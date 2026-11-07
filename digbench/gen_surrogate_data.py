@@ -62,6 +62,7 @@ def main():
     ap.add_argument("--episodes", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="surrogate_data")
+    ap.add_argument("--standard", action="store_true", help="one episode: the task-3 cycle (depth 0.6, mu 0.38)")
     ap.add_argument("--worker", type=int, default=0)
     ap.add_argument("--num-workers", type=int, default=1, help="run N processes in parallel on one GPU to hide CPU overhead")
     args = ap.parse_args()
@@ -74,11 +75,17 @@ def main():
         if ep % args.num_workers != args.worker:
             continue
         f = out / f"ep{args.seed:03d}_{ep:04d}.npz"
-        if f.exists():
+        if f.exists() and not args.standard:
             continue
         rng = np.random.default_rng(args.seed * 100000 + ep)
         mu = float(rng.uniform(0.3, 0.7))
         path, T, meta = make_path(rng)
+        if args.standard:
+            from .run_bucket import path as std_path
+            mu, T = 0.38, 5.5
+            path = lambda t: std_path(t, 0.6)
+            meta = {"depth": 0.6, "drag": 1.2, "x0": 2.7, "curl": math.radians(75)}
+            f = out / "standard_task3.npz"
         t0 = time.perf_counter()
         sim = Sim3D(BED, args.dx, mu_f=mu, arch=args.arch, tool_speed_max=1.5, mem_frac=0.85 / args.num_workers,
                     max_particles=int(1.15 * BED[0] * BED[1] * SURF / (args.dx / 2) ** 3) + 1000)
