@@ -213,6 +213,20 @@ def main():
                           output_names=["dh", "force"], opset_version=17)
     except Exception as e:
         print("onnx export failed:", e)
+    # parity fixture for the browser port (app/src/sim/neuralSoil.ts): full-width (mirrored) H, T0, T1, mu, the
+    # model input x, and the PyTorch outputs
+    with torch.no_grad():
+        ep = val[0]
+        t = len(ep["H"]) // 3
+        H = tens(ep["H"][t][None]); T0 = tens(ep["T"][t][None]); T1 = tens(ep["T"][t + 1][None]); mu = tens(np.array([ep["mu"]], np.float32))
+        x = features(H, T0, T1, mu, torch)
+        dh, f = model(x)
+        full = lambda a: torch.cat([a.flip(-1), a], -1)[0].cpu().numpy()
+        fixture = {"nx": int(x.shape[-2]), "ny": int(x.shape[-1]), "mu": float(ep["mu"]),
+                   "H": full(H).ravel().tolist(), "T0": [None if not np.isfinite(v) else float(v) for v in full(T0).ravel()],
+                   "T1": [None if not np.isfinite(v) else float(v) for v in full(T1).ravel()],
+                   "x": x[0].cpu().numpy().ravel().tolist(), "dh": dh[0, 0].cpu().numpy().ravel().tolist(), "force": f[0].cpu().numpy().tolist()}
+        (Path(args.out) / f"surrogate-{args.tag}-fixture.json").write_text(json.dumps(fixture))
     print("summary:", json.dumps(summary, indent=1))
 
 
