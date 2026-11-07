@@ -44,3 +44,35 @@ COLLAPSE_CASES = [
     {"a": 8.0, "H0": 0.40, "L0": 0.05},
     {"a": 12.0, "H0": 0.45, "L0": 0.0375},
 ]
+
+
+# --- Task 2: plate intrusion resistive force (granular RFT) ------------------
+# Li, Zhang, Goldman, "A terradynamics of legged locomotion on granular media", Science 339, 1408 (2013),
+# supplementary Table S1/S2/S3 (arXiv:1303.7065). Aluminium plate 3.81 x 2.54 x 0.64 cm moved at ~1 cm/s
+# in a 15 cm deep air-fluidized bed; stress per unit depth alpha_{z,x}(beta, gamma) in N/cm^3 is the slope
+# of F/A vs centre depth |z|. Run-to-run variation <= 0.005 N/cm^3. Fourier fit (their eq. S8):
+#   alpha_z = sum_{m=-1..1, n=0..1} A_mn cos(2pi(m beta/pi + n gamma/2pi)) + B_mn sin(...)
+#   alpha_x = sum C_mn cos(...) + D_mn sin(...)
+# Medium used here: 3 mm glass spheres, closely packed (volume fraction 0.63, particle density 2.6 g/cm^3,
+# repose 21 deg). Fit underestimates the one directly reported measurement alpha_z(0, pi/2) = 0.29 N/cm^3
+# (fit 0.22; Table S3), so the fit itself carries ~25-33% error at its peak.
+RFT_3MM_CP = {
+    "source": "Li, Zhang, Goldman 2013, Science 339:1408, Table S2 (3 mm glass spheres, CP)",
+    "A": {(0, 0): 0.045, (1, 0): 0.031},
+    "B": {(1, 1): 0.046, (0, 1): 0.084, (-1, 1): 0.012},
+    "C": {(1, 1): -0.031, (0, 1): 0.060, (-1, 1): 0.0},
+    "D": {(1, 0): 0.015},
+    "measured_alpha_z_0_90": 0.29,
+    "rho_bulk": 2600.0 * 0.63,
+    "mu_f": 0.38,  # tan(21 deg) repose; also the value used by Askari & Kamrin 2016 for glass beads
+    "plate_mu": 0.4,  # aluminium-poppy seed value reported in the paper (glass value not reported)
+}
+
+
+def rft_alpha(beta, gamma, M=RFT_3MM_CP):
+    """(alpha_x, alpha_z) in N/cm^3; beta, gamma in radians (Li et al. conventions)."""
+    import math
+    ang = lambda m, n: 2 * math.pi * (m * beta / math.pi + n * gamma / (2 * math.pi))
+    az = sum(a * math.cos(ang(m, n)) for (m, n), a in M["A"].items()) + sum(b * math.sin(ang(m, n)) for (m, n), b in M["B"].items())
+    ax = sum(c * math.cos(ang(m, n)) for (m, n), c in M["C"].items()) + sum(d * math.sin(ang(m, n)) for (m, n), d in M["D"].items())
+    return ax, az
