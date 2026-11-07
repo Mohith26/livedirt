@@ -210,7 +210,7 @@ def main():
         dummy = features(tens(val[0]["H"][0][None]), tens(val[0]["T"][0][None]), tens(val[0]["T"][1][None]),
                          tens(np.array([0.5], np.float32)), torch)
         torch.onnx.export(model, dummy, str(Path(args.out) / f"surrogate-{args.tag}.onnx"), input_names=["x"],
-                          output_names=["dh", "force"], opset_version=17)
+                          output_names=["dh", "force"], opset_version=17, dynamo=False)
     except Exception as e:
         print("onnx export failed:", e)
     # parity fixture for the browser port (app/src/sim/neuralSoil.ts): full-width (mirrored) H, T0, T1, mu, the

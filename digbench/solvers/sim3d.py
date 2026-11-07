@@ -31,9 +31,9 @@ def _arch(name):
 class Sim3D:
     def __init__(self, size, dx, *, mu_f=0.38, mu_tool=0.4, rho_bulk=1600.0, E=1.0e6, nu=0.3, ppc_side=2,
                  max_particles=4_000_000, n_boxes=8, arch="gpu", symmetry_y=True, seed=0, tool_speed_max=1.0,
-                 floor_sticky=True, wall_mu=0.0):
+                 floor_sticky=True, wall_mu=0.0, mem_frac=0.85):
         ti.reset()
-        ti.init(arch=_arch(arch), default_fp=ti.f32, random_seed=seed, offline_cache=True, device_memory_fraction=0.85)
+        ti.init(arch=_arch(arch), default_fp=ti.f32, random_seed=seed, offline_cache=True, device_memory_fraction=mem_frac)
         self.dx, self.pad = dx, 3
         self.size = np.array(size, dtype=np.float64)
         self.n = [int(math.ceil(s / dx)) + 2 * self.pad for s in size]

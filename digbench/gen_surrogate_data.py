@@ -62,6 +62,8 @@ def main():
     ap.add_argument("--episodes", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="surrogate_data")
+    ap.add_argument("--worker", type=int, default=0)
+    ap.add_argument("--num-workers", type=int, default=1, help="run N processes in parallel on one GPU to hide CPU overhead")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     nxy = (int(round(BED[0] / CELL)), int(round(BED[1] / CELL)))
@@ -69,6 +71,8 @@ def main():
     TP = tool_points(boxes)
     sh = 0.05  # shell half-thickness used by bucket_boxes
     for ep in range(args.episodes):
+        if ep % args.num_workers != args.worker:
+            continue
         f = out / f"ep{args.seed:03d}_{ep:04d}.npz"
         if f.exists():
             continue
@@ -76,7 +80,7 @@ def main():
         mu = float(rng.uniform(0.3, 0.7))
         path, T, meta = make_path(rng)
         t0 = time.perf_counter()
-        sim = Sim3D(BED, args.dx, mu_f=mu, arch=args.arch, tool_speed_max=1.5,
+        sim = Sim3D(BED, args.dx, mu_f=mu, arch=args.arch, tool_speed_max=1.5, mem_frac=0.85 / args.num_workers,
                     max_particles=int(1.15 * BED[0] * BED[1] * SURF / (args.dx / 2) ** 3) + 1000)
         sim.fill_box((0, 0, 0), (BED[0], BED[1], SURF), rng_seed=ep)
         sim.set_tool(boxes)
