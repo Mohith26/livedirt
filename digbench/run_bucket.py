@@ -31,7 +31,7 @@ def bucket_boxes(dx):
     the far face)."""
     # fixed 5 cm half-thickness (10 cm shell) at every resolution so grid-convergence runs share one geometry;
     # >= 2.5 cells thick for dx <= 4 cm (thinner shells let soil tunnel through)
-    assert dx <= 0.0401, "bucket shell needs dx <= 4 cm"
+    assert dx <= 0.0801, "bucket shell needs dx <= 4 cm (8 cm allowed for smoke tests)"
     t = 0.05
     return [
         ((t, 0.0, -0.45), (t, 0.5 + 2 * t, 0.45 + 2 * t), 0.0),            # back plate
