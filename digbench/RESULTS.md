@@ -55,3 +55,16 @@ Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 
 | `map-dx3mm` | 0.94, 0.94, 0.94 | 0.016 / 0.023 | 0.118 | 1.13 | 0.212 / 0.218 / 0.29 | Tesla T4 |
 | `smoke-dx2mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.225; alpha_x(90,0) 0.099 (fit 0.091) | Tesla T4 |
 | `smoke-dx3mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.212; alpha_x(90,0) 0.098 (fit 0.091) | Tesla T4 |
+
+## Task 5: calibration (observe a slump, infer friction, predict digging force)
+
+Real data: friction angle fitted to the Sarlin et al. fits = 26.1 deg (loss 0.207); measured repose 23.5 +/- 1.2 deg.
+
+| mu_true | rep | mu_hat | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |
+|---|---|---|---|---|---|---|
+| 0.30 | 0 | 0.291 | 28.3 | 27.3 | -3.6% | +147.6% |
+| 0.30 | 1 | 0.296 | 28.3 | 27.8 | -1.7% | +147.6% |
+| 0.45 | 0 | 0.436 | 55.5 | 52.0 | -6.3% | +26.2% |
+| 0.45 | 1 | 0.441 | 55.5 | 53.1 | -4.3% | +26.2% |
+| 0.60 | 0 | 0.596 | 106.1 | 104.1 | -1.9% | -34.0% |
+| 0.60 | 1 | 0.609 | 106.1 | 109.9 | +3.6% | -34.0% |
