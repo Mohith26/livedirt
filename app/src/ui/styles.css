@@ -206,3 +206,14 @@ table.sweep tbody th { text-align: left; color: var(--text); font-size: 11px; wi
 table.sweep tbody th small { display: block; color: var(--faint); font-weight: 500; font-size: 9.5px; }
 table.sweep td.k { color: var(--faint); }
 table.sweep td.na { color: var(--faint); }
+@media (max-width: 900px) {
+  .topbar { gap: 8px; left: 10px; right: 10px; top: 10px; }
+  .modes { margin: 0; flex: 1; justify-content: space-between; }
+  .modes button { padding: 0 10px; }
+  #btnMcap, .actions a.iconbtn { display: none; }
+}
+@media (max-width: 560px) {
+  .brand > div:last-child { display: none; }
+  .brand { padding: 0 10px; }
+  .actions .iconbtn { padding: 0 12px; }
+}
