@@ -67,7 +67,7 @@ def main():
     nxy = (int(round(BED[0] / CELL)), int(round(BED[1] / CELL)))
     boxes = bucket_boxes(args.dx)
     TP = tool_points(boxes)
-    sh = max(0.02, 1.25 * args.dx)  # shell thickness half-width used by bucket_boxes
+    sh = 0.05  # shell half-thickness used by bucket_boxes
     for ep in range(args.episodes):
         f = out / f"ep{args.seed:03d}_{ep:04d}.npz"
         if f.exists():

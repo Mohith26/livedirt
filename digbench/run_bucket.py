@@ -29,7 +29,10 @@ def bucket_boxes(dx):
     """Shell plates built outward from a fixed 0.9 x 0.9 x 1.0 m interior (capacity unchanged), each at least
     2.5 grid cells thick: thinner shells let soil tunnel through (nodes inside a thin plate take the normal of
     the far face)."""
-    t = max(T, 1.25 * dx)
+    # fixed 5 cm half-thickness (10 cm shell) at every resolution so grid-convergence runs share one geometry;
+    # >= 2.5 cells thick for dx <= 4 cm (thinner shells let soil tunnel through)
+    assert dx <= 0.0401, "bucket shell needs dx <= 4 cm"
+    t = 0.05
     return [
         ((t, 0.0, -0.45), (t, 0.5 + 2 * t, 0.45 + 2 * t), 0.0),            # back plate
         ((-0.45, 0.0, -0.9 - t), (0.45, 0.5 + 2 * t, t), 0.0),             # floor
@@ -112,7 +115,8 @@ def main():
     ap.add_argument("--arch", default="gpu")
     ap.add_argument("--dx", type=float, default=0.04)
     ap.add_argument("--depth", type=float, default=0.6)
-    ap.add_argument("--fmax", type=float, default=None, help="drive force limit (N); None = prescribed motion")
+    ap.add_argument("--fmax", type=float, default=None, help="drive force limit (N); None = prescribed motion. "
+                    "DX225LC-7 spec (ISO): arm digging force 11,500 kgf = 112.8 kN, bucket 16,500 kgf = 161.8 kN")
     ap.add_argument("--mu-f", type=float, default=0.38)
     ap.add_argument("--E", type=float, default=1.0e6)
     ap.add_argument("--rho", type=float, default=1600.0)
