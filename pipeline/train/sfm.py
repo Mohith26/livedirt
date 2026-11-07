@@ -18,6 +18,6 @@ res = {"features_s": round(t1-t0), "matching_s": round(t2-t1), "mapping_s": roun
        "registered": best.num_reg_images() if best else 0, "frames": len(list(frames.glob("*.jpg"))),
        "points3D": best.num_points3D() if best else 0, "mean_reproj_error_px": best.compute_mean_reprojection_error() if best else None}
 if best:
-    k = max(maps, key=lambda i: maps[i].num_reg_images()); best.write(out / "best")
+    (out / "best").mkdir(exist_ok=True); best.write(out / "best")
     print(best.summary())
 json.dump(res, open(work / "sfm_result.json", "w"), indent=1); print(res)

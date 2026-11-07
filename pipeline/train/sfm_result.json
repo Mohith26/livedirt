@@ -1,0 +1,11 @@
+{
+ "features_s": 16,
+ "matching_s": 13,
+ "mapping_s": 208,
+ "models": 1,
+ "registered": 200,
+ "frames": 200,
+ "points3D": 82411,
+ "mean_reproj_error_px": 0.46347313381292604,
+ "note": "timings from run.log; written from sparse/0 after sfm.py's copy step failed (fixed)"
+}

@@ -39,3 +39,14 @@ Stages:
 ## Known issue
 Importing `pycolmap` and `torch` in the same Python process aborts with OMP Error #15 (two libomp copies).
 `sfm.py` and `evaluate.py` run as separate processes, so the pipeline is unaffected; don't merge them.
+
+## Status (Nov 7 2026)
+
+- SfM is done: **200 / 200 frames registered, 82,411 points, 0.46 px mean reprojection error** (`sfm_result.json`; features 16 s, matching 13 s, mapping 208 s on Apple Silicon CPU).
+- Training could not run inside the automation sandbox: Brush found no Metal adapter (no GUI session), and macOS refused to launch a sandbox-created app bundle. No splat metrics exist yet, so none are reported.
+- To finish, run from a normal Terminal (uses the Mac GPU, resumes from the existing SfM, ~7000 Brush steps, then PSNR/SSIM/LPIPS on the 25 held-out frames):
+
+```bash
+bash ~/livedirt/pipeline/train/run_all.sh
+node ~/livedirt/app/scripts/make-results.mjs   # folds eval_metrics.json into docs/RESULTS.md
+```

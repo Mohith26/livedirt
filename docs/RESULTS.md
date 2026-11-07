@@ -54,4 +54,6 @@ A 4.2 s session recorded in the browser and checked with `npm run verify-mcap` (
 
 ## 4. Own reconstruction from the raw footage
 
-In progress: `pipeline/train/` (SfM with pycolmap + Brush training, every 8th frame held out). No held-out metrics are reported until the run completes.
+Source: the original 4K drone video (Pexels 29568320), 200 frames at 1600 px. Camera poses with pycolmap: **200 / 200 frames registered, 82,411 points, 0.46 px mean reprojection error** (features 16 s, matching 13 s, mapping 208 s, CPU).
+
+Training (Brush, every 8th frame held out) has not run yet: the automation sandbox has no GPU adapter. No held-out PSNR/SSIM/LPIPS is reported until it does; see `pipeline/train/README.md`.

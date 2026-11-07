@@ -26,6 +26,9 @@ md += `An earlier version of this sweep with the photographed (splat) machine in
 md += `## 3. Data export\n\nA 4.2 s session recorded in the browser and checked with \`npm run verify-mcap\` (official \`@mcap/core\` indexed reader): 7 channels with Foxglove schemas (foxglove.PointCloud ×2, CompressedImage, FrameTransforms, Grid) plus joint and earthwork streams; roof scans ~16.8k points, front scans ~11.8k points, JPEG frames, 240×240 elevation grid.\n\n`;
 const trainF = new URL('../../pipeline/train/eval_metrics.json', import.meta.url);
 md += `## 4. Own reconstruction from the raw footage\n\n`;
-md += fs.existsSync(trainF) ? `See \`pipeline/train/\`. Held-out metrics: \`${JSON.stringify(JSON.parse(fs.readFileSync(trainF)))}\`\n` : `In progress: \`pipeline/train/\` (SfM with pycolmap + Brush training, every 8th frame held out). No held-out metrics are reported until the run completes.\n`;
+const sfmF = new URL('../../pipeline/train/sfm_result.json', import.meta.url);
+const sfm = fs.existsSync(sfmF) ? JSON.parse(fs.readFileSync(sfmF)) : null;
+if (sfm) md += `Source: the original 4K drone video (Pexels 29568320), 200 frames at 1600 px. Camera poses with pycolmap: **${sfm.registered} / ${sfm.frames} frames registered, ${sfm.points3D.toLocaleString('en-US')} points, ${sfm.mean_reproj_error_px.toFixed(2)} px mean reprojection error** (features ${sfm.features_s} s, matching ${sfm.matching_s} s, mapping ${sfm.mapping_s} s, CPU).\n\n`;
+md += fs.existsSync(trainF) ? `Held-out metrics (every 8th frame, Brush 3DGS): \`${JSON.stringify(JSON.parse(fs.readFileSync(trainF)))}\`\n` : `Training (Brush, every 8th frame held out) has not run yet: the automation sandbox has no GPU adapter. No held-out PSNR/SSIM/LPIPS is reported until it does; see \`pipeline/train/README.md\`.\n`;
 fs.writeFileSync(new URL('../../docs/RESULTS.md', import.meta.url), md);
 console.log(md.length, 'chars');
