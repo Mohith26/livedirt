@@ -54,7 +54,11 @@ def main():
                             E=args.E, dx=args.dx, speed=args.speed, arch=args.arch)
         ser = r.pop("series")
         ax, az, n = alpha_from_series(ser, A)
-        rx, rz = references.rft_alpha(math.radians(b), math.radians(g))
+        # Convention: the simulator's beta rotates the plate CCW from +x with motion toward -x, so beta > 0 tilts the
+        # leading face up. Li et al.'s beta > 0 tilts it down (their large positive drag-induced lift at beta=+45,
+        # gamma=0). Same physical plate => Li beta = -beta here. Checked on the convention-invariant cases
+        # (beta = 0, 90), which matched before any mapping.
+        rx, rz = references.rft_alpha(math.radians(-b), math.radians(g))
         rows.append({"beta": b, "gamma": g, "alpha_x": ax, "alpha_z": az, "ref_x": rx, "ref_z": rz, "n_samples": n,
                      **{k: r[k] for k in ("n_particles", "grid", "dt", "steps", "wall_s", "rtf", "start_depth", "travel")},
                      "series": ser[::2].round(6).tolist()})
