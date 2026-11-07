@@ -89,7 +89,15 @@ def main():
     Path(args.out).mkdir(parents=True, exist_ok=True)
     pth = Path(args.out) / f"hybrid-{args.tag}.json"
 
-    ref = run_mpm(SITE, 0.0, args, 0.0)
+    cache = Path(args.out) / f"hybrid-ref-dx{args.dx:g}-d{args.depth:g}-mu{args.mu_f:g}.npz"
+    if cache.exists():
+        z = np.load(cache)
+        ref = {"H": z["H"], "carried": float(z["carried"]), "drag_mean": float(z["drag_mean"]), "drag_peak": float(z["drag_peak"]),
+               "wall_s": float(z["wall_s"]), "particles": int(z["particles"])}
+    else:
+        ref = run_mpm(SITE, 0.0, args, 0.0)
+        np.savez(cache, H=ref["H"], carried=ref["carried"], drag_mean=ref["drag_mean"], drag_peak=ref["drag_peak"],
+                 wall_s=ref["wall_s"], particles=ref["particles"])
     Href = ref["H"]
     print(f"reference full-site MPM: {ref['particles']} particles, {ref['wall_s']:.0f}s, carried {ref['carried']:.3f} m3, "
           f"drag mean {ref['drag_mean']/1e3:.1f} kN", flush=True)
