@@ -45,7 +45,7 @@ function toolPoints(n = 14): Float32Array {
 }
 
 /** lowest bucket-solid elevation per window cell (NaN where the bucket is not over the cell) */
-export function rasterizeBucket(pivotX: number, pivotZ: number, pitch: number, out = new Float32Array(NX * NY)): Float32Array {
+export function rasterizeBucket(pivotX: number, pivotZ: number, pitch: number, out: Float32Array = new Float32Array(NX * NY)): Float32Array {
   out.fill(Infinity);
   const P = toolPoints();
   const ca = Math.cos(pitch), sa = Math.sin(pitch);
@@ -61,7 +61,7 @@ export function rasterizeBucket(pivotX: number, pivotZ: number, pitch: number, o
   return out;
 }
 
-export function buildFeatures(H: Float32Array, T0: Float32Array, T1: Float32Array, mu: number, out = new Float32Array(6 * NX * NY)): Float32Array {
+export function buildFeatures(H: Float32Array, T0: Float32Array, T1: Float32Array, mu: number, out: Float32Array = new Float32Array(6 * NX * NY)): Float32Array {
   const n = NX * NY;
   for (let k = 0; k < n; k++) {
     const h = H[k];
