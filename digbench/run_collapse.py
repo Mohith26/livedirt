@@ -42,9 +42,13 @@ def main():
     ap.add_argument("--ppc", type=int, default=2, help="particles per cell side")
     ap.add_argument("--E", type=float, default=1.0e6)
     ap.add_argument("--phi", type=float, default=references.COLLAPSE["repose_deg"])
-    ap.add_argument("--yield-fit", default="plane_strain", choices=["plane_strain", "klar3d"])
+    ap.add_argument("--yield-fit", default="plane_strain", choices=["plane_strain", "klar3d", "dp_tan"])
+    ap.add_argument("--rheology", default="const", choices=["const", "muI"])
     ap.add_argument("--floor", default="sticky", choices=["sticky", "coulomb"])
     ap.add_argument("--floor-mu", type=float, default=None)
+    ap.add_argument("--wall-mu", type=float, default=0.0)
+    ap.add_argument("--side-W", type=float, default=0.0, help="channel width for sidewall friction (0 = pure plane strain)")
+    ap.add_argument("--side-mu", type=float, default=0.0)
     ap.add_argument("--cases", default="all", help="comma list of aspect ratios, or all")
     ap.add_argument("--tag", default="mpm")
     ap.add_argument("--out", default=str(ROOT / "results"))
@@ -58,8 +62,8 @@ def main():
     rows = []
     for case in cases:
         t0 = time.perf_counter()
-        r = mpm_dp.run_column_collapse(case, dx=args.dx, ppc_side=args.ppc, E=args.E, phi_deg=args.phi, yield_fit=args.yield_fit,
-                                       floor=args.floor, floor_mu=args.floor_mu, arch=args.arch)
+        r = mpm_dp.run_column_collapse(case, dx=args.dx, ppc_side=args.ppc, E=args.E, phi_deg=args.phi, yield_fit=args.yield_fit, rheology=args.rheology,
+                                       floor=args.floor, floor_mu=args.floor_mu, wall_mu=args.wall_mu, side_W=args.side_W, side_mu=args.side_mu, arch=args.arch)
         pos = r.pop("positions")
         r.pop("snapshots")
         xc, h = metrics.profile_from_particles(pos[:, 0], pos[:, 1], args.dx, r["spacing"])

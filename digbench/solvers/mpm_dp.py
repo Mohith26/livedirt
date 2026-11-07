@@ -19,7 +19,8 @@ def _arch(name):
 
 
 def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg=23.5,
-                        rho_bulk=1600.0, yield_fit="plane_strain", floor="sticky", floor_mu=None, gate_settle=0.15,
+                        rho_bulk=1600.0, yield_fit="plane_strain", rheology="const",
+                        mu1=0.38, mu2=0.64, I0=0.279, grain_d=0.005, rho_s=2500.0, floor="sticky", floor_mu=None, wall_mu=0.0, side_W=0.0, side_mu=0.0, gate_settle=0.15,
                         arch="gpu", max_time=None, stop_speed=0.005, seed=0, snapshot_every=None):
     """Simulate one column collapse. Returns final particle positions (wall/floor at 0) and timing."""
     H0, L0 = case["H0"], case["L0"]
@@ -53,7 +54,10 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
     mu = E / (2 * (1 + nu))
     la = E * nu / ((1 + nu) * (1 - 2 * nu))
     sphi = math.sin(math.radians(phi_deg))
-    if yield_fit == "plane_strain":
+    if yield_fit == "dp_tan" or rheology == "muI":
+        # granular-flow convention: tau_eq <= mu p with mu = tan(angle); in 2D this is |e1-e2| <= -(1+la/mu) tr(e) mu
+        alpha = math.tan(math.radians(phi_deg)) / math.sqrt(2.0)
+    elif yield_fit == "plane_strain":
         # exact Mohr-Coulomb in 2D plane strain with Hencky strain: |e1-e2| <= -(1+la/mu) tr(e) sin(phi)
         alpha = sphi / math.sqrt(2.0)
     else:  # Klar et al. 2016 3D cone fit
@@ -61,7 +65,11 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
     c_wave = math.sqrt((la + 2 * mu) / rho_bulk)
     dt = 0.4 * dx / c_wave
     sticky = floor == "sticky"
+    use_muI = rheology == "muI"
+    a1, a2 = mu1 / math.sqrt(2.0), mu2 / math.sqrt(2.0)
     fmu = 0.0 if floor_mu is None else float(floor_mu)
+    wmu = float(wall_mu)
+    use_side = side_W > 0 and side_mu > 0
 
     x = ti.Vector.field(2, ti.f32, n_p)
     v = ti.Vector.field(2, ti.f32, n_p)
@@ -72,6 +80,7 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
     gate_x = ti.field(ti.f32, ())
     damp = ti.field(ti.f32, ())
     vmax = ti.field(ti.f32, ())
+    pres = ti.field(ti.f32, n_p)
 
     @ti.kernel
     def init_fields():
@@ -98,7 +107,16 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
             if tr >= 0.0:
                 e = ti.Vector([0.0, 0.0])
             else:
-                yp = ehn + (2.0 * la + 2.0 * mu) / (2.0 * mu) * tr * alpha
+                al = alpha
+                if ti.static(use_muI):
+                    # mu(I) (Jop et al. 2006): I = gdot d / sqrt(p / rho_s); gdot = sqrt(2 D':D'), D = sym(C)
+                    D = 0.5 * (C[p] + C[p].transpose())
+                    Dd = D - 0.5 * (D[0, 0] + D[1, 1]) * ti.Matrix.identity(ti.f32, 2)
+                    gdot = ti.sqrt(2.0 * (Dd[0, 0] ** 2 + Dd[1, 1] ** 2 + 2.0 * Dd[0, 1] ** 2))
+                    pr = ti.max(-(la + mu) * tr, 1e-3)
+                    I = gdot * grain_d / ti.sqrt(pr / rho_s)
+                    al = a1 + (a2 - a1) / (I0 / ti.max(I, 1e-9) + 1.0)
+                yp = ehn + (2.0 * la + 2.0 * mu) / (2.0 * mu) * tr * al
                 if yp > 0.0:
                     e = e - (yp / ehn) * ehat
             Sig = ti.Matrix([[ti.exp(e[0]), 0.0], [0.0, ti.exp(e[1])]])
@@ -106,6 +124,7 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
             tr2 = e[0] + e[1]
             tau_d = ti.Matrix([[2.0 * mu * e[0] + la * tr2, 0.0], [0.0, 2.0 * mu * e[1] + la * tr2]])
             tau = U @ tau_d @ U.transpose()
+            pres[p] = ti.max(-(la + mu) * tr2, 0.0)  # Kirchhoff pressure (2D mean stress), used for sidewall friction
             stress = (-dt * p_vol * 4.0 * inv_dx * inv_dx) * tau
             affine = stress + p_mass * C[p]
             for i, j in ti.static(ti.ndrange(3, 3)):
@@ -129,8 +148,12 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
                             vt = ti.abs(gv[0])
                             if vt > 1e-12:
                                 gv[0] = gv[0] / vt * ti.max(0.0, vt + fmu * vn)
-                if i <= pad and gv[0] < 0:
+                if i <= pad and gv[0] < 0:  # back wall, Coulomb friction wall_mu (0 = frictionless)
+                    vnw = gv[0]
                     gv[0] = 0.0
+                    vtw = ti.abs(gv[1])
+                    if vtw > 1e-12:
+                        gv[1] = gv[1] / vtw * ti.max(0.0, vtw + wmu * vnw)
                 if i >= nx - pad and gv[0] > 0:
                     gv[0] = 0.0
                 if j >= ny - pad and gv[1] > 0:
@@ -152,6 +175,12 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
                 weight = w[i][0] * w[j][1]
                 new_v += weight * gv
                 new_C += 4.0 * inv_dx * weight * gv.outer_product(dpos)
+            if ti.static(use_side):
+                # quasi-2D channel: Coulomb friction on the two glass sidewalls, decel = 2 mu_w p / (rho W) (Jop et al. 2005)
+                sp_ = new_v.norm()
+                dec = dt * 2.0 * side_mu * pres[p] / (rho_bulk * side_W)
+                if sp_ > 1e-12:
+                    new_v = new_v * (ti.max(0.0, sp_ - dec) / sp_)
             v[p] = new_v
             C[p] = new_C
             x[p] += dt * new_v
@@ -213,6 +242,6 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
         "stopped": stopped,
         "volume_ratio": float(J.sum() * p_vol / (n_p * p_vol)),
         "params": {"dx": dx, "ppc_side": ppc_side, "E": E, "nu": nu, "phi_deg": phi_deg, "rho_bulk": rho_bulk,
-                   "yield_fit": yield_fit, "floor": floor, "floor_mu": floor_mu, "gate_settle": gate_settle, "alpha_dp": alpha},
+                   "yield_fit": yield_fit, "rheology": rheology, "mu1": mu1, "mu2": mu2, "I0": I0, "floor": floor, "floor_mu": floor_mu, "wall_mu": wall_mu, "side_W": side_W, "side_mu": side_mu, "gate_settle": gate_settle, "alpha_dp": alpha},
         "snapshots": snaps,
     }
