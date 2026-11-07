@@ -41,3 +41,82 @@ for ro, he, tag, cfg, dev, wall, cs in rows:
     out.append(f"| `{tag}` | " + " | ".join(f"{c['runout_relerr']:+.0%} / {c['height_relerr']:+.0%}" for c in cs) + " |")
 (R.parent / "RESULTS.md").write_text("\n".join(out) + "\n")
 print("\n".join(out[:12 + len(rows)]))
+
+
+# ---------------- Task 2: plate stress maps ----------------
+plates = sorted(R.glob("plate-map-*.json"))
+if plates:
+    out += ["", "## Task 2: plate intrusion stress maps (3D MPM + rigid tool)", "",
+            "Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 3 mm glass spheres (closely packed). "
+            "36 (beta, gamma) pairs, beta and gamma in {-60,-30,0,30,60,90} deg; stress per unit depth alpha = slope of F/A vs depth. "
+            "Friction mu = 0.38 = tan(repose 21 deg), plate friction 0.4 (paper's aluminium value); nothing fitted to the map. "
+            "Beta convention mapped to the paper's (sim beta = -Li beta), checked on the convention-invariant cases beta = 0, 90.", "",
+            "| tag | corr (x, z, all) | MAE x / z (N/cm^3) | NRMSE | scale gain | alpha_z(0,90) sim / fit / measured | device |",
+            "|---|---|---|---|---|---|---|"]
+    for p in plates:
+        d = json.loads(p.read_text()); s = d["summary"]
+        out.append(f"| `{d['tag']}` | {s['corr_x']:.2f}, {s['corr_z']:.2f}, {s['corr']:.2f} | {s['mae_x']:.3f} / {s['mae_z']:.3f} | "
+                   f"{s['nrmse']:.3f} | {s['gain']:.2f} | {s['alpha_z_0_90']:.3f} / 0.218 / {s['alpha_z_0_90_measured']:.2f} | {d['device']} |")
+    for p in sorted(R.glob("plate-smoke-*.json")):
+        d = json.loads(p.read_text())
+        cs = {(c['beta'], c['gamma']): c for c in d['cases']}
+        a, b = cs.get((0, 90)), cs.get((90, 0))
+        if a and b:
+            out.append(f"| `{d['tag']}` (grid check) | - | - | - | - | alpha_z(0,90) {a['alpha_z']:.3f}; alpha_x(90,0) {b['alpha_x']:.3f} (fit {b['ref_x']:.3f}) | {d['device']} |")
+
+# ---------------- Task 3: bucket ----------------
+bks = sorted(R.glob("bucket-v2-*.json")) or sorted(R.glob("bucket-dx*.json"))
+if bks:
+    out += ["", "## Task 3: full-scale bucket dig cycle (3D MPM, closed loop)", "",
+            "1.0 m wide, 0.81 m^3 bucket; penetrate to 0.6 m, drag 1.2 m, curl 75 deg, lift. Sand mu = 0.38, 1600 kg/m^3. "
+            "No public measured data at this scale; scored by grid convergence, conservation, and against the heightfield baselines.", "",
+            "| tag | drag mean / peak (kN) | vertical peak (kN) | carried (bank m^3) | trench depth MPM / kinematic / LiveDirt-relax (m) | terrain RMSE kinematic / LiveDirt-relax vs MPM (m) | trajectory done | wall (s) |",
+            "|---|---|---|---|---|---|---|---|"]
+    for p in bks:
+        d = json.loads(p.read_text()); s = d["summary"]
+        out.append(f"| `{d['tag']}` | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.1f} | {s['vertical_force_peak_kN']:.0f} | {s['carried_bank_m3']:.2f} | "
+                   f"{s['trench_depth_centre_mpm_m']:.2f} / {s['trench_depth_centre_kinematic_m']:.2f} / {s['trench_depth_centre_livedirt_relax_m']:.2f} | "
+                   f"{s['terrain_rmse_kinematic_vs_mpm_m']:.3f} / {s['terrain_rmse_livedirt_relax_vs_mpm_m']:.3f} | {s['trajectory_completion']:.0%} (min speed x{s['min_speed_scale']:.2f}) | {s['wall_s']:.0f} |")
+
+# ---------------- Task 4: hybrid ----------------
+hys = sorted(R.glob("hybrid-v2-*.json")) or sorted(R.glob("hybrid-dx*.json"))
+if hys:
+    out += ["", "## Task 4: multiscale hybrid vs full-site MPM", "",
+            "8 m x 6 m site, same dig. Reference = MPM over the whole site. Hybrid = MPM only in a box around the swept footprint "
+            "(+ margin) with frictional zone walls, written back to the site heightfield and relaxed with LiveDirt's relax.", "",
+            "| tag | method | terrain RMSE region / changed cells (m) | carried err | drag mean err | speedup vs reference | particles |", "|---|---|---|---|---|---|---|"]
+    for p in hys:
+        d = json.loads(p.read_text())
+        ref = d.get("reference", {})
+        out.append(f"| `{d['tag']}` | full-site MPM reference | 0 / 0 | - | - | 1x ({ref.get('wall_s', 0):.0f} s) | {ref.get('particles', '-')} |")
+        for r in d["runs"]:
+            ce = f"{r['carried_err']:+.0%}" if "carried_err" in r else "-"
+            de = f"{r['drag_mean_err']:+.0%}" if "drag_mean_err" in r else "-"
+            out.append(f"| `{d['tag']}` | {r['name']} | {r['rmse_region_m']:.3f} / {r['rmse_changed_m']:.3f} | {ce} | {de} | {r['speedup']:.1f}x | {r.get('particles', '-')} |")
+
+# ---------------- Task 5: calibration ----------------
+for p in sorted(R.glob("calib-*.json")):
+    d = json.loads(p.read_text())
+    out += ["", "## Task 5: calibration (observe a slump, infer friction, predict digging force)", ""]
+    if d.get("real"):
+        r = d["real"]
+        out.append(f"Real data: friction angle fitted to the Sarlin et al. fits = {r['phi_fit_deg']:.1f} deg (loss {r['loss_at_fit']:.3f}); "
+                   f"measured repose {r['measured_repose_deg']} +/- {r['measured_sd_deg']} deg.")
+    if d.get("synthetic"):
+        out += ["", "| mu_true | rep | mu_hat | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |", "|---|---|---|---|---|---|---|"]
+        for s in d["synthetic"]:
+            out.append(f"| {s['mu_true']:.2f} | {s['rep']} | {s['mu_hat']:.3f} | {s.get('drag_true_N', float('nan'))/1e3:.1f} | "
+                       f"{s.get('drag_pred_N', float('nan'))/1e3:.1f} | {s.get('drag_err', float('nan')):+.1%} | {s.get('drag_err_default_mu0.5', float('nan')):+.1%} |")
+
+# ---------------- Task 6: surrogate ----------------
+for p in sorted(R.glob("surrogate-*.json")):
+    d = json.loads(p.read_text()); s = d["summary"]
+    out += ["", "## Task 6: learned terrain + force surrogate (held-out MPM episodes)", "",
+            f"{s['params']:,} parameters, {s['train_episodes']} training / {s['val_episodes']} held-out episodes, {s['ms_per_step']:.2f} ms per 0.1 s step on {s['device']}.", "",
+            "| model | final terrain RMSE, disturbed cells (m) | rollout RMSE, all cells (m) |", "|---|---|---|"]
+    for m in ("surrogate", "livedirt", "persistence"):
+        out.append(f"| {m} | {s['final_rmse_disturbed_m'][m]:.3f} | {s['rollout_rmse_all_m'][m]:.3f} |")
+    out.append(f"\nDrag-force relative error during the drag phase (surrogate): {s['force_x_rel_err_drag']:.0%}.")
+
+(R.parent / "RESULTS.md").write_text("\n".join(out) + "\n")
+print("wrote", R.parent / "RESULTS.md", len(out), "lines")

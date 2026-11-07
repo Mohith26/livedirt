@@ -45,3 +45,13 @@ Reference: Sarlin et al. 2021, Phys. Rev. E 104, 064904 (arXiv:2112.11458), Seri
 | `abl-phi22.3` | +23% / -4% | +22% / -23% | +23% / -20% | +21% / -29% | +26% / -35% | +24% / -38% | +20% / -40% |
 | `abl-klar3d` | +28% / -5% | +29% / -26% | +30% / -24% | +24% / -32% | +32% / -39% | +29% / -43% | +30% / -44% |
 | `heightfield-0.0025` | -66% / +0% | -65% / +8% | -65% / +43% | -67% / +54% | -66% / +67% | -66% / +81% | -67% / +93% |
+
+## Task 2: plate intrusion stress maps (3D MPM + rigid tool)
+
+Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 3 mm glass spheres (closely packed). 36 (beta, gamma) pairs, beta and gamma in {-60,-30,0,30,60,90} deg; stress per unit depth alpha = slope of F/A vs depth. Friction mu = 0.38 = tan(repose 21 deg), plate friction 0.4 (paper's aluminium value); nothing fitted to the map. Beta convention mapped to the paper's (sim beta = -Li beta), checked on the convention-invariant cases beta = 0, 90.
+
+| tag | corr (x, z, all) | MAE x / z (N/cm^3) | NRMSE | scale gain | alpha_z(0,90) sim / fit / measured | device |
+|---|---|---|---|---|---|---|
+| `map-dx3mm` | 0.94, 0.94, 0.94 | 0.016 / 0.023 | 0.118 | 1.13 | 0.212 / 0.218 / 0.29 | Tesla T4 |
+| `smoke-dx2mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.225; alpha_x(90,0) 0.099 (fit 0.091) | Tesla T4 |
+| `smoke-dx3mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.212; alpha_x(90,0) 0.098 (fit 0.091) | Tesla T4 |
