@@ -298,7 +298,7 @@ class Sim3D:
         self.damp[None] = 1.0
         ti.sync()
 
-    def drive(self, path_fn, duration, *, f_max=None, sample_every=0.01, use_tool=1, speed_floor=0.0):
+    def drive(self, path_fn, duration, *, f_max=None, sample_every=0.01, use_tool=1, speed_floor=0.0, on_sample=None):
         """Closed-loop tool drive. path_fn(t_cmd) -> (pos(3), pitch); the commanded trajectory parameter
         t_cmd advances at rate s in [0, 1]: s drops when the soil force opposing motion exceeds f_max (relief
         valve), so the soil can stall the tool. Returns a time series."""
@@ -341,6 +341,8 @@ class Sim3D:
                     else:
                         s = min(1.0, s + 0.05)
                 rows.append([(k + 1) * dt, t_cmd, *pb, ab, fx, fz, ty, s])
+                if on_sample is not None:
+                    on_sample(self, rows[-1])
         ti.sync()
         self.t += n_steps * dt
         return {"series": np.array(rows), "wall_s": time.perf_counter() - t0, "steps": n_steps, "dt": dt}
