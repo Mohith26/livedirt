@@ -1,0 +1,45 @@
+{
+  "R": [
+    [
+      0.999926,
+      0.012127,
+      -0.000196
+    ],
+    [
+      0.012128,
+      -0.999796,
+      0.01612
+    ],
+    [
+      0,
+      -0.016122,
+      -0.99987
+    ]
+  ],
+  "origin": [
+    0,
+    -0.417354739841124,
+    0
+  ],
+  "scale": 1,
+  "yaw": 0,
+  "metricScale": 0.87,
+  "scaleSource": "Track length (4.445 m) and height over cab (2.98 m) of a Develon DX225LC-7 class excavator vs. measured splat extents; estimated +/-10%",
+  "siteRadius": 24.5,
+  "terrain": {
+    "cell": 0.1,
+    "half": 24,
+    "openRadius": 2.6,
+    "machineMin": 6,
+    "raise": 0.3,
+    "grow": 0.5
+  },
+  "source": {
+    "title": "Muddy Excavator Site",
+    "author": "dok11",
+    "url": "https://superspl.at/scene/ded12920",
+    "license": "CC BY 4.0",
+    "footage": "David Pickup (Pexels), https://www.pexels.com/video/29568320/",
+    "reconstruction": "RealityScan alignment + LichtFeld 3DGS (by dok11)"
+  }
+}

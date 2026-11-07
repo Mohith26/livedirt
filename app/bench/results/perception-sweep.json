@@ -1,0 +1,2852 @@
+{
+  "byHeight": [
+    {
+      "condition": "captured",
+      "bucket": "<24 px",
+      "n": 3,
+      "camRecall": 0.3333333333333333
+    },
+    {
+      "condition": "captured",
+      "bucket": "24-40 px",
+      "n": 9,
+      "camRecall": 0.6666666666666666
+    },
+    {
+      "condition": "captured",
+      "bucket": "40-64 px",
+      "n": 9,
+      "camRecall": 0.6666666666666666
+    },
+    {
+      "condition": "captured",
+      "bucket": ">=64 px",
+      "n": 4,
+      "camRecall": 0
+    },
+    {
+      "condition": "dusk",
+      "bucket": "<24 px",
+      "n": 3,
+      "camRecall": 0
+    },
+    {
+      "condition": "dusk",
+      "bucket": "24-40 px",
+      "n": 9,
+      "camRecall": 0.6666666666666666
+    },
+    {
+      "condition": "dusk",
+      "bucket": "40-64 px",
+      "n": 9,
+      "camRecall": 0.3333333333333333
+    },
+    {
+      "condition": "dusk",
+      "bucket": ">=64 px",
+      "n": 4,
+      "camRecall": 0
+    },
+    {
+      "condition": "rain",
+      "bucket": "<24 px",
+      "n": 3,
+      "camRecall": 0
+    },
+    {
+      "condition": "rain",
+      "bucket": "24-40 px",
+      "n": 9,
+      "camRecall": 0.5555555555555556
+    },
+    {
+      "condition": "rain",
+      "bucket": "40-64 px",
+      "n": 9,
+      "camRecall": 0.8888888888888888
+    },
+    {
+      "condition": "rain",
+      "bucket": ">=64 px",
+      "n": 4,
+      "camRecall": 0
+    },
+    {
+      "condition": "dust",
+      "bucket": "<24 px",
+      "n": 3,
+      "camRecall": 0
+    },
+    {
+      "condition": "dust",
+      "bucket": "24-40 px",
+      "n": 9,
+      "camRecall": 0
+    },
+    {
+      "condition": "dust",
+      "bucket": "40-64 px",
+      "n": 9,
+      "camRecall": 0
+    },
+    {
+      "condition": "dust",
+      "bucket": ">=64 px",
+      "n": 4,
+      "camRecall": 0
+    }
+  ],
+  "createdAt": "2026-11-07T07:15:14.577Z",
+  "model": "YOLOX-Nano (COCO, 416, ONNX, WASM)",
+  "scoreThreshold": 0.35,
+  "iouThreshold": 0.3,
+  "minLidarReturns": 5,
+  "samples": [
+    {
+      "condition": "captured",
+      "distance": 4,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 209.96890430102798,
+        "y": 264.79695666513294,
+        "w": 39.220601970437656,
+        "h": 80.85310086691953
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 122,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 4,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 260.86894556627436,
+        "y": 250.86484422323355,
+        "w": 29.422052454448306,
+        "h": 77.26576456542097
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 126,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 4,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 308.30218946548734,
+        "y": 249.51465002966626,
+        "w": 23.05941568150638,
+        "h": 75.49105836340817
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 124,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 4,
+      "bearing": 14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 350.24818018495614,
+        "y": 249.0365867230391,
+        "w": 28.8052847251696,
+        "h": 77.64968992891013
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 134,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 6,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 202.98768374673068,
+        "y": 219.70122341712795,
+        "w": 31.0771642440842,
+        "h": 63.3648424575137
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5361415211902454,
+      "camIou": 0.7327329915351575,
+      "roofReturns": 0,
+      "frontReturns": 82,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 6,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 259.0618564816798,
+        "y": 204.2553312261396,
+        "w": 22.808180978047233,
+        "h": 60.45561146634148
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 87,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 6,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 311.38846596627405,
+        "y": 203.21302511196606,
+        "w": 17.039472466869995,
+        "h": 58.95326596485259
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 85,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 6,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 358.3737002001435,
+        "y": 205.03769294216107,
+        "w": 22.23727216814393,
+        "h": 60.33577650968033
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 90,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 8,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 198.84906372303527,
+        "y": 192.41900117921475,
+        "w": 25.700714570690764,
+        "h": 52.06013227386222
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.769448800865618,
+      "camIou": 0.7606975576922368,
+      "roofReturns": 31,
+      "frontReturns": 56,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 8,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.56541488710866,
+        "y": 181.08546353730043,
+        "w": 18.408942943959005,
+        "h": 49.01888571398112
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.7128898374994463,
+      "camIou": 0.6536729624116123,
+      "roofReturns": 47,
+      "frontReturns": 60,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 8,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 313.1900332276806,
+        "y": 175.89060652267602,
+        "w": 13.50460612570214,
+        "h": 48.26050247722
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 51,
+      "frontReturns": 57,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 8,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 363.64753275896226,
+        "y": 175.79532628875995,
+        "w": 18.238081510162317,
+        "h": 49.65785990444866
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 58,
+      "frontReturns": 61,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 10,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 195.2469605841316,
+        "y": 170.46811786588475,
+        "w": 22.112219132042014,
+        "h": 44.56015914973486
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.624499882433156,
+      "camIou": 0.762200944940623,
+      "roofReturns": 72,
+      "frontReturns": 42,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 10,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.11130821312724,
+        "y": 164.7377757330598,
+        "w": 15.472491269005218,
+        "h": 41.31986612518463
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5408365274411935,
+      "camIou": 0.7730896939881479,
+      "roofReturns": 61,
+      "frontReturns": 43,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 10,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 314.3594593815539,
+        "y": 156.91361221593874,
+        "w": 11.201730881142055,
+        "h": 40.91239784171512
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5524065929000983,
+      "camIou": 0.6682220921894304,
+      "roofReturns": 81,
+      "frontReturns": 44,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 10,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 367.0906873247441,
+        "y": 158.50227134323848,
+        "w": 15.37317621078887,
+        "h": 41.9418699761072
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 74,
+      "frontReturns": 48,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 12,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 193.04226200040904,
+        "y": 156.1985109382722,
+        "w": 19.31225248420995,
+        "h": 38.787499889763126
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.6230322916044599,
+      "camIou": 0.7937126180118024,
+      "roofReturns": 64,
+      "frontReturns": 33,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 12,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 257.0323677417972,
+        "y": 146.43428956072353,
+        "w": 13.547716449428322,
+        "h": 36.27450204237445
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5468276069706732,
+      "camIou": 0.6751234133318155,
+      "roofReturns": 57,
+      "frontReturns": 31,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 12,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 315.2020892844982,
+        "y": 145.22274838815184,
+        "w": 9.538287320715483,
+        "h": 35.342800814417416
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.46718385728983947,
+      "camIou": 0.6050447932431297,
+      "roofReturns": 56,
+      "frontReturns": 36,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 12,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 369.5075895380851,
+        "y": 147.15190008758077,
+        "w": 13.256442422682994,
+        "h": 36.213357872850935
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 54,
+      "frontReturns": 36,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 15,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 190.62628014893852,
+        "y": 140.61870539774077,
+        "w": 16.239831173882322,
+        "h": 32.498465184879166
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5668137722995112,
+      "camIou": 0.8683649027207869,
+      "roofReturns": 39,
+      "frontReturns": 22,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 15,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7228947697641,
+        "y": 134.31319104365568,
+        "w": 11.224888957551343,
+        "h": 30.11434773112373
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.40200954912631204,
+      "camIou": 0.7040003513097349,
+      "roofReturns": 40,
+      "frontReturns": 22,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 15,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.05121746779895,
+        "y": 128.6726629201091,
+        "w": 7.8585106466330785,
+        "h": 29.633770248877767
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 39,
+      "frontReturns": 17,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 15,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 372.0949351738294,
+        "y": 135.16807097732706,
+        "w": 10.988147322784528,
+        "h": 30.054744641110545
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 41,
+      "frontReturns": 24,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 18,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 189.41386178020778,
+        "y": 131.73956868532593,
+        "w": 13.93423742139504,
+        "h": 27.825554508699952
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.47739011053440095,
+      "camIou": 0.8218715836164313,
+      "roofReturns": 26,
+      "frontReturns": 16,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 18,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7470666735592,
+        "y": 128.05721586584153,
+        "w": 9.536030476554004,
+        "h": 25.611692919426673
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 25,
+      "frontReturns": 14,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 18,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.67855420475354,
+        "y": 122.91497083096466,
+        "w": 6.615217013394044,
+        "h": 25.16795987744878
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 30,
+      "frontReturns": 8,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 18,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 374.0844749976972,
+        "y": 124.98135694381378,
+        "w": 9.421515529335636,
+        "h": 25.7931740250539
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 29,
+      "frontReturns": 11,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 22,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 188.59845169752072,
+        "y": 124.79166395403473,
+        "w": 11.673744728108403,
+        "h": 23.271496823664563
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5130533894467249,
+      "camIou": 0.6908618914131189,
+      "roofReturns": 20,
+      "frontReturns": 13,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 22,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.8823783497492,
+        "y": 123.26708022084397,
+        "w": 7.924499548712731,
+        "h": 21.30239196414739
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 14,
+      "frontReturns": 7,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 22,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 317.26391818257,
+        "y": 118.58469448280572,
+        "w": 5.453356483780226,
+        "h": 20.90705429712439
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 19,
+      "frontReturns": 1,
+      "lidarDetected": true
+    },
+    {
+      "condition": "captured",
+      "distance": 22,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 375.99272367766537,
+        "y": 115.28934877254085,
+        "w": 7.917306937562728,
+        "h": 21.69290354819168
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 21,
+      "frontReturns": 2,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 4,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 209.96890430102798,
+        "y": 264.79695666513294,
+        "w": 39.220601970437656,
+        "h": 80.85310086691953
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 118,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 4,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 260.86894556627436,
+        "y": 250.86484422323355,
+        "w": 29.422052454448306,
+        "h": 77.26576456542097
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 127,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 4,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 308.30218946548734,
+        "y": 249.51465002966626,
+        "w": 23.05941568150638,
+        "h": 75.49105836340817
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 126,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 4,
+      "bearing": 14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 350.24818018495614,
+        "y": 249.0365867230391,
+        "w": 28.8052847251696,
+        "h": 77.64968992891013
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 127,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 6,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 202.98768374673068,
+        "y": 219.70122341712795,
+        "w": 31.0771642440842,
+        "h": 63.3648424575137
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.41887724888510647,
+      "camIou": 0.7927579221567631,
+      "roofReturns": 0,
+      "frontReturns": 79,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 6,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 259.0618564816798,
+        "y": 204.2553312261396,
+        "w": 22.808180978047233,
+        "h": 60.45561146634148
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 2,
+      "frontReturns": 85,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 6,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 311.38846596627405,
+        "y": 203.21302511196606,
+        "w": 17.039472466869995,
+        "h": 58.95326596485259
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 86,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 6,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 358.3737002001435,
+        "y": 205.03769294216107,
+        "w": 22.23727216814393,
+        "h": 60.33577650968033
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 93,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 8,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 198.84906372303527,
+        "y": 192.41900117921475,
+        "w": 25.700714570690764,
+        "h": 52.06013227386222
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.44257093757819277,
+      "camIou": 0.82264173793261,
+      "roofReturns": 33,
+      "frontReturns": 55,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 8,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.56541488710866,
+        "y": 181.08546353730043,
+        "w": 18.408942943959005,
+        "h": 49.01888571398112
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 46,
+      "frontReturns": 59,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 8,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 313.1900332276806,
+        "y": 175.89060652267602,
+        "w": 13.50460612570214,
+        "h": 48.26050247722
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 52,
+      "frontReturns": 55,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 8,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 363.64753275896226,
+        "y": 175.79532628875995,
+        "w": 18.238081510162317,
+        "h": 49.65785990444866
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 58,
+      "frontReturns": 60,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 10,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 195.2469605841316,
+        "y": 170.46811786588475,
+        "w": 22.112219132042014,
+        "h": 44.56015914973486
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 72,
+      "frontReturns": 40,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 10,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.11130821312724,
+        "y": 164.7377757330598,
+        "w": 15.472491269005218,
+        "h": 41.31986612518463
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 62,
+      "frontReturns": 44,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 10,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 314.3594593815539,
+        "y": 156.91361221593874,
+        "w": 11.201730881142055,
+        "h": 40.91239784171512
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5676905631443958,
+      "camIou": 0.6669778438712335,
+      "roofReturns": 80,
+      "frontReturns": 46,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 10,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 367.0906873247441,
+        "y": 158.50227134323848,
+        "w": 15.37317621078887,
+        "h": 41.9418699761072
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 74,
+      "frontReturns": 46,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 12,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 193.04226200040904,
+        "y": 156.1985109382722,
+        "w": 19.31225248420995,
+        "h": 38.787499889763126
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.6386106689376803,
+      "camIou": 0.8223979915370414,
+      "roofReturns": 60,
+      "frontReturns": 33,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 12,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 257.0323677417972,
+        "y": 146.43428956072353,
+        "w": 13.547716449428322,
+        "h": 36.27450204237445
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5603497865747258,
+      "camIou": 0.8271272433380397,
+      "roofReturns": 58,
+      "frontReturns": 33,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 12,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 315.2020892844982,
+        "y": 145.22274838815184,
+        "w": 9.538287320715483,
+        "h": 35.342800814417416
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.36421801442496005,
+      "camIou": 0.627967312854009,
+      "roofReturns": 57,
+      "frontReturns": 36,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 12,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 369.5075895380851,
+        "y": 147.15190008758077,
+        "w": 13.256442422682994,
+        "h": 36.213357872850935
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 55,
+      "frontReturns": 33,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 15,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 190.62628014893852,
+        "y": 140.61870539774077,
+        "w": 16.239831173882322,
+        "h": 32.498465184879166
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.4402921703822287,
+      "camIou": 0.7803027301182148,
+      "roofReturns": 38,
+      "frontReturns": 23,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 15,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7228947697641,
+        "y": 134.31319104365568,
+        "w": 11.224888957551343,
+        "h": 30.11434773112373
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 38,
+      "frontReturns": 23,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 15,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.05121746779895,
+        "y": 128.6726629201091,
+        "w": 7.8585106466330785,
+        "h": 29.633770248877767
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.41687827593132454,
+      "camIou": 0.6478372133826261,
+      "roofReturns": 38,
+      "frontReturns": 18,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 15,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 372.0949351738294,
+        "y": 135.16807097732706,
+        "w": 10.988147322784528,
+        "h": 30.054744641110545
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 40,
+      "frontReturns": 24,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 18,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 189.41386178020778,
+        "y": 131.73956868532593,
+        "w": 13.93423742139504,
+        "h": 27.825554508699952
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 16,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 18,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7470666735592,
+        "y": 128.05721586584153,
+        "w": 9.536030476554004,
+        "h": 25.611692919426673
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.36884522208993076,
+      "camIou": 0.7265767650518107,
+      "roofReturns": 25,
+      "frontReturns": 14,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 18,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.67855420475354,
+        "y": 122.91497083096466,
+        "w": 6.615217013394044,
+        "h": 25.16795987744878
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 30,
+      "frontReturns": 7,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 18,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 374.0844749976972,
+        "y": 124.98135694381378,
+        "w": 9.421515529335636,
+        "h": 25.7931740250539
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 31,
+      "frontReturns": 11,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 22,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 188.59845169752072,
+        "y": 124.79166395403473,
+        "w": 11.673744728108403,
+        "h": 23.271496823664563
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 19,
+      "frontReturns": 13,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 22,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.8823783497492,
+        "y": 123.26708022084397,
+        "w": 7.924499548712731,
+        "h": 21.30239196414739
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 14,
+      "frontReturns": 7,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 22,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 317.26391818257,
+        "y": 118.58469448280572,
+        "w": 5.453356483780226,
+        "h": 20.90705429712439
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 17,
+      "frontReturns": 1,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dusk",
+      "distance": 22,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 375.99272367766537,
+        "y": 115.28934877254085,
+        "w": 7.917306937562728,
+        "h": 21.69290354819168
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 20,
+      "frontReturns": 2,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 4,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 209.96890430102798,
+        "y": 264.79695666513294,
+        "w": 39.220601970437656,
+        "h": 80.85310086691953
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 116,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 4,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 260.86894556627436,
+        "y": 250.86484422323355,
+        "w": 29.422052454448306,
+        "h": 77.26576456542097
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 115,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 4,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 308.30218946548734,
+        "y": 249.51465002966626,
+        "w": 23.05941568150638,
+        "h": 75.49105836340817
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 120,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 4,
+      "bearing": 14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 350.24818018495614,
+        "y": 249.0365867230391,
+        "w": 28.8052847251696,
+        "h": 77.64968992891013
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 127,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 6,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 202.98768374673068,
+        "y": 219.70122341712795,
+        "w": 31.0771642440842,
+        "h": 63.3648424575137
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.35131593189156973,
+      "camIou": 0.7842696378661645,
+      "roofReturns": 0,
+      "frontReturns": 75,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 6,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 259.0618564816798,
+        "y": 204.2553312261396,
+        "w": 22.808180978047233,
+        "h": 60.45561146634148
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5782023547392612,
+      "camIou": 0.7059329099545211,
+      "roofReturns": 0,
+      "frontReturns": 81,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 6,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 311.38846596627405,
+        "y": 203.21302511196606,
+        "w": 17.039472466869995,
+        "h": 58.95326596485259
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 83,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 6,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 358.3737002001435,
+        "y": 205.03769294216107,
+        "w": 22.23727216814393,
+        "h": 60.33577650968033
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 88,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 8,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 198.84906372303527,
+        "y": 192.41900117921475,
+        "w": 25.700714570690764,
+        "h": 52.06013227386222
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.72702664744196,
+      "camIou": 0.7665967541574744,
+      "roofReturns": 35,
+      "frontReturns": 53,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 8,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.56541488710866,
+        "y": 181.08546353730043,
+        "w": 18.408942943959005,
+        "h": 49.01888571398112
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5027864811306912,
+      "camIou": 0.6615769145711641,
+      "roofReturns": 42,
+      "frontReturns": 55,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 8,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 313.1900332276806,
+        "y": 175.89060652267602,
+        "w": 13.50460612570214,
+        "h": 48.26050247722
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.3766255208770275,
+      "camIou": 0.6074741501556566,
+      "roofReturns": 49,
+      "frontReturns": 50,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 8,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 363.64753275896226,
+        "y": 175.79532628875995,
+        "w": 18.238081510162317,
+        "h": 49.65785990444866
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 52,
+      "frontReturns": 63,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 10,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 195.2469605841316,
+        "y": 170.46811786588475,
+        "w": 22.112219132042014,
+        "h": 44.56015914973486
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.6780274328215725,
+      "camIou": 0.7628739014814905,
+      "roofReturns": 67,
+      "frontReturns": 40,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 10,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.11130821312724,
+        "y": 164.7377757330598,
+        "w": 15.472491269005218,
+        "h": 41.31986612518463
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5059146858702519,
+      "camIou": 0.822642988703144,
+      "roofReturns": 57,
+      "frontReturns": 35,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 10,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 314.3594593815539,
+        "y": 156.91361221593874,
+        "w": 11.201730881142055,
+        "h": 40.91239784171512
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.4461700964706772,
+      "camIou": 0.5961038051038874,
+      "roofReturns": 78,
+      "frontReturns": 42,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 10,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 367.0906873247441,
+        "y": 158.50227134323848,
+        "w": 15.37317621078887,
+        "h": 41.9418699761072
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 68,
+      "frontReturns": 45,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 12,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 193.04226200040904,
+        "y": 156.1985109382722,
+        "w": 19.31225248420995,
+        "h": 38.787499889763126
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5629717787502955,
+      "camIou": 0.8071818935424906,
+      "roofReturns": 52,
+      "frontReturns": 29,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 12,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 257.0323677417972,
+        "y": 146.43428956072353,
+        "w": 13.547716449428322,
+        "h": 36.27450204237445
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.5483923076564565,
+      "camIou": 0.8055628848957243,
+      "roofReturns": 56,
+      "frontReturns": 31,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 12,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 315.2020892844982,
+        "y": 145.22274838815184,
+        "w": 9.538287320715483,
+        "h": 35.342800814417416
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.4471337684748278,
+      "camIou": 0.6270056996233633,
+      "roofReturns": 52,
+      "frontReturns": 35,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 12,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 369.5075895380851,
+        "y": 147.15190008758077,
+        "w": 13.256442422682994,
+        "h": 36.213357872850935
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 48,
+      "frontReturns": 31,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 15,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 190.62628014893852,
+        "y": 140.61870539774077,
+        "w": 16.239831173882322,
+        "h": 32.498465184879166
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.6390081619615131,
+      "camIou": 0.8635324026485187,
+      "roofReturns": 34,
+      "frontReturns": 22,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 15,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7228947697641,
+        "y": 134.31319104365568,
+        "w": 11.224888957551343,
+        "h": 30.11434773112373
+      },
+      "visibleFrac": 1,
+      "camDetected": true,
+      "camScore": 0.35523536491359664,
+      "camIou": 0.7821096232235889,
+      "roofReturns": 32,
+      "frontReturns": 22,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 15,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.05121746779895,
+        "y": 128.6726629201091,
+        "w": 7.8585106466330785,
+        "h": 29.633770248877767
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 39,
+      "frontReturns": 17,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 15,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 372.0949351738294,
+        "y": 135.16807097732706,
+        "w": 10.988147322784528,
+        "h": 30.054744641110545
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 35,
+      "frontReturns": 23,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 18,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 189.41386178020778,
+        "y": 131.73956868532593,
+        "w": 13.93423742139504,
+        "h": 27.825554508699952
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 24,
+      "frontReturns": 15,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 18,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7470666735592,
+        "y": 128.05721586584153,
+        "w": 9.536030476554004,
+        "h": 25.611692919426673
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 24,
+      "frontReturns": 13,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 18,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.67855420475354,
+        "y": 122.91497083096466,
+        "w": 6.615217013394044,
+        "h": 25.16795987744878
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 6,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 18,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 374.0844749976972,
+        "y": 124.98135694381378,
+        "w": 9.421515529335636,
+        "h": 25.7931740250539
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 8,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 22,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 188.59845169752072,
+        "y": 124.79166395403473,
+        "w": 11.673744728108403,
+        "h": 23.271496823664563
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 21,
+      "frontReturns": 11,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 22,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.8823783497492,
+        "y": 123.26708022084397,
+        "w": 7.924499548712731,
+        "h": 21.30239196414739
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 14,
+      "frontReturns": 6,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 22,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 317.26391818257,
+        "y": 118.58469448280572,
+        "w": 5.453356483780226,
+        "h": 20.90705429712439
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 18,
+      "frontReturns": 1,
+      "lidarDetected": true
+    },
+    {
+      "condition": "rain",
+      "distance": 22,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 375.99272367766537,
+        "y": 115.28934877254085,
+        "w": 7.917306937562728,
+        "h": 21.69290354819168
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 20,
+      "frontReturns": 2,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 4,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 209.96890430102798,
+        "y": 264.79695666513294,
+        "w": 39.220601970437656,
+        "h": 80.85310086691953
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 75,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 4,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 260.86894556627436,
+        "y": 250.86484422323355,
+        "w": 29.422052454448306,
+        "h": 77.26576456542097
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 83,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 4,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 308.30218946548734,
+        "y": 249.51465002966626,
+        "w": 23.05941568150638,
+        "h": 75.49105836340817
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 88,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 4,
+      "bearing": 14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 350.24818018495614,
+        "y": 249.0365867230391,
+        "w": 28.8052847251696,
+        "h": 77.64968992891013
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 89,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 6,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 202.98768374673068,
+        "y": 219.70122341712795,
+        "w": 31.0771642440842,
+        "h": 63.3648424575137
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 50,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 6,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 259.0618564816798,
+        "y": 204.2553312261396,
+        "w": 22.808180978047233,
+        "h": 60.45561146634148
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 1,
+      "frontReturns": 43,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 6,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 311.38846596627405,
+        "y": 203.21302511196606,
+        "w": 17.039472466869995,
+        "h": 58.95326596485259
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 50,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 6,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 358.3737002001435,
+        "y": 205.03769294216107,
+        "w": 22.23727216814393,
+        "h": 60.33577650968033
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 0,
+      "frontReturns": 46,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 8,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 198.84906372303527,
+        "y": 192.41900117921475,
+        "w": 25.700714570690764,
+        "h": 52.06013227386222
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 13,
+      "frontReturns": 27,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 8,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.56541488710866,
+        "y": 181.08546353730043,
+        "w": 18.408942943959005,
+        "h": 49.01888571398112
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 29,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 8,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 313.1900332276806,
+        "y": 175.89060652267602,
+        "w": 13.50460612570214,
+        "h": 48.26050247722
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 25,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 8,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 363.64753275896226,
+        "y": 175.79532628875995,
+        "w": 18.238081510162317,
+        "h": 49.65785990444866
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 28,
+      "frontReturns": 33,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 10,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 195.2469605841316,
+        "y": 170.46811786588475,
+        "w": 22.112219132042014,
+        "h": 44.56015914973486
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 34,
+      "frontReturns": 19,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 10,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 258.11130821312724,
+        "y": 164.7377757330598,
+        "w": 15.472491269005218,
+        "h": 41.31986612518463
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 30,
+      "frontReturns": 25,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 10,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 314.3594593815539,
+        "y": 156.91361221593874,
+        "w": 11.201730881142055,
+        "h": 40.91239784171512
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 44,
+      "frontReturns": 25,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 10,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 367.0906873247441,
+        "y": 158.50227134323848,
+        "w": 15.37317621078887,
+        "h": 41.9418699761072
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 40,
+      "frontReturns": 25,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 12,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 193.04226200040904,
+        "y": 156.1985109382722,
+        "w": 19.31225248420995,
+        "h": 38.787499889763126
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 35,
+      "frontReturns": 13,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 12,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 257.0323677417972,
+        "y": 146.43428956072353,
+        "w": 13.547716449428322,
+        "h": 36.27450204237445
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 21,
+      "frontReturns": 14,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 12,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 315.2020892844982,
+        "y": 145.22274838815184,
+        "w": 9.538287320715483,
+        "h": 35.342800814417416
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 23,
+      "frontReturns": 19,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 12,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 369.5075895380851,
+        "y": 147.15190008758077,
+        "w": 13.256442422682994,
+        "h": 36.213357872850935
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 26,
+      "frontReturns": 16,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 15,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 190.62628014893852,
+        "y": 140.61870539774077,
+        "w": 16.239831173882322,
+        "h": 32.498465184879166
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 13,
+      "frontReturns": 11,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 15,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7228947697641,
+        "y": 134.31319104365568,
+        "w": 11.224888957551343,
+        "h": 30.11434773112373
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 23,
+      "frontReturns": 11,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 15,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.05121746779895,
+        "y": 128.6726629201091,
+        "w": 7.8585106466330785,
+        "h": 29.633770248877767
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 17,
+      "frontReturns": 8,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 15,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 372.0949351738294,
+        "y": 135.16807097732706,
+        "w": 10.988147322784528,
+        "h": 30.054744641110545
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 16,
+      "frontReturns": 9,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 18,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 189.41386178020778,
+        "y": 131.73956868532593,
+        "w": 13.93423742139504,
+        "h": 27.825554508699952
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 8,
+      "frontReturns": 8,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 18,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.7470666735592,
+        "y": 128.05721586584153,
+        "w": 9.536030476554004,
+        "h": 25.611692919426673
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 9,
+      "frontReturns": 4,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 18,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 316.67855420475354,
+        "y": 122.91497083096466,
+        "w": 6.615217013394044,
+        "h": 25.16795987744878
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 10,
+      "frontReturns": 4,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 18,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 374.0844749976972,
+        "y": 124.98135694381378,
+        "w": 9.421515529335636,
+        "h": 25.7931740250539
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 18,
+      "frontReturns": 4,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 22,
+      "bearing": -28,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 188.59845169752072,
+        "y": 124.79166395403473,
+        "w": 11.673744728108403,
+        "h": 23.271496823664563
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 9,
+      "frontReturns": 4,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 22,
+      "bearing": -14,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 256.8823783497492,
+        "y": 123.26708022084397,
+        "w": 7.924499548712731,
+        "h": 21.30239196414739
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 7,
+      "frontReturns": 3,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 22,
+      "bearing": 0,
+      "gtVisible": true,
+      "gtBox": {
+        "x": 317.26391818257,
+        "y": 118.58469448280572,
+        "w": 5.453356483780226,
+        "h": 20.90705429712439
+      },
+      "visibleFrac": 1,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 12,
+      "frontReturns": 1,
+      "lidarDetected": true
+    },
+    {
+      "condition": "dust",
+      "distance": 22,
+      "bearing": 14,
+      "gtVisible": false,
+      "gtBox": {
+        "x": 375.99272367766537,
+        "y": 115.28934877254085,
+        "w": 7.917306937562728,
+        "h": 21.69290354819168
+      },
+      "visibleFrac": 0,
+      "camDetected": false,
+      "camScore": 0,
+      "camIou": 0,
+      "roofReturns": 10,
+      "frontReturns": 0,
+      "lidarDetected": true
+    }
+  ],
+  "negatives": [
+    {
+      "condition": "captured",
+      "frames": 5,
+      "falsePositives": 0
+    },
+    {
+      "condition": "dusk",
+      "frames": 5,
+      "falsePositives": 0
+    },
+    {
+      "condition": "rain",
+      "frames": 5,
+      "falsePositives": 0
+    },
+    {
+      "condition": "dust",
+      "frames": 5,
+      "falsePositives": 0
+    }
+  ],
+  "summary": [
+    {
+      "condition": "captured",
+      "distance": 4,
+      "n": 4,
+      "gtVisible": 4,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "captured",
+      "distance": 6,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.5361415211902454
+    },
+    {
+      "condition": "captured",
+      "distance": 8,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.6666666666666666,
+      "lidarRecall": 1,
+      "meanScore": 0.7411693191825321
+    },
+    {
+      "condition": "captured",
+      "distance": 10,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.5725810009248159
+    },
+    {
+      "condition": "captured",
+      "distance": 12,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.5456812519549908
+    },
+    {
+      "condition": "captured",
+      "distance": 15,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.6666666666666666,
+      "lidarRecall": 1,
+      "meanScore": 0.48441166071291164
+    },
+    {
+      "condition": "captured",
+      "distance": 18,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.47739011053440095
+    },
+    {
+      "condition": "captured",
+      "distance": 22,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.5130533894467249
+    },
+    {
+      "condition": "dusk",
+      "distance": 4,
+      "n": 4,
+      "gtVisible": 4,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dusk",
+      "distance": 6,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.41887724888510647
+    },
+    {
+      "condition": "dusk",
+      "distance": 8,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.44257093757819277
+    },
+    {
+      "condition": "dusk",
+      "distance": 10,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.5676905631443958
+    },
+    {
+      "condition": "dusk",
+      "distance": 12,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.521059489979122
+    },
+    {
+      "condition": "dusk",
+      "distance": 15,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.6666666666666666,
+      "lidarRecall": 1,
+      "meanScore": 0.4285852231567766
+    },
+    {
+      "condition": "dusk",
+      "distance": 18,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.3333333333333333,
+      "lidarRecall": 1,
+      "meanScore": 0.36884522208993076
+    },
+    {
+      "condition": "dusk",
+      "distance": 22,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "rain",
+      "distance": 4,
+      "n": 4,
+      "gtVisible": 4,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "rain",
+      "distance": 6,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.6666666666666666,
+      "lidarRecall": 1,
+      "meanScore": 0.46475914331541546
+    },
+    {
+      "condition": "rain",
+      "distance": 8,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.5354795498165595
+    },
+    {
+      "condition": "rain",
+      "distance": 10,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.5433707383875005
+    },
+    {
+      "condition": "rain",
+      "distance": 12,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 1,
+      "lidarRecall": 1,
+      "meanScore": 0.5194992849605266
+    },
+    {
+      "condition": "rain",
+      "distance": 15,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0.6666666666666666,
+      "lidarRecall": 1,
+      "meanScore": 0.4971217634375549
+    },
+    {
+      "condition": "rain",
+      "distance": 18,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "rain",
+      "distance": 22,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 4,
+      "n": 4,
+      "gtVisible": 4,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 6,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 8,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 10,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 12,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 15,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 18,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    },
+    {
+      "condition": "dust",
+      "distance": 22,
+      "n": 4,
+      "gtVisible": 3,
+      "camRecall": 0,
+      "lidarRecall": 1,
+      "meanScore": null
+    }
+  ],
+  "inferMsMean": 68.20675675651512
+}

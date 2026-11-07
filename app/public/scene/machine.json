@@ -1,0 +1,15 @@
+{
+  "note": "Pose of the photographed excavator, measured from orthographic top/side renders of the leveled metric splat cloud (pipeline/js/view-raised.mjs). Hand-measured; ~0.15 m / ~3 deg uncertainty.",
+  "center": { "x": -3.10, "z": 1.58 },
+  "groundY": 1.75,
+  "trackYawDeg": 59.0,
+  "houseYawDeg": -26.7,
+  "spec": {
+    "model": "Develon DX225LC-7 class (22-23 t)",
+    "source": "Develon DX225LC-7 spec sheet",
+    "trackLength": 4.445, "undercarriageWidth": 2.99, "trackGauge": 2.39, "shoeWidth": 0.6, "trackHeight": 0.945,
+    "boom": 5.7, "arm": 2.9, "bucketTipRadius": 1.45, "bucketCapacityM3": 0.92,
+    "heightOverCab": 2.98, "houseWidth": 2.71, "counterweightClearance": 1.092, "tailSwingRadius": 2.909,
+    "maxDigDepth": 6.59, "maxReachGround": 9.68, "swingSpeedRpm": 10.9
+  }
+}

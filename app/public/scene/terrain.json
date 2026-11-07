@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "N": 480,
+  "cell": 0.1,
+  "half": 24,
+  "layout": [
+    "H0:f32",
+    "T:f32",
+    "M:u8",
+    "albedo:rgb8"
+  ],
+  "metricScale": 0.87,
+  "scaleSource": "Track length (4.445 m) and height over cab (2.98 m) of a Develon DX225LC-7 class excavator vs. measured splat extents; estimated +/-10%",
+  "siteRadius": 24.5,
+  "splats": 2383021,
+  "palette": {
+    "flat": {
+      "n": 32170,
+      "mean": [
+        0.3678,
+        0.3525,
+        0.3363
+      ],
+      "sd": [
+        0.1893,
+        0.1896,
+        0.1891
+      ],
+      "lumP10": 0.1248,
+      "lumP50": 0.3384,
+      "lumP90": 0.6108
+    },
+    "gentle": {
+      "n": 18555,
+      "mean": [
+        0.3729,
+        0.3579,
+        0.3407
+      ],
+      "sd": [
+        0.1981,
+        0.1982,
+        0.1977
+      ],
+      "lumP10": 0.1155,
+      "lumP50": 0.3426,
+      "lumP90": 0.629
+    },
+    "steep": {
+      "n": 5027,
+      "mean": [
+        0.3714,
+        0.3555,
+        0.3366
+      ],
+      "sd": [
+        0.2034,
+        0.2026,
+        0.201
+      ],
+      "lumP10": 0.1023,
+      "lumP50": 0.3414,
+      "lumP90": 0.6243
+    },
+    "pile": {
+      "n": 4641,
+      "mean": [
+        0.384,
+        0.369,
+        0.3478
+      ],
+      "sd": [
+        0.1687,
+        0.1684,
+        0.1676
+      ],
+      "lumP10": 0.1508,
+      "lumP50": 0.3742,
+      "lumP90": 0.5722
+    }
+  },
+  "source": {
+    "title": "Muddy Excavator Site",
+    "author": "dok11",
+    "url": "https://superspl.at/scene/ded12920",
+    "license": "CC BY 4.0",
+    "footage": "David Pickup (Pexels), https://www.pexels.com/video/29568320/",
+    "reconstruction": "RealityScan alignment + LichtFeld 3DGS (by dok11)"
+  }
+}

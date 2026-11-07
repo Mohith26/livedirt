@@ -1,0 +1,20 @@
+{
+  "status": "partial: SfM (pycolmap sequential matching) still running at handoff (started 02:06 ET); no splat trained or evaluated yet",
+  "hardware": "Apple Silicon arm64 (macOS), CPU for SfM, no CUDA",
+  "measured": {
+    "source_video": {"url": "https://videos.pexels.com/video-files/29568320/12727230_1920_1080_30fps.mp4", "bytes": 133363966, "resolution": "1920x1080", "fps": 29.97, "duration_s": 33.90},
+    "frames_extracted": 200,
+    "frame_width_px": 1600,
+    "frames_dir_size": "116M",
+    "holdout_protocol": "every 8th frame (Brush --eval-split-every 8): 25 test / 175 train",
+    "sfm_feature_extraction": "completed by 02:08 ET (database.db 497 MB; SIFT max 8192 features/image; single SIMPLE_RADIAL camera)",
+    "sfm_matching_and_mapping": "in progress at 02:15 ET"
+  },
+  "trainer_probe": {
+    "brush": "v0.3.0 aarch64-apple-darwin binary downloaded; --help runs; supports COLMAP input, --eval-split-every, --eval-save-to-disk",
+    "msplat": "pip: 'No matching distribution found for msplat'; building from github.com/SeedeXR/msplat not attempted"
+  },
+  "metrics": {"psnr": null, "ssim": null, "lpips_alex": null, "note": "not measured yet; evaluate.py writes eval_metrics.json after training"},
+  "versions": {"pycolmap_imageio-ffmpeg": "3.13.0 0.6.0", "torch_scikit-image": "2.8.0 0.24.0", "ffmpeg": "7.1 (imageio-ffmpeg static binary)", "python": "3.9.6 (/usr/bin/python3)"},
+  "known_issue": "importing pycolmap and torch in the same process aborts (OMP Error #15, duplicate libomp); keep SfM and evaluation in separate processes (already the case in run_all.sh)"
+}
