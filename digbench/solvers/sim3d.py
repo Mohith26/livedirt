@@ -31,7 +31,7 @@ def _arch(name):
 class Sim3D:
     def __init__(self, size, dx, *, mu_f=0.38, mu_tool=0.4, rho_bulk=1600.0, E=1.0e6, nu=0.3, ppc_side=2,
                  max_particles=4_000_000, n_boxes=8, arch="gpu", symmetry_y=True, seed=0, tool_speed_max=1.0,
-                 floor_sticky=True):
+                 floor_sticky=True, wall_mu=0.0):
         ti.reset()
         ti.init(arch=_arch(arch), default_fp=ti.f32, random_seed=seed, offline_cache=True, device_memory_fraction=0.85)
         self.dx, self.pad = dx, 3
@@ -58,6 +58,8 @@ class Sim3D:
         g = 9.81
         sym = symmetry_y
         sticky = floor_sticky
+        wmu = float(wall_mu)
+        sym_y = 1 if symmetry_y else 0
 
         self.x = ti.Vector.field(3, ti.f32, max_particles)
         self.v = ti.Vector.field(3, ti.f32, max_particles)
@@ -181,14 +183,18 @@ class Sim3D:
                             gv = ti.Vector([0.0, 0.0, 0.0])
                         elif gv[2] < 0:
                             gv[2] = 0.0
-                    if I[0] <= pad and gv[0] < 0:
-                        gv[0] = 0.0
-                    if I[0] >= nx - pad and gv[0] > 0:
-                        gv[0] = 0.0
-                    if I[1] <= pad and gv[1] < 0:
-                        gv[1] = 0.0
-                    if I[1] >= ny - pad and gv[1] > 0:
-                        gv[1] = 0.0
+                    # side walls: Coulomb friction wall_mu (an active-zone boundary stands in for the soil beyond it);
+                    # the y = 0 symmetry plane is always free-slip
+                    for ax in ti.static(range(2)):
+                        lo_hit = I[ax] <= pad and gv[ax] < 0
+                        hi_hit = I[ax] >= (nx if ax == 0 else ny) - pad and gv[ax] > 0
+                        if lo_hit or hi_hit:
+                            vn = ti.abs(gv[ax])
+                            gv[ax] = 0.0
+                            if not (ax == 1 and lo_hit and sym_y == 1):
+                                vt = gv.norm()
+                                if vt > 1e-12:
+                                    gv = gv * (ti.max(0.0, vt - wmu * vn) / vt)
                     if I[2] >= nz - pad and gv[2] > 0:
                         gv[2] = 0.0
                     grid_v[I] = gv

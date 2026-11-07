@@ -54,9 +54,9 @@ def lip_world(pivot, pitch):
     return np.array([pivot[0] + ca * LIP[0] - sa * LIP[1], pivot[2] + sa * LIP[0] + ca * LIP[1]])
 
 
-def path(t, depth=0.6):
+def path(t, depth=0.6, x_shift=0.0):
     """Commanded pivot pose vs time (s). Lip starts 0.3 m above the surface."""
-    x0, z0 = 2.7, SURF + 1.2
+    x0, z0 = 2.7 + x_shift, SURF + 1.2
     dz_pen = 0.3 + depth  # lip starts 0.3 m above the surface; lower it to `depth` below
     if t < 1.0:  # penetrate (down and slightly back)
         u = t / 1.0
