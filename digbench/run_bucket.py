@@ -17,7 +17,7 @@ import numpy as np
 
 from .run_collapse import device_name, git_rev
 from .solvers.heightfield import Heightfield
-from .solvers.sim3d import Sim3D
+from .solvers.sim3d import Sim3D, connected_surface
 
 ROOT = Path(__file__).resolve().parent
 
@@ -143,9 +143,7 @@ def main():
     lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
     on_bucket = (lx > -1.25) & (lx < 0.4) & (lz > -1.25) & (lz < 0.4) & (r[:, 1] < 0.85)
     ground = ~on_bucket
-    Hg = np.zeros(nxy)
-    ix = np.clip((p[ground, 0] / cell).astype(int), 0, nxy[0] - 1); iy = np.clip((p[ground, 1] / cell).astype(int), 0, nxy[1] - 1)
-    np.maximum.at(Hg, (ix, iy), p[ground, 2] + 0.5 * sim.sp)
+    Hg = connected_surface(p[ground], nxy, cell, sim.sp)
     vol_total = 2 * len(p) * sim.sp ** 3
     vol_on_bucket_outside = 2 * on_bucket.sum() * sim.sp ** 3 - carried
     drag = (ser[:, 0] > 1.2) & (ser[:, 1] < 3.0)

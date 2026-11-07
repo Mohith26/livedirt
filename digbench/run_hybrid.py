@@ -19,7 +19,7 @@ import numpy as np
 from .run_bucket import BED, SURF, bucket_boxes, carried_volume, path
 from .run_collapse import device_name, git_rev
 from .solvers.heightfield import Heightfield
-from .solvers.sim3d import Sim3D
+from .solvers.sim3d import Sim3D, connected_surface
 
 ROOT = Path(__file__).resolve().parent
 SITE = (8.0, 3.0, BED[2])
@@ -49,9 +49,7 @@ def run_mpm(size, x_off, args, wall_mu):
     lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
     ground = ~((lx > -1.25) & (lx < 0.4) & (lz > -1.25) & (lz < 0.4) & (r[:, 1] < 0.85))
     nxy = (int(round(size[0] / CELL)), int(round(size[1] / CELL)))
-    H = np.zeros(nxy)
-    ix = np.clip((p[ground, 0] / CELL).astype(int), 0, nxy[0] - 1); iy = np.clip((p[ground, 1] / CELL).astype(int), 0, nxy[1] - 1)
-    np.maximum.at(H, (ix, iy), p[ground, 2] + 0.5 * sim.sp)
+    H = connected_surface(p[ground], nxy, CELL, sim.sp)
     drag = (ser[:, 1] > 1.2) & (ser[:, 1] < 3.0)
     return {"H": H, "carried": carried, "drag_mean": float(ser[drag, 6].mean()), "drag_peak": float(ser[:, 6].max()),
             "wall_s": wall, "particles": int(sim.n_p[None]), "series": ser}

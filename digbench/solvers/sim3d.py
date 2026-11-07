@@ -366,3 +366,17 @@ class Sim3D:
         else:
             np.add.at(H, (ix, iy), self.p_vol / (cell * cell))
         return H
+
+
+def connected_surface(g, nxy, cell, sp, zmax=4.0):
+    """Top of the soil column connected to the bed (stops at the first two-bin gap), so airborne spill is not
+    counted as ground. g: (N, 3) particle positions in domain coordinates."""
+    nz = int(zmax / sp) + 2
+    occ = np.zeros((nxy[0], nxy[1], nz), dtype=bool)
+    ix = np.clip((g[:, 0] / cell).astype(int), 0, nxy[0] - 1)
+    iy = np.clip((g[:, 1] / cell).astype(int), 0, nxy[1] - 1)
+    iz = np.clip((g[:, 2] / sp).astype(int), 0, nz - 1)
+    occ[ix, iy, iz] = True
+    gap = ~occ[:, :, :-1] & ~occ[:, :, 1:]
+    first = np.where(gap.any(axis=2), gap.argmax(axis=2), nz - 1)
+    return (first * sp).astype(np.float64)

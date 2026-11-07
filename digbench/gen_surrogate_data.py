@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 
 from .run_bucket import BED, SURF, bucket_boxes, carried_volume
-from .solvers.sim3d import Sim3D
+from .solvers.sim3d import Sim3D, connected_surface
 
 CELL = 0.05
 
@@ -44,20 +44,6 @@ def make_path(rng):
         u = min(1.0, (t - t_pen - t_drag - t_curl) / t_lift)
         return np.array([x2 - 0.1, 0.0, z1 + 0.3 + 0.7 * u]), -curl
     return path, t_pen + t_drag + t_curl + t_lift, {"depth": depth, "drag": drag, "x0": x0, "curl": curl}
-
-
-def connected_surface(g, nxy, sp, zmax=4.0):
-    """Top of the soil column connected to the bed: bin particles in z (bin = particle spacing) and stop at the
-    first gap of two empty bins, so airborne spill is not counted as ground."""
-    nz = int(zmax / sp) + 2
-    occ = np.zeros((nxy[0], nxy[1], nz), dtype=bool)
-    ix = np.clip((g[:, 0] / CELL).astype(int), 0, nxy[0] - 1)
-    iy = np.clip((g[:, 1] / CELL).astype(int), 0, nxy[1] - 1)
-    iz = np.clip((g[:, 2] / sp).astype(int), 0, nz - 1)
-    occ[ix, iy, iz] = True
-    gap = ~occ[:, :, :-1] & ~occ[:, :, 1:]
-    first = np.where(gap.any(axis=2), gap.argmax(axis=2), nz - 1)
-    return (first * sp).astype(np.float64)
 
 
 def tool_points(boxes, n=14):
@@ -106,7 +92,7 @@ def main():
             ca, sa = math.cos(pa), math.sin(pa)
             lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
             on_b = (lx > -0.9 - 0.15) & (lx < 2 * sh + 0.15) & (lz > -0.9 - 2 * sh - 0.15) & (lz < 2 * sh + 0.15) & (r[:, 1] < 0.5 + 2 * sh + 0.15)
-            H = connected_surface(p[~on_b], nxy, s.sp)
+            H = connected_surface(p[~on_b], nxy, CELL, s.sp)
             wx = pv[0] + ca * TP[:, 0] - sa * TP[:, 2]; wz = pv[2] + sa * TP[:, 0] + ca * TP[:, 2]
             T_ = np.full(nxy, np.nan)
             ix = np.clip((wx / CELL).astype(int), 0, nxy[0] - 1); iy = np.clip((TP[:, 1] / CELL).astype(int), 0, nxy[1] - 1)
