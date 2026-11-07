@@ -13,13 +13,16 @@ FF=$(venv/bin/python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_e
 # 2. 200 evenly spaced frames at 1600 px wide
 if [ ! -d frames ]; then mkdir frames; "$FF" -loglevel error -i src_1920.mp4 -vf "fps=200/33.9,scale=1600:-2" -q:v 2 frames/f_%04d.jpg; fi
 # 3. SfM over all frames (train + test registered jointly so held-out poses exist)
-[ -f sparse/best/images.bin ] || venv/bin/python -u "$HERE/sfm.py" .
+echo "[1/4] SfM"; [ -f sparse/best/images.bin ] || venv/bin/python -u "$HERE/sfm.py" .
 # 4. COLMAP dataset layout for Brush: <ds>/images + <ds>/sparse/0
 mkdir -p ds/sparse; [ -e ds/images ] || ln -s ../frames ds/images; [ -e ds/sparse/0 ] || ln -s ../../sparse/best ds/sparse/0
 # 5. train on 7/8 of frames, every 8th frame held out (standard 3DGS protocol), evaluate + save renders
 [ -x brush-app-aarch64-apple-darwin/brush_app ] || { curl -sfL -o brush.tar.xz https://github.com/ArthurBrussee/brush/releases/download/v0.3.0/brush-app-aarch64-apple-darwin.tar.xz && tar xf brush.tar.xz; }
 mkdir -p out
-/usr/bin/time -p brush-app-aarch64-apple-darwin/brush_app ds --total-steps "$STEPS" --eval-split-every 8 --eval-every "$STEPS" --eval-save-to-disk \
-  --max-resolution 1600 --export-every "$STEPS" --export-path out --export-name "muddy_site_{iter}.ply" 2>&1 | tee train.log
+echo "[2/4] training (Brush, $STEPS steps)"
+# `script` keeps a TTY so Brush shows its progress bar, while still logging to train.log
+script -q train.log /usr/bin/time -p brush-app-aarch64-apple-darwin/brush_app ds --total-steps "$STEPS" --eval-split-every 8 --eval-every "$STEPS" --eval-save-to-disk \
+  --max-resolution 1600 --export-every "$STEPS" --export-path out --export-name "muddy_site_{iter}.ply"
+echo "[3/4] held-out evaluation"
 # 6. independent metrics from the saved eval image pairs
-venv/bin/python "$HERE/evaluate.py" out "$HERE/eval_metrics.json" "$HERE/heldout"
+venv/bin/python "$HERE/evaluate.py" out "$HERE/eval_metrics.json" "$HERE/heldout" frames

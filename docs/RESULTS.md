@@ -56,4 +56,6 @@ A 4.2 s session recorded in the browser and checked with `npm run verify-mcap` (
 
 Source: the original 4K drone video (Pexels 29568320), 200 frames at 1600 px. Camera poses with pycolmap: **200 / 200 frames registered, 82,411 points, 0.46 px mean reprojection error** (features 16 s, matching 13 s, mapping 208 s, CPU).
 
-Training (Brush, every 8th frame held out) has not run yet: the automation sandbox has no GPU adapter. No held-out PSNR/SSIM/LPIPS is reported until it does; see `pipeline/train/README.md`.
+Training: Brush v0.3.0, 7000 steps on 175 frames (every 8th frame held out), 337 s on Apple Silicon. Held-out evaluation on 25 frames, recomputed independently from Brush's saved renders vs the source frames (1600×900): **PSNR 23.53 dB, SSIM 0.723, LPIPS-Alex 0.330** (per-frame PSNR 20.9 to 24.6 dB). Side-by-sides: `pipeline/train/heldout/`.
+
+This is a short training run (the original 3DGS paper reports 30k iterations), so it is a baseline rather than a tuned number. One visible failure: the articulated dump truck driving through the footage renders as a smeared ghost, because 3DGS assumes a static scene. That is the same assumption LiveDirt's diggable terrain is built to break.

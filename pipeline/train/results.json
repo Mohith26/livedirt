@@ -1,5 +1,5 @@
 {
-  "status": "partial: SfM complete (200/200 frames registered); 3DGS training blocked inside the agent sandbox (no Metal adapter without a GUI session). Run run_all.sh from a normal macOS Terminal to train + evaluate; it resumes from the existing SfM.",
+  "status": "done: SfM 200/200 registered; Brush 3DGS trained 7000 steps on 175 frames (user's Mac GPU, 337 s wall); evaluated on 25 held-out frames",
   "hardware": "Apple Silicon arm64 (macOS), CPU for SfM, no CUDA",
   "measured": {
     "source_video": {
@@ -31,10 +31,16 @@
     "msplat": "pip: 'No matching distribution found for msplat'; building from github.com/SeedeXR/msplat not attempted"
   },
   "metrics": {
-    "psnr": null,
-    "ssim": null,
-    "lpips_alex": null,
-    "note": "not measured yet; evaluate.py writes eval_metrics.json after training"
+    "heldout_frames": 25,
+    "psnr_db": 23.53,
+    "ssim": 0.723,
+    "lpips_alex": 0.33,
+    "psnr_min_median_max": [
+      20.88,
+      23.72,
+      24.56
+    ],
+    "note": "PSNR/SSIM via scikit-image, LPIPS (AlexNet) via lpips 0.1, computed by evaluate.py from Brush's saved eval renders vs the source frames at 1600x900"
   },
   "versions": {
     "pycolmap_imageio-ffmpeg": "3.13.0 0.6.0",
@@ -43,8 +49,12 @@
     "python": "3.9.6 (/usr/bin/python3)"
   },
   "known_issue": "importing pycolmap and torch in the same process aborts (OMP Error #15, duplicate libomp); keep SfM and evaluation in separate processes (already the case in run_all.sh)",
-  "blocker": {
-    "brush_v0.3.0": "panic: 'No possible adapter available for backend' (requested METAL, no adapter) when launched from the sandbox; torch MPS also unavailable there",
-    "launchservices_workaround": "open LiveDirtTrain.app -> kLSNoExecutableErr (files created in the sandbox carry com.apple.provenance)"
-  }
+  "training": {
+    "trainer": "Brush v0.3.0 (aarch64-apple-darwin)",
+    "steps": 7000,
+    "train_frames": 175,
+    "wall_s": 337.13,
+    "run_from": "macOS Terminal on the user's Apple Silicon Mac (GPU via Metal)"
+  },
+  "blocker_history": "Inside the agent sandbox Brush found no Metal adapter; training was run from a normal Terminal instead."
 }

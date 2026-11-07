@@ -35,6 +35,8 @@ Cycle times average 19 s, consistent with a 22 t excavator. Designing a slope st
 - Lidar (two units, ≥5 person returns): 100% at every tested distance and condition. The level roof unit alone is blind inside ~6 m; the tilted front unit covers it.
 - Blind-spot test: a worker 3.4 m from the swing centre, beside the cab, gets **0** lidar returns from either unit. The monitor reports "undetected person in zone".
 
+**Own reconstruction from the raw footage** (`pipeline/train/`): from the original 4K drone video, pycolmap registered 200 / 200 frames (0.46 px reprojection error); Brush trained 7000 steps in 337 s on a MacBook. On 25 held-out frames: **PSNR 23.5 dB, SSIM 0.723, LPIPS 0.330**. The articulated dump truck driving through the footage renders as a smeared ghost, a live example of the static-scene assumption breaking on a real job site.
+
 ## What's real
 
 | | |
@@ -56,7 +58,7 @@ npm run bench -- wet-clay 1    # headless autonomy benchmark on the captured ter
 npm run build
 ```
 
-Rebuild the scene from the public source capture: `pipeline/build.sh` (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Training our own splat from the raw footage with held-out evaluation: [`pipeline/train/`](pipeline/train).
+Rebuild the scene from the public source capture: `pipeline/build.sh` (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Training a splat from the raw footage with held-out evaluation: [`pipeline/train/`](pipeline/train) (`bash pipeline/train/run_all.sh`).
 
 ## Controls
 

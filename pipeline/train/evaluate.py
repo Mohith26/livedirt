@@ -2,7 +2,8 @@
 Brush (--eval-split-every 8 --eval-save-to-disk) writes rendered + GT images per eval step. This script
 recomputes PSNR / SSIM (scikit-image) and LPIPS (lpips, AlexNet backbone, as in the 3DGS paper's reporting)
 from those image pairs and writes a JSON summary plus side-by-side comparison images.
-Usage: python evaluate.py <eval_dir> <out_json> <sbs_dir>"""
+Usage: python evaluate.py <eval_dir> <out_json> <sbs_dir> [gt_frames_dir]
+Brush v0.3.0 saves only the renders (out/eval_<step>/<frame>.png); ground truth is then the source frame of the same name."""
 import sys, json, pathlib, numpy as np
 from PIL import Image
 from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
@@ -15,6 +16,13 @@ for r in sorted(eval_dir.rglob("*")):
     if "render" in n or "pred" in n:
         cands = [r.with_name(r.name.replace(k, v)) for k, v in (("render", "gt"), ("Render", "GT"), ("pred", "gt"), ("render", "ground_truth"))]
         g = next((c for c in cands if c.exists()), None)
+        if g: pairs.append((r, g))
+gt_dir = pathlib.Path(sys.argv[4]) if len(sys.argv) > 4 else None
+if not pairs and gt_dir is not None:
+    steps = sorted([d for d in eval_dir.glob("eval_*") if d.is_dir()], key=lambda d: int(d.name.split("_")[1]))
+    src = steps[-1] if steps else eval_dir
+    for r in sorted(src.glob("*.png")):
+        g = next((c for c in (gt_dir / (r.stem + ext) for ext in (".jpg", ".png", ".jpeg")) if c.exists()), None)
         if g: pairs.append((r, g))
 if not pairs: sys.exit(f"no render/gt pairs found under {eval_dir}")
 try:

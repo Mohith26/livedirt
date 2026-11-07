@@ -40,13 +40,15 @@ Stages:
 Importing `pycolmap` and `torch` in the same Python process aborts with OMP Error #15 (two libomp copies).
 `sfm.py` and `evaluate.py` run as separate processes, so the pipeline is unaffected; don't merge them.
 
-## Status (Nov 7 2026)
+## Results (Nov 7 2026)
 
-- SfM is done: **200 / 200 frames registered, 82,411 points, 0.46 px mean reprojection error** (`sfm_result.json`; features 16 s, matching 13 s, mapping 208 s on Apple Silicon CPU).
-- Training could not run inside the automation sandbox: Brush found no Metal adapter (no GUI session), and macOS refused to launch a sandbox-created app bundle. No splat metrics exist yet, so none are reported.
-- To finish, run from a normal Terminal (uses the Mac GPU, resumes from the existing SfM, ~7000 Brush steps, then PSNR/SSIM/LPIPS on the 25 held-out frames):
+- SfM: 200 / 200 frames registered, 82,411 points, 0.46 px mean reprojection error (features 16 s, matching 13 s, mapping 208 s, CPU).
+- Training: Brush v0.3.0, 7000 steps on 175 frames, 337 s on Apple Silicon (Metal).
+- Held-out (25 frames, every 8th): **PSNR 23.53 dB, SSIM 0.723, LPIPS-Alex 0.330** (per-frame PSNR 20.9 to 24.6 dB). Side-by-sides in `heldout/`.
+- Observation: the articulated dump truck driving through the footage renders as a smeared ghost. Real job-site capture is not static, which is the assumption LiveDirt is built to challenge.
+
+Re-run (resumable; shows Brush's progress bar):
 
 ```bash
-bash ~/livedirt/pipeline/train/run_all.sh
-node ~/livedirt/app/scripts/make-results.mjs   # folds eval_metrics.json into docs/RESULTS.md
+bash ~/livedirt/pipeline/train/run_all.sh && node ~/livedirt/app/scripts/make-results.mjs
 ```
