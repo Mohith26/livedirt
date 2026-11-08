@@ -395,12 +395,15 @@ export class App {
           <div class="row"><span>Avg bucket fill</span><b id="aFill">0%</b></div>
           <div class="row"><span>Productivity</span><b id="aProd">0 m³/h</b></div>
           <div class="row"><span>Lidar vs truth (grade)</span><b id="aSurv">n/a</b></div>
+          <div class="row"><span>Soil drag on bucket</span><b id="aForce">${a.neural ? '0 kN' : 'kinematic cut'}</b></div>
         </div>
+        ${this.toggleHtml('tNeural', 'Learned soil (beta)', !!a.neural, 'U-Net trained on 3D MPM dig cycles; predicts terrain and bucket force. Arm slows above the DX225 arm force (112.8 kN).')}
         <div class="log" id="aLog"></div>`;
       if (!hasDesign) $('#aExample').onclick = () => { this.exampleTrench(); this.renderPanel(); };
       $('#aRun').onclick = () => this.toggleAutonomy();
       $('#aReset').onclick = () => { a.stop(); a.joints = { ...this.restJoints }; this.twin.setJoints(a.joints); this.renderPanel(); };
       $$('#segSpeed button').forEach((b) => b.addEventListener('click', () => { a.speed = parseFloat(b.dataset.v!); $$('#segSpeed button').forEach((x) => x.classList.toggle('on', x === b)); }));
+      this.bindToggle('tNeural', async (on) => { await this.setNeuralSoil(on); this.renderPanel(); });
     }
   }
 
@@ -524,6 +527,23 @@ export class App {
       a.click();
       toast(`Saved ${summary}`, 'ok', 4000);
     }
+  }
+
+  private neuralModel: import('./sim/neuralSoil').NeuralModel | null = null;
+  async setNeuralSoil(on: boolean) {
+    const a = this.autonomy;
+    if (!on) { a.neural = null; return; }
+    if (!this.neuralModel) {
+      toast('Loading learned soil model (4.4 MB)…');
+      const ort = await import('onnxruntime-web/wasm');
+      ort.env.wasm.wasmPaths = import.meta.env.DEV ? 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/' : '/ort/';
+      const { loadNeuralModel } = await import('./sim/neuralSoil');
+      this.neuralModel = await loadNeuralModel(ort, '/models/soil-v1.onnx', { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+      toast('Learned soil ready', 'ok');
+    }
+    // friction from the selected soil's repose angle (the model was trained on dry sand, mu 0.3-0.7)
+    const mu = Math.min(0.7, Math.max(0.3, Math.tan((this.terrain.hf.soil.reposeDeg * Math.PI) / 180)));
+    a.neural = { model: this.neuralModel, mu, fMax: 112800 };
   }
 
   async ensureDetector() {
@@ -821,6 +841,7 @@ export class App {
       setText($('#aCyc'), `${a.stats.cycles} · ${a.stats.avgCycleS.toFixed(1)} s`);
       setText($('#aFill'), `${(a.stats.avgFill * 100).toFixed(0)}%`);
       setText($('#aProd'), `${a.stats.productivity.toFixed(0)} m³/h`);
+      setText($('#aForce'), a.neural ? `${(a.soilForce[0] / 1000).toFixed(0)} kN${a.reliefScale < 0.99 ? ' · relief' : ''}` : 'kinematic cut');
       const sv = a.stats.surveys[a.stats.surveys.length - 1];
       setText($('#aSurv'), !sv ? 'n/a' : sv.coverage === 0 ? 'no coverage' : `${(sv.lidarMeanAbove * 100).toFixed(1)} vs ${(sv.truthMeanAbove * 100).toFixed(1)} cm · ${(sv.coverage * 100).toFixed(0)}%`);
       const log = $('#aLog'); if (log) { const txt = a.log.slice(-14).join('\n'); if (log.textContent !== txt) { log.textContent = txt; log.scrollTop = log.scrollHeight; } }
