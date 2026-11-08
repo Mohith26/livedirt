@@ -21,8 +21,14 @@ def _arch(name):
 def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg=23.5,
                         rho_bulk=1600.0, yield_fit="plane_strain", rheology="const",
                         mu1=0.38, mu2=0.64, I0=0.279, grain_d=0.005, rho_s=2500.0, floor="sticky", floor_mu=None, wall_mu=0.0, side_W=0.0, side_mu=0.0, gate_settle=0.15,
-                        arch="gpu", max_time=None, stop_speed=0.005, seed=0, snapshot_every=None):
-    """Simulate one column collapse. Returns final particle positions (wall/floor at 0) and timing."""
+                        arch="gpu", max_time=None, stop_speed=0.005, seed=0, snapshot_every=None,
+                        dilatancy_deg=0.0, dilatancy_evmax=0.0):
+    """Simulate one column collapse. Returns final particle positions (wall/floor at 0) and timing.
+
+    dilatancy_deg / dilatancy_evmax: dilatant flow rule (ablation). On yield, plastic shear d_gamma comes with plastic
+    dilation d_ev = tan(psi) d_gamma (taken out of the elastic trace, so a constrained dilating element gains pressure
+    and strength, and an unconstrained one expands), with psi = psi0 (1 - ev_acc / evmax): dilation stops at the
+    critical state once the dense packing has loosened by evmax (e.g. ln(0.62/0.58) = 0.067 for glass beads)."""
     H0, L0 = case["H0"], case["L0"]
     g = 9.81
     pad = 3
@@ -81,6 +87,10 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
     damp = ti.field(ti.f32, ())
     vmax = ti.field(ti.f32, ())
     pres = ti.field(ti.f32, n_p)
+    evp = ti.field(ti.f32, n_p)  # accumulated plastic volumetric strain (dilatancy)
+    tpsi = math.tan(math.radians(dilatancy_deg))
+    evmax = max(float(dilatancy_evmax), 1e-9)
+    use_dil = dilatancy_deg > 0 and dilatancy_evmax > 0
 
     @ti.kernel
     def init_fields():
@@ -119,6 +129,10 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
                 yp = ehn + (2.0 * la + 2.0 * mu) / (2.0 * mu) * tr * al
                 if yp > 0.0:
                     e = e - (yp / ehn) * ehat
+                    if ti.static(use_dil):
+                        dev = tpsi * ti.max(0.0, 1.0 - evp[p] / evmax) * yp
+                        evp[p] += dev
+                        e = e - ti.Vector([0.5 * dev, 0.5 * dev])
             Sig = ti.Matrix([[ti.exp(e[0]), 0.0], [0.0, ti.exp(e[1])]])
             F[p] = U @ Sig @ V.transpose()
             tr2 = e[0] + e[1]
@@ -242,6 +256,7 @@ def run_column_collapse(case, *, dx=0.0025, ppc_side=2, E=1.0e6, nu=0.3, phi_deg
         "stopped": stopped,
         "volume_ratio": float(J.sum() * p_vol / (n_p * p_vol)),
         "params": {"dx": dx, "ppc_side": ppc_side, "E": E, "nu": nu, "phi_deg": phi_deg, "rho_bulk": rho_bulk,
-                   "yield_fit": yield_fit, "rheology": rheology, "mu1": mu1, "mu2": mu2, "I0": I0, "floor": floor, "floor_mu": floor_mu, "wall_mu": wall_mu, "side_W": side_W, "side_mu": side_mu, "gate_settle": gate_settle, "alpha_dp": alpha},
+                   "yield_fit": yield_fit, "rheology": rheology, "mu1": mu1, "mu2": mu2, "I0": I0, "floor": floor, "floor_mu": floor_mu, "wall_mu": wall_mu, "side_W": side_W, "side_mu": side_mu, "gate_settle": gate_settle, "alpha_dp": alpha,
+                   "dilatancy_deg": dilatancy_deg, "dilatancy_evmax": dilatancy_evmax},
         "snapshots": snaps,
     }

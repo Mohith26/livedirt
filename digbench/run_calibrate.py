@@ -27,8 +27,8 @@ ROOT = Path(__file__).resolve().parent
 OBS_CASE = {"a": 2.0, "H0": 0.2, "L0": 0.1}
 
 
-def collapse_profile(mu, arch, dx=0.0025, case=OBS_CASE, quasi2d=False):
-    kw = dict(dx=dx, phi_deg=math.degrees(math.atan(mu)), yield_fit="dp_tan", arch=arch)
+def collapse_profile(mu, arch, dx=0.0025, case=OBS_CASE, quasi2d=False, seed=0):
+    kw = dict(dx=dx, phi_deg=math.degrees(math.atan(mu)), yield_fit="dp_tan", arch=arch, seed=seed)
     if quasi2d:
         kw.update(wall_mu=0.21, side_W=0.15, side_mu=0.21)
     r = mpm_dp.run_column_collapse(case, **kw)
@@ -36,6 +36,19 @@ def collapse_profile(mu, arch, dx=0.0025, case=OBS_CASE, quasi2d=False):
     xc, h = metrics.profile_from_particles(pos[:, 0], pos[:, 1], dx, r["spacing"])
     grid = np.arange(0.0, 1.0, 0.01)
     return np.interp(grid, xc, h, right=0.0), xc, h
+
+
+def sfm_noise(rng, grid_x, clean, sigma=0.001, corr=0.01, scale_sd=0.001):
+    """Photogrammetry error model (non-circular observer): spatially correlated Gaussian error (sigma 1 mm, correlation
+    length 1 cm) plus a global scale error (sd 0.1%). Basis: SfM relative precision of ~1:1000 of the viewing distance
+    (James & Robson 2012, J. Geophys. Res. Earth Surface 117, F03017), taken at ~0.5-1 m for a lab heap; the
+    correlation length and scale term are assumptions (doming/scale drift are the dominant SfM systematic errors)."""
+    n = len(grid_x)
+    w = rng.normal(0, 1, n + 40)
+    k = np.exp(-0.5 * (np.arange(-20, 21) * (grid_x[1] - grid_x[0]) / corr) ** 2)
+    corr_noise = np.convolve(w, k / np.sqrt((k ** 2).sum()), mode="same")[20:20 + n] * sigma
+    scale = 1.0 + rng.normal(0, scale_sd)
+    return (clean * scale + corr_noise) * (clean > 0)
 
 
 def golden(f, lo, hi, tol=0.004):
@@ -63,6 +76,13 @@ def main():
     ap.add_argument("--reps", type=int, default=2)
     ap.add_argument("--bucket-dx", type=float, default=0.04)
     ap.add_argument("--skip-bucket", action="store_true")
+    ap.add_argument("--obs-dx", type=float, default=0.0025, help="observer (ground-truth generator) resolution")
+    ap.add_argument("--inv-dx", type=float, default=0.0025, help="inverting model resolution")
+    ap.add_argument("--obs-seed", type=int, default=0, help="observer particle seed (inverter uses seed 0)")
+    ap.add_argument("--noise-model", choices=["gauss", "sfm"], default="gauss")
+    ap.add_argument("--attitude", choices=["legacy", "physical"], default="legacy", help="bucket path for the drag transfer")
+    ap.add_argument("--real-variants", default="base", help="comma list: base, tan, side0, side04, muI (real-data gap probes)")
+    ap.add_argument("--skip-real", action="store_true")
     ap.add_argument("--tag", default="calib")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
@@ -73,26 +93,42 @@ def main():
     rng = np.random.default_rng(0)
 
     # --- real data: fit friction angle of the quasi-2D model to Sarlin et al. fits ---
-    def real_loss(phi):
+    VARIANTS = {  # real-data gap probes: convention (sin vs tan), sidewall friction, rate dependence
+        "base": dict(yield_fit="plane_strain", wall_mu=0.21, side_W=0.15, side_mu=0.21),
+        "tan": dict(yield_fit="dp_tan", wall_mu=0.21, side_W=0.15, side_mu=0.21),
+        "side0": dict(yield_fit="plane_strain", wall_mu=0.21, side_W=0.0, side_mu=0.0),
+        "side04": dict(yield_fit="plane_strain", wall_mu=0.21, side_W=0.15, side_mu=0.4),
+        "muI": dict(rheology="muI", wall_mu=0.21, side_W=0.15, side_mu=0.21),
+    }
+
+    def real_loss(phi, kw):
         errs = []
         for c in references.COLLAPSE_CASES:
-            r = mpm_dp.run_column_collapse(c, dx=0.0025, phi_deg=phi, wall_mu=0.21, side_W=0.15, side_mu=0.21, arch=args.arch)
+            k = dict(kw)
+            if k.get("rheology") == "muI":  # fit the quasi-static friction mu1 = tan(phi); keep Jop's mu2 - mu1 gap
+                k.update(mu1=math.tan(math.radians(phi)), mu2=math.tan(math.radians(phi)) + (math.tan(math.radians(32.8)) - math.tan(math.radians(20.9))))
+            r = mpm_dp.run_column_collapse(c, dx=0.0025, phi_deg=phi, arch=args.arch, **k)
             pos = r["positions"]
             xc, h = metrics.profile_from_particles(pos[:, 0], pos[:, 1], 0.0025, r["spacing"])
             dep = metrics.deposit(xc, h, c["L0"], references.COLLAPSE["grain_d"])
             sc = metrics.score(c, dep, references.collapse_runout, references.collapse_height)
             errs.append(abs(sc["runout_relerr"]) + abs(sc["height_relerr"]))
         return float(np.mean(errs))
-    phi_fit, n_eval = golden(real_loss, 18.0, 34.0, tol=0.5)
-    out["real"] = {"phi_fit_deg": phi_fit, "loss_at_fit": real_loss(phi_fit), "measured_repose_deg": 23.5, "measured_sd_deg": 1.2,
-                   "evals": n_eval, "note": "plane-strain MC convention (sin phi) with quasi-2D sidewall friction, as in task 1"}
-    print("real-data fit:", json.dumps(out["real"]), flush=True)
-    pth.write_text(json.dumps(out))
+    if not args.skip_real:
+        for vname in args.real_variants.split(","):
+            kw = VARIANTS[vname]
+            phi_fit, n_eval = golden(lambda ph: real_loss(ph, kw), 14.0, 34.0, tol=0.5)
+            out["real"][vname] = {"phi_fit_deg": phi_fit, "loss_at_fit": real_loss(phi_fit, kw), "measured_repose_deg": 23.5,
+                                  "measured_sd_deg": 1.2, "sigma_from_measured": (phi_fit - 23.5) / 1.2, "evals": n_eval, "model": kw}
+            print("real-data fit:", vname, json.dumps(out["real"][vname]), flush=True)
+            pth.write_text(json.dumps(out))
 
     # --- synthetic inversion + transfer to bucket force ---
     if not args.skip_bucket:
-        from .run_bucket import BED, SURF, bucket_boxes, path
+        from .run_bucket import BED, SURF, bucket_boxes, path as legacy_path
+        from .attitude import physical_path
         from .solvers.sim3d import Sim3D
+        path = (lambda t: physical_path(0.6, SURF)[0](t)) if args.attitude == "physical" else legacy_path
 
         def bucket_drag(mu):
             sim = Sim3D(BED, args.bucket_dx, mu_f=mu, arch=args.arch, tool_speed_max=1.5,
@@ -109,13 +145,17 @@ def main():
         out["bucket_drag_default_mu0.5_N"] = f_default
 
     for mu_t in [float(s) for s in args.truths.split(",")]:
-        clean, _, _ = collapse_profile(mu_t, args.arch)
+        clean, _, _ = collapse_profile(mu_t, args.arch, dx=args.obs_dx, seed=args.obs_seed)
         f_true = bucket_drag(mu_t) if not args.skip_bucket else None
         for rep in range(args.reps):
-            obs = clean + rng.normal(0, args.noise, clean.shape) * (clean > 0)
-            loss = lambda mu: float(np.sqrt(((collapse_profile(mu, args.arch)[0] - obs) ** 2).mean()))
+            if args.noise_model == "sfm":
+                obs = sfm_noise(rng, np.arange(0.0, 1.0, 0.01), clean)
+            else:
+                obs = clean + rng.normal(0, args.noise, clean.shape) * (clean > 0)
+            loss = lambda mu: float(np.sqrt(((collapse_profile(mu, args.arch, dx=args.inv_dx)[0] - obs) ** 2).mean()))
             mu_hat, n_eval = golden(loss, 0.15, 0.9)
-            row = {"mu_true": mu_t, "rep": rep, "mu_hat": mu_hat, "mu_err": mu_hat - mu_t, "evals": n_eval}
+            row = {"mu_true": mu_t, "rep": rep, "mu_hat": mu_hat, "mu_err": mu_hat - mu_t, "evals": n_eval,
+                   "obs_dx": args.obs_dx, "inv_dx": args.inv_dx, "obs_seed": args.obs_seed, "noise_model": args.noise_model}
             if not args.skip_bucket:
                 f_hat = bucket_drag(mu_hat)
                 row.update({"drag_true_N": f_true, "drag_pred_N": f_hat, "drag_err": (f_hat - f_true) / f_true,

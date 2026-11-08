@@ -49,6 +49,8 @@ def main():
     ap.add_argument("--wall-mu", type=float, default=0.0)
     ap.add_argument("--side-W", type=float, default=0.0, help="channel width for sidewall friction (0 = pure plane strain)")
     ap.add_argument("--side-mu", type=float, default=0.0)
+    ap.add_argument("--dilatancy", type=float, default=0.0, help="dilatancy angle psi0 (deg); 0 = non-dilatant (default)")
+    ap.add_argument("--dilatancy-evmax", type=float, default=0.067, help="max plastic dilation (dense->loose), ln(0.62/0.58)")
     ap.add_argument("--cases", default="all", help="comma list of aspect ratios, or all")
     ap.add_argument("--tag", default="mpm")
     ap.add_argument("--out", default=str(ROOT / "results"))
@@ -63,7 +65,8 @@ def main():
     for case in cases:
         t0 = time.perf_counter()
         r = mpm_dp.run_column_collapse(case, dx=args.dx, ppc_side=args.ppc, E=args.E, phi_deg=args.phi, yield_fit=args.yield_fit, rheology=args.rheology,
-                                       floor=args.floor, floor_mu=args.floor_mu, wall_mu=args.wall_mu, side_W=args.side_W, side_mu=args.side_mu, arch=args.arch)
+                                       floor=args.floor, floor_mu=args.floor_mu, wall_mu=args.wall_mu, side_W=args.side_W, side_mu=args.side_mu, arch=args.arch,
+                                       dilatancy_deg=args.dilatancy, dilatancy_evmax=args.dilatancy_evmax)
         pos = r.pop("positions")
         r.pop("snapshots")
         xc, h = metrics.profile_from_particles(pos[:, 0], pos[:, 1], args.dx, r["spacing"])
