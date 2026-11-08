@@ -21,7 +21,7 @@ run it$IT-flux  --data $DATA --head flux --pool global --curriculum 4 --noise 0.
 run it$IT-d     --data $DATA --head flux --pool occ --floor-train --curriculum 4,16,32 --noise auto --epochs 24 --max-windows 3000 --seed 0
 run it$IT-d-s1  --data $DATA --head flux --pool occ --floor-train --curriculum 4,16,32 --noise auto --epochs 24 --max-windows 3000 --seed 1
 run it$IT-d-s2  --data $DATA --head flux --pool occ --floor-train --curriculum 4,16,32 --noise auto --epochs 24 --max-windows 3000 --seed 2
-if [ -d $HOME/v3/replay_walled ] && [ "$IT" = 1 ]; then
+if [ "$(ls $HOME/v3/replay_walled/*.npz 2>/dev/null | wc -l)" -ge 30 ] && [ "$IT" = 1 ]; then
   mkdir -p $HOME/v3/replay_t1_open && ln -sf $HOME/v3/replay/t1_*.npz $HOME/v3/replay_t1_open/ 2>/dev/null || true
   run it$IT-walls-open   --data $HOME/v3/replay_t1_open --head free --pool global --curriculum 4 --noise 0.005 --epochs 12 --max-windows 6000
   run it$IT-walls-walled --data $HOME/v3/replay_walled  --head free --pool global --curriculum 4 --noise 0.005 --epochs 12 --max-windows 6000
