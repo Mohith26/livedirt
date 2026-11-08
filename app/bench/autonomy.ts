@@ -34,6 +34,8 @@ const consistency = flag('--consistency-gate'); // a priori physical consistency
 const backend = opt('--soil-backend')?.[0] ?? 'heightfield'; // heightfield | mpm
 const mpmUrl = opt('--mpm-url')?.[0] ?? 'http://127.0.0.1:8765';
 const mpmReq = JSON.parse(opt('--mpm-req')?.[0] ?? '{}'); // extra request fields: soil {model, phi, c}, margin, col_depth, seed
+const ctrl = opt('--controller')?.[0] ?? 'legacy';
+const noClamp = flag('--no-clamp');
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
@@ -76,6 +78,8 @@ if (neuralModel) {
   auto.neural = { model: mdl, mu: neuralMu, fMax: noRelief ? Infinity : 112800, floor: !noFloor, gate, stats: fstats, legacyRelief: legacyRelief || noRelief, consistency };
 }
 if (legacyPitch) auto.attitude = 'legacy';
+auto.controller = ctrl as 'legacy' | 'adaptive';
+if (noClamp) auto.designClamp = false;
 const traces: unknown[] = [];
 if (traceFile) auto.traceRec = (r) => traces.push(r);
 const mpmLog: unknown[] = [];
@@ -131,7 +135,7 @@ const res = {
   bankRemoved: +auto.stats.bankRemoved.toFixed(3), passes: auto.stats.passes,
   surveys: auto.stats.surveys.map((s) => ({ t: +s.t.toFixed(1), points: s.points, coverage: +s.coverage.toFixed(3), inTolFrac: +s.inTolFrac.toFixed(3), lidarMeanAboveCm: +(s.lidarMeanAbove * 100).toFixed(2), truthMeanAboveCm: +(s.truthMeanAbove * 100).toFixed(2) })),
   final: { onGradePct: +g.onGradePct.toFixed(1), meanAbsErrorCm: +(g.meanAbsError * 100).toFixed(2), remainingCutM3: +g.remainingCut.toFixed(3), overDigM3: +g.overDig.toFixed(3), unplannedCutM3: +g.unplannedCut.toFixed(3), sloughedM3: +hf.ledger.sloughed.toFixed(3), maxAboveCm: +(g.maxAbove * 100).toFixed(1), maxBelowCm: +(g.maxBelow * 100).toFixed(1) },
-  bottom: gs(gB), slopes: gs(gS), backend, mpm: backend === 'mpm' ? { url: mpmUrl, req: mpmReq, bites: mpmLog } : undefined,
+  bottom: gs(gB), slopes: gs(gS), backend, controller: ctrl, designClamp: auto.designClamp, adaptive: ctrl === 'adaptive' ? { fillEff: +auto.fillEff.toFixed(3), log: auto.adaptiveLog } : undefined, mpm: backend === 'mpm' ? { url: mpmUrl, req: mpmReq, bites: mpmLog } : undefined,
   log: auto.log,
   volume: { terrainStartM3: +vol0.toFixed(3), terrainEndM3: +vol1.toFixed(3), inBucketM3: +auto.bucketLoad.toFixed(3), carriedLedgerM3: +hf.ledger.carried.toFixed(3),
     deltaM3: +(vol1 + hf.ledger.carried - vol0).toFixed(3), bankCutM3: +hf.ledger.bankCut.toFixed(3), swellExpectedM3: +(hf.ledger.bankCut * (hf.soil.swell - 1)).toFixed(3) },

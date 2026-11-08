@@ -187,7 +187,8 @@ export class Heightfield {
    * when `respectDesign` is set, never below the design grade (semi-automatic grade control). With
    * `blockOutside`, cells outside the design footprint are not cut below their original grade.
    */
-  dig(x: number, z: number, radius: number, depth: number, respectDesign = false, blockOutside = false): DigResult {
+  /** minY: no cell is cut below this height (the bucket's cutting edge); used without the design clamp */
+  dig(x: number, z: number, radius: number, depth: number, respectDesign = false, blockOutside = false, minY = -Infinity): DigResult {
     const res: DigResult = { bank: 0, loose: 0 };
     if (depth <= 0 || radius <= 0) return res;
     const [ci, cj] = this.cellOf(x, z);
@@ -202,7 +203,7 @@ export class Heightfield {
         if (d > radius) continue;
         const w = 0.5 * (1 + Math.cos((Math.PI * d) / radius));
         const want = depth * w;
-        let floor = this.H0[k] - this.maxDigDepth;
+        let floor = Math.max(this.H0[k] - this.maxDigDepth, minY);
         if (respectDesign && this.designSpec) {
           const D = this.design[k];
           // machine-control semantics: inside the footprint never below design; outside it (when blocking) never

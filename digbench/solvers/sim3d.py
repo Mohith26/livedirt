@@ -100,6 +100,8 @@ class Sim3D:
         self.box_a = ti.field(ti.f32, n_boxes)  # box pitch inside tool frame (rad)
         self.tpos = ti.Vector.field(3, ti.f32, ())
         self.tang = ti.field(ti.f32, ())  # tool pitch about +y (rad)
+        self.troll = ti.field(ti.f32, ())  # tool roll about +x (rad; tiltrotator), applied outside the pitch
+        self.trollw = ti.field(ti.f32, ())  # roll rate (rad/s)
         self.tvel = ti.Vector.field(3, ti.f32, ())
         self.tomg = ti.field(ti.f32, ())  # pitch rate (rad/s)
         self.force = ti.Vector.field(3, ti.f32, ())
@@ -112,21 +114,28 @@ class Sim3D:
         self.sch_vel = ti.Vector.field(3, ti.f32, self.SCH)
         self.sch_ang = ti.field(ti.f32, self.SCH)
         self.sch_omg = ti.field(ti.f32, self.SCH)
+        self.sch_roll = ti.field(ti.f32, self.SCH)
+        self.sch_rollw = ti.field(ti.f32, self.SCH)
         x, v, C, F, alive = self.x, self.v, self.C, self.F, self.alive
         vcf = self.vc
         use_vc = 1 if volume_correction else 0
         grid_v, grid_m = self.grid_v, self.grid_m
         nb, box_c, box_h, box_a = self.nb, self.box_c, self.box_h, self.box_a
         tpos, tang, tvel, tomg = self.tpos, self.tang, self.tvel, self.tomg
+        troll, trollw = self.troll, self.trollw
         force, torque, damp, n_p = self.force, self.torque, self.damp, self.n_p
         sch_pos, sch_vel, sch_ang, sch_omg = self.sch_pos, self.sch_vel, self.sch_ang, self.sch_omg
+        sch_roll, sch_rollw = self.sch_roll, self.sch_rollw
         floor_k = self.floor_k
         mu_t = mu_tool
 
         @ti.func
         def tool_sdf(p):
             # transform to tool frame (pitch about y)
-            r = p - tpos[None]
+            r0 = p - tpos[None]
+            # undo the roll about x (y' = c y - s z, z' = s y + c z), then the pitch about y
+            cr, sr = ti.cos(troll[None]), ti.sin(troll[None])
+            r = ti.Vector([r0[0], cr * r0[1] + sr * r0[2], -sr * r0[1] + cr * r0[2]])
             ca, sa = ti.cos(tang[None]), ti.sin(tang[None])
             lx = ca * r[0] + sa * r[2]
             lz = -sa * r[0] + ca * r[2]
@@ -157,6 +166,8 @@ class Sim3D:
                 tang[None] = sch_ang[k]
                 tvel[None] = sch_vel[k]
                 tomg[None] = sch_omg[k]
+                troll[None] = sch_roll[k]
+                trollw[None] = sch_rollw[k]
             for I in ti.grouped(grid_m):
                 grid_v[I] = ti.Vector([0.0, 0.0, 0.0])
                 grid_m[I] = 0.0
@@ -221,7 +232,11 @@ class Sim3D:
                             r = xp - tpos[None]
                             # rigid velocity for pitch rate d(theta)/dt with x' = c x - s z, z' = s x + c z:
                             # d r / dt = theta_dot * (-r_z, 0, r_x)
-                            vp = tvel[None] + ti.Vector([-tomg[None] * r[2], 0.0, tomg[None] * r[0]])
+                            # angular velocity: roll rate about world x plus pitch rate about the ROLLED y axis; the pitch
+                            # convention (x' = c x - s z) is a rotation by -theta about +y, so w = (phi', -theta' cos phi, -theta' sin phi)
+                            cph, sph = ti.cos(troll[None]), ti.sin(troll[None])
+                            wv = ti.Vector([trollw[None], -tomg[None] * cph, -tomg[None] * sph])
+                            vp = tvel[None] + wv.cross(r)
                             vr = gv - vp
                             vn = vr.dot(n)
                             if vn < 0.0:
@@ -294,6 +309,8 @@ class Sim3D:
         self._mark_inside_tool = mark_inside_tool
         self.n_p[None] = 0
         self.nb[None] = 0
+        self.troll[None] = 0.0
+        self.trollw[None] = 0.0
         self.t = 0.0
 
     # ---------------- setup ----------------
@@ -357,9 +374,11 @@ class Sim3D:
             self.box_h[i] = ti.Vector(list(map(float, h)))
             self.box_a[i] = float(a)
 
-    def set_pose(self, pos, pitch):
+    def set_pose(self, pos, pitch, roll=None):
         self.tpos[None] = ti.Vector(list((np.asarray(pos) + self.origin).astype(np.float32)))
         self.tang[None] = float(pitch)
+        if roll is not None:
+            self.troll[None] = float(roll)
 
     def remove_inside_tool(self):
         self._mark_inside_tool()
@@ -443,6 +462,7 @@ class Sim3D:
         o = self.origin.astype(np.float32)
         P = np.zeros((self.SCH, 3), np.float32); V = np.zeros((self.SCH, 3), np.float32)
         Aa = np.zeros(self.SCH, np.float32); Om = np.zeros(self.SCH, np.float32)
+        Rr = np.zeros(self.SCH, np.float32); Rw = np.zeros(self.SCH, np.float32)
         k, t0 = 0, time.perf_counter()
         mult = 2.0 if self.symmetry_y else 1.0
         while k < n_steps:
@@ -450,15 +470,18 @@ class Sim3D:
             ts = t_cmd + s * dt * np.arange(m + 1)
             poses = [path_fn(t) for t in ts]
             pp = np.array([np.asarray(q[0], np.float64) for q in poses]); aa = np.array([float(q[1]) for q in poses])
+            rr = np.array([float(q[2]) if len(q) > 2 else 0.0 for q in poses])
             P[:m] = pp[:m] + o; V[:m] = (pp[1:] - pp[:-1]) / dt
             Aa[:m] = aa[:m]; Om[:m] = (aa[1:] - aa[:-1]) / dt
+            Rr[:m] = rr[:m]; Rw[:m] = (rr[1:] - rr[:-1]) / dt
             self.sch_pos.from_numpy(P); self.sch_vel.from_numpy(V); self.sch_ang.from_numpy(Aa); self.sch_omg.from_numpy(Om)
+            self.sch_roll.from_numpy(Rr); self.sch_rollw.from_numpy(Rw)
             for j in range(m):
                 self._substep_k(use_tool, j)
             k += m
             t_cmd = float(ts[m])
             pb, ab = pp[m], aa[m]
-            self.set_pose(pb, ab)
+            self.set_pose(pb, ab, rr[m])
             fwin = self.force.to_numpy() / m
             twin = self.torque.to_numpy() / m
             self.force[None] = ti.Vector([0.0, 0.0, 0.0])

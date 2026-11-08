@@ -46,7 +46,7 @@ export interface AutoStats {
   haltedS: number;
 }
 
-interface Waypoint { tip: [number, number, number]; bucketAbs: number; phase: AutoPhase; cut?: boolean; dwell?: number }
+interface Waypoint { tip: [number, number, number]; bucketAbs: number; phase: AutoPhase; cut?: boolean; dwell?: number; tilt?: number }
 
 const DEG = Math.PI / 180;
 
@@ -61,6 +61,34 @@ export class DigAutonomy {
   bucketCapacity = 0.92 * 1.15; // m^3 heaped (spec 0.92 m^3 SAE) with ~15% heap allowance
   bucketWidth = 1.05;
   maxCutPerBite = 0.5; // m below current surface per bite
+  /**
+   * 'legacy': fixed 1.4 m bites on fixed lanes, every lane re-dug each pass; relies on the heightfield's per-cell design
+   * clamp to shape the cut. 'adaptive': machine-control edge (the cutting edge never goes below design anywhere across
+   * its width), one floor lane plus slope lanes, bite length planned from the scanned surface to fill the bucket using
+   * a fill efficiency learned from measured payloads, cut depth backed off after relief stalls, later passes only dig
+   * where the survey found material above grade. Works with any soil backend (no design clamp needed).
+   */
+  controller: 'legacy' | 'adaptive' = 'legacy';
+  targetFill = 0.9; // fraction of heaped capacity the adaptive planner aims for
+  /** heightfield cutting clamps every cell to the design (legacy machine-control shortcut inside the soil model). When
+   * false, the heightfield only refuses to cut below the bucket's cutting edge, like any other soil backend. */
+  designClamp = true;
+  fillEff = 0.6; // learned: bank volume measured in the bucket / bank volume swept above the edge
+  private adaptiveCut = 0.5; // current max cut below surface (m), backed off on stalls
+  private lanesA: { off: number; kind: 'floor' | 'slope' }[] = [];
+  private laneFar: [number, number] = [0, 0];
+  private laneNear: [number, number] = [0, 0];
+  private laneV: [number, number] = [0, 0];
+  private laneIdx = 0;
+  private laneT = 0; // progress along the current lane, 0 (far end) -> 1 (near end)
+  private biteBank0 = 0;
+  /** tiltrotator roll of the bucket about the drag direction (rad, + raises the +lateral side); 0 for the legacy controller */
+  tilt = 0;
+  maxTilt = 40 * DEG;
+  private curTilt = 0; // tilt of the waypoint being executed
+  private biteSwept = 0;
+  lastBiteCompletion = 1; // set by external backends (1 = path completed)
+  adaptiveLog: { lane: number; t0: number; t1: number; swept: number; measured: number; eff: number; cut: number; completion: number }[] = [];
   /** seconds the machine holds still to accumulate scans before judging grade */
   surveyDwell = 1.6;
   /** minimum fraction of design cells with lidar returns needed to judge grade */
@@ -151,7 +179,15 @@ export class DigAutonomy {
     const setback = topHalf + 0.61 + 1.3;
     this.spoil = [mx + vx * side * setback, mz + vz * side * setback];
     this.biteIdx = 0;
-    this.note(`plan: ${lanes} lane(s) x ${nb} bites, trench ${len.toFixed(1)} m, spoil ${setback.toFixed(1)} m off centreline`);
+    // adaptive lanes: the floor lane on the centreline, then slope lanes outward on both sides (0.8 bucket widths apart)
+    this.lanesA = [{ off: 0, kind: 'floor' }];
+    const step = this.bucketWidth * 0.8;
+    for (let o = design.bottomWidth / 2 + this.bucketWidth / 2 - 0.1; o - this.bucketWidth / 2 < topW / 2; o += step) {
+      this.lanesA.push({ off: o, kind: 'slope' }, { off: -o, kind: 'slope' });
+    }
+    this.laneFar = far; this.laneNear = near; this.laneV = [vx, vz];
+    this.laneIdx = 0; this.laneT = 0;
+    this.note(`plan: ${lanes} lane(s) x ${nb} bites, trench ${len.toFixed(1)} m, spoil ${setback.toFixed(1)} m off centreline` + (this.controller === 'adaptive' ? `; adaptive: ${this.lanesA.length} lanes` : ''));
   }
 
   start() {
@@ -197,6 +233,110 @@ export class DigAutonomy {
     const sy = this.surfaceAt(this.spoil[0], this.spoil[1]);
     this.queue.push({ tip: [this.spoil[0], Math.max(sy + 2.2, this.groundY + 1.8), this.spoil[1]], bucketAbs: 25 * DEG, phase: 'swing-dump' });
     this.queue.push({ tip: [this.spoil[0], Math.max(sy + 1.9, this.groundY + 1.5), this.spoil[1]], bucketAbs: -115 * DEG, phase: 'dump', dwell: 1.1 });
+  }
+
+  private designOrGround(x: number, z: number) {
+    const [i, j] = this.hf.cellOf(x, z);
+    const v = this.hf.inGrid(i, j) ? this.hf.design[j * this.hf.N + i] : NaN;
+    return Number.isNaN(v) ? this.hf.heightAt(x, z, 'H0') : v;
+  }
+  /** cross-slope of the design under the bucket at a lane point -> tilt (clamped to the tiltrotator range) */
+  private laneTilt(x: number, z: number) {
+    const lx = this.laneV[0], lz = this.laneV[1], h = this.bucketWidth / 2;
+    const g = (this.designOrGround(x + lx * h, z + lz * h) - this.designOrGround(x - lx * h, z - lz * h)) / this.bucketWidth;
+    return Math.max(-this.maxTilt, Math.min(this.maxTilt, Math.atan(g)));
+  }
+  /** machine-control edge height (at the lane centre) for the current tilt: the tilted edge line never goes below the
+   * design (or the original ground outside the footprint) anywhere across the bucket width */
+  private edgeFloor(x: number, z: number) {
+    const lx = this.laneV[0], lz = this.laneV[1], tn = Math.tan(this.tilt);
+    let m = -Infinity;
+    for (let k = 0; k <= 6; k++) {
+      const o = -this.bucketWidth / 2 + (this.bucketWidth * k) / 6;
+      m = Math.max(m, this.designOrGround(x + lx * o, z + lz * o) - tn * o);
+    }
+    return m;
+  }
+  private lanePoint(lane: number, t: number): [number, number] {
+    const o = this.lanesA[lane].off, [fx, fz] = this.laneFar, [nx, nz] = this.laneNear;
+    return [fx + (nx - fx) * t + this.laneV[0] * o, fz + (nz - fz) * t + this.laneV[1] * o];
+  }
+  /** cut height at a lane point: never below the machine-control edge, at most adaptiveCut below the surface */
+  private cutHeight(x: number, z: number) { return Math.max(this.edgeFloor(x, z), this.surfaceAt(x, z) - this.adaptiveCut); }
+  /** bank volume (m^3) above the cut line under the bucket width per metre of lane at a point */
+  private sweptPerM(x: number, z: number) {
+    const lx = this.laneV[0], lz = this.laneV[1], e = this.cutHeight(x, z), tn = Math.tan(this.tilt);
+    let a = 0;
+    for (let k = 0; k < 6; k++) {
+      const o = -this.bucketWidth / 2 + (this.bucketWidth * (k + 0.5)) / 6;
+      a += Math.max(0, this.surfaceAt(x + lx * o, z + lz * o) - (e + tn * o)) * (this.bucketWidth / 6);
+    }
+    return a;
+  }
+  /** next adaptive bite, or null when the pass is complete */
+  private nextAdaptiveBite(): Bite | null {
+    const len = Math.hypot(this.laneNear[0] - this.laneFar[0], this.laneNear[1] - this.laneFar[1]) || 1;
+    const ds = 0.05, minLen = 0.4, maxLen = 2.2;
+    const want = (this.targetFill * this.bucketCapacity) / ((this.hf.soil?.swell ?? 1) * this.fillEff);
+    while (this.laneIdx < this.lanesA.length) {
+      { const [mx, mz] = this.lanePoint(this.laneIdx, 0.5); this.tilt = this.lanesA[this.laneIdx].kind === 'floor' ? 0 : this.laneTilt(mx, mz); }
+      // skip ahead to the first point on this lane with material above the cut line
+      while (this.laneT < 1) {
+        const [x, z] = this.lanePoint(this.laneIdx, this.laneT);
+        if (this.sweptPerM(x, z) > 0.02) break;
+        this.laneT += ds / len;
+      }
+      if (this.laneT >= 1) { this.laneIdx++; this.laneT = 0; continue; }
+      const t0 = this.laneT;
+      let acc = 0, t = t0;
+      while (t < 1 && (t - t0) * len < maxLen && (acc < want || (t - t0) * len < minLen)) {
+        const [x, z] = this.lanePoint(this.laneIdx, t);
+        acc += this.sweptPerM(x, z) * ds;
+        t += ds / len;
+      }
+      t = Math.min(1, t);
+      this.laneT = t;
+      // not worth a cycle: less than 5% of a bucket of bank material left above the cut line on this stretch
+      if (acc < 0.05 * this.bucketCapacity / (this.hf.soil?.swell ?? 1)) continue;
+      this.biteSwept = acc;
+      const a = this.lanePoint(this.laneIdx, t0), b = this.lanePoint(this.laneIdx, t);
+      return { a, b, lane: this.laneIdx };
+    }
+    return null;
+  }
+  private buildAdaptiveWaypoints(b: Bite) {
+    const down = -88 * DEG;
+    const above = 0.9;
+    const H0a = this.surfaceAt(b.a[0], b.a[1]);
+    this.biteBank0 = this.stats.bankRemoved;
+    this.queue.push({ tip: [b.a[0], H0a + above, b.a[1]], bucketAbs: -70 * DEG, phase: 'approach' });
+    this.queue.push({ tip: [b.a[0], this.cutHeight(b.a[0], b.a[1]), b.a[1]], bucketAbs: down, phase: 'penetrate', cut: true, dwell: 0.4, tilt: this.tilt });
+    const L = Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]);
+    const steps = Math.max(2, Math.ceil(L / 0.3));
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      const x = b.a[0] + (b.b[0] - b.a[0]) * t, z = b.a[1] + (b.b[1] - b.a[1]) * t;
+      this.queue.push({ tip: [x, this.cutHeight(x, z), z], bucketAbs: down + 35 * DEG * t, phase: 'drag', cut: true, tilt: this.tilt });
+    }
+    const bx = b.b[0], bz = b.b[1];
+    this.queue.push({ tip: [bx, this.surfaceAt(bx, bz) + 0.2, bz], bucketAbs: 20 * DEG, phase: 'curl', tilt: this.tilt });
+    this.queue.push({ tip: [bx, this.surfaceAt(bx, bz) + 2.2, bz], bucketAbs: 25 * DEG, phase: 'lift' });
+    const sy = this.surfaceAt(this.spoil[0], this.spoil[1]);
+    this.queue.push({ tip: [this.spoil[0], Math.max(sy + 2.2, this.groundY + 1.8), this.spoil[1]], bucketAbs: 25 * DEG, phase: 'swing-dump' });
+    this.queue.push({ tip: [this.spoil[0], Math.max(sy + 1.9, this.groundY + 1.5), this.spoil[1]], bucketAbs: -115 * DEG, phase: 'dump', dwell: 1.1 });
+  }
+  /** after each adaptive bite: learn fill efficiency from the measured payload, back the cut off after a stall */
+  private adaptAfterBite() {
+    const measured = this.stats.bankRemoved - this.biteBank0;
+    if (this.biteSwept > 0.05) {
+      const eff = Math.max(0.1, Math.min(2.0, measured / this.biteSwept));
+      this.fillEff = 0.6 * this.fillEff + 0.4 * eff;
+    }
+    const c = this.lastBiteCompletion;
+    if (c < 0.9) this.adaptiveCut = Math.max(0.15, this.adaptiveCut * 0.7);
+    else this.adaptiveCut = Math.min(0.6, this.adaptiveCut * 1.1);
+    this.adaptiveLog.push({ lane: this.laneIdx, t0: 0, t1: this.laneT, swept: +this.biteSwept.toFixed(4), measured: +measured.toFixed(4), eff: +this.fillEff.toFixed(3), cut: +this.adaptiveCut.toFixed(3), completion: +c.toFixed(3) });
+    this.lastBiteCompletion = 1;
   }
 
   /** accumulate the latest merged scan into the survey grid (call each step during the dwell) */
@@ -256,8 +396,10 @@ export class DigAutonomy {
     }
     if (this.phase === 'halted') { this.phase = 'approach'; this.note('resume: zone clear'); }
 
+    let nextA: Bite | null = null;
+    if (this.queue.length === 0 && this.controller === 'adaptive') nextA = this.nextAdaptiveBite();
     if (this.queue.length === 0) {
-      if (this.biteIdx >= this.bites.length) {
+      if (this.controller === 'adaptive' ? nextA === null : this.biteIdx >= this.bites.length) {
         // pass complete: park the bucket clear of the trench, dwell while scans accumulate, then decide
         if (this.surveyT < 0) { this.surveyT = this.surveyDwell; this.surveySum = null; this.surveyCnt = null; this.lastScanRef = null; this.note('survey: holding still to scan'); }
         this.phase = 'survey';
@@ -281,6 +423,7 @@ export class DigAutonomy {
         if (!accepted && improving && this.stats.passes < 6) {
           this.stats.passes++;
           this.biteIdx = 0;
+          this.laneIdx = 0; this.laneT = 0;
           this.note(`pass ${this.stats.passes}`);
         } else {
           this.phase = 'done';
@@ -289,12 +432,22 @@ export class DigAutonomy {
           return this.joints;
         }
       }
-      this.curBite = this.bites[this.biteIdx];
-      this.buildBiteWaypoints(this.bites[this.biteIdx++]);
+      if (this.controller === 'adaptive') {
+        // the survey branch may have reset the lanes for a new pass: plan from there
+        const b = nextA ?? this.nextAdaptiveBite();
+        if (!b) return this.joints;
+        this.curBite = b;
+        this.biteIdx++;
+        this.buildAdaptiveWaypoints(b);
+      } else {
+        this.curBite = this.bites[this.biteIdx];
+        this.buildBiteWaypoints(this.bites[this.biteIdx++]);
+      }
       this.cycleStart = this.stats.elapsed;
     }
     const wp = this.queue[0];
     this.phase = wp.phase;
+    this.curTilt = wp.tilt ?? 0;
     const ik = solveIkFlexible(this.g, this.cx, this.groundY, this.cz, wp.tip, wp.bucketAbs, this.joints.swing);
     if (!ik.reachable && ik.error > 0.25) {
       this.note(`waypoint unreachable (${ik.error.toFixed(2)} m), skipping`);
@@ -328,6 +481,7 @@ export class DigAutonomy {
     if (done) {
       this.queue.shift();
       if (wp.phase === 'dump') {
+        if (this.controller === 'adaptive') this.adaptAfterBite();
         const v = this.hf.dump(this.spoil[0], this.spoil[1], this.load, 1.0);
         this.fills.push(this.load / this.bucketCapacity);
         this.load = Math.max(0, this.load - v);
@@ -355,9 +509,10 @@ export class DigAutonomy {
       const o = -this.bucketWidth / 2 + (this.bucketWidth * (i + 0.5)) / lanes;
       const x = tx + sx * o, z = tz + sz * o;
       const h = this.hf.heightAt(x, z);
-      const depth = h - ty;
+      const ey = ty + Math.tan(this.curTilt) * o; // tilted cutting edge height at this lane
+      const depth = h - ey;
       if (depth <= 0.005) continue;
-      const r = this.hf.dig(x, z, 0.32, Math.min(depth, 0.25), true, true);
+      const r = this.designClamp ? this.hf.dig(x, z, 0.32, Math.min(depth, 0.25), true, true) : this.hf.dig(x, z, 0.32, Math.min(depth, 0.25), false, false, ey);
       bank += r.bank; loose += r.loose;
     }
     const got = this.hf.ledger.carried - before;
@@ -535,7 +690,8 @@ export class DigAutonomy {
    * Apply an external backend's bite result: `delta` (surface change, m) on the trace's bed grid (cell, margin, nx x ny,
    * window frame of the trace) is written to the heightfield; `carried` (bank m^3) becomes the bucket load.
    */
-  applyExternal(tr: DigTrace, r: { delta: number[]; nx: number; ny: number; cell: number; margin: number; carried: number }) {
+  applyExternal(tr: DigTrace, r: { delta: number[]; nx: number; ny: number; cell: number; margin: number; carried: number; completion?: number }) {
+    this.lastBiteCompletion = r.completion ?? 1;
     const hf = this.hf, sw = tr.swing ?? this.joints.swing;
     const ux = Math.cos(sw), uz = Math.sin(sw), vx = -uz, vz = ux;
     const C = r.cell, M = r.margin;
@@ -594,13 +750,13 @@ export class DigAutonomy {
       for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) terr[i * ny + j] = +(at(-M + (i + 0.5) * C, -1.0 - M + (j + 0.5) * C) + shift).toFixed(4);
       this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural, r0: +r0.toFixed(4), groundY: +this.groundY.toFixed(4), shift: +shift.toFixed(4), attitude: this.attitude, swing: +sw.toFixed(6) };
       this.traceShift = shift; this.traceR0 = r0; this.traceT = 0;
-      this.trace.poses.push([0, +(P.px - r0).toFixed(4), +(P.pz + shift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
+      this.trace.poses.push([0, +(P.px - r0).toFixed(4), +(P.pz + shift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3), +this.curTilt.toFixed(4)]);
     }
     this.traceT += dt;
     if (this.traceT >= 0.1 - 1e-9) {
       this.traceT -= 0.1;
       const tr = this.trace;
-      tr.poses.push([+(tr.poses.length * 0.1).toFixed(2), +(P.px - this.traceR0).toFixed(4), +(P.pz + this.traceShift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
+      tr.poses.push([+(tr.poses.length * 0.1).toFixed(2), +(P.px - this.traceR0).toFixed(4), +(P.pz + this.traceShift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3), +this.curTilt.toFixed(4)]);
     }
   }
   private endTrace() { if (this.trace && this.traceRec) this.traceRec(this.trace); this.trace = null; }

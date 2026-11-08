@@ -119,8 +119,14 @@ class Episode:
         self.i0, self.j0 = int(round(margin / CELL)), int(round(margin / CELL))
         self.yb = margin + 1.0  # bucket centreline (window lateral 0) in bed y
 
-    def bed_pose(self, px, pz, pitch):
-        return np.array([px + self.M, self.yb, pz - self.zfloor]), pitch
+    def bed_pose(self, px, pz, pitch, roll=0.0):
+        pos = np.array([px + self.M, self.yb, pz - self.zfloor])
+        if roll != 0.0:
+            # the app tilts the bucket about its cutting-edge centre; Sim3D rolls about the tool origin (the pivot), so
+            # shift the pivot to keep the lip centre fixed: pivot += l - R_x(roll) l with l = lip offset (x, 0, z)
+            lz = float(lip_offset(pitch)[1])
+            pos = pos + np.array([0.0, math.sin(roll) * lz, lz * (1.0 - math.cos(roll))])
+        return pos, pitch, roll
 
     def window_H(self, p, pv, pa, sh=0.05):
         r = p - np.array([pv[0], pv[1], pv[2]])
@@ -166,10 +172,11 @@ class Episode:
         def path(t):
             t = min(t, T_end)
             px, pz, pa = (np.interp(t, P[:, 0], P[:, c]) for c in (1, 2, 3))
-            return self.bed_pose(px, pz, pa)
+            ro = float(np.interp(t, P[:, 0], P[:, 5])) if P.shape[1] > 5 else 0.0
+            return self.bed_pose(px, pz, pa, ro)
 
-        p0, a0 = path(0.0)
-        self.sim.set_pose(p0, a0)
+        p0, a0, r0_ = path(0.0)
+        self.sim.set_pose(p0, a0, r0_)
         t0 = time.perf_counter()
         self.sim.settle(settle)
         H_before = self.bed_surface(self.sim.particles(), np.asarray(p0), a0)
@@ -209,10 +216,11 @@ class Episode:
         def path(t):
             t = min(t, T_end)
             px, pz, pa = (np.interp(t, P[:, 0], P[:, c]) for c in (1, 2, 3))
-            return self.bed_pose(px, pz, pa)
+            ro = float(np.interp(t, P[:, 0], P[:, 5])) if P.shape[1] > 5 else 0.0
+            return self.bed_pose(px, pz, pa, ro)
 
-        p0, a0 = path(0.0)
-        self.sim.set_pose(p0, a0)
+        p0, a0, r0_ = path(0.0)
+        self.sim.set_pose(p0, a0, r0_)
         self.sim.settle(0.25)
         dem_log = []
 
@@ -253,7 +261,7 @@ class Episode:
                             F=np.array(forces, np.float32), carried=np.array(carried, np.float32), s=np.array(srel, np.float32),
                             tcmd=np.array(tcmd, np.float32), demand=np.array(dem, np.float32), mu=self.mu, dt=0.1, cell=CELL,
                             zshift=zs, margin=self.M, meta=json.dumps(meta))
-        pe, ae = path(1e9)
+        pe, ae, _ = path(1e9)
         return {"frames": len(Hs), "carried": carried[-1] if carried else 0.0, "wall": time.perf_counter() - t0,
                 "completion": float(tcmd[-1] / T_end) if tcmd else 0.0, "min_s": float(min(srel)) if srel else 1.0,
                 "peak_demand": float(max(dem_log)) if dem_log else 0.0, "end_pose": (pe, ae)}
