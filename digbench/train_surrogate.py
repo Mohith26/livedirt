@@ -166,8 +166,11 @@ def main():
     # LiveDirt baseline rollouts are pure-Python CPU work: run them in parallel up front
     from concurrent.futures import ProcessPoolExecutor
     import os
-    with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) - 1)) as pool:
-        lv_all = list(pool.map(livedirt_rollout, val))
+    try:
+        with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) - 1)) as pool:
+            lv_all = list(pool.map(livedirt_rollout, val))
+    except (PermissionError, OSError):  # sandboxes without process pools
+        lv_all = [livedirt_rollout(ep) for ep in val]
     with torch.no_grad():
         for vi, ep in enumerate(val):
             n = len(ep["H"])
