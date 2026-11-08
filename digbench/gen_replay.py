@@ -243,6 +243,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="max traces to run (0 = all)")
     ap.add_argument("--select", default="", help="comma list of trace indices to run (overrides --limit)")
     ap.add_argument("--no-limits", action="store_true")
+    ap.add_argument("--particle-seed", type=int, default=0, help="offset added to the particle-jitter seed (aleatoric-variance runs)")
     ap.add_argument("--col-depth", type=float, default=None, help="per-column floor: simulate only this much soil below "
                     "the surface away from the bucket's reach (speed; validated against the full column)")
     ap.add_argument("--out", required=True)
@@ -312,7 +313,7 @@ def main():
             poses = tr["poses"]
             lip_min = min(p[2] + lip_offset(p[3])[1] for p in poses)
             ep = Episode(terr, M, mu, args.dx, args.arch, args.num_workers, r0=tr["r0"], ground_win=tr["groundY"] + tr["shift"],
-                         seed=k, min_floor_win=lip_min, poses=poses, col_depth=args.col_depth)
+                         seed=k + 1000 * args.particle_seed, min_floor_win=lip_min, poses=poses, col_depth=args.col_depth)
             meta = {"source": "replay", "name": name, "bite": tr["bite"], "pass": tr["pass"],
                     "soil": tr["soil"], "neural": tr["neural"], "attitude": tr.get("attitude", "")}
             r = ep.run_bite(poses, f, meta, limits=not args.no_limits)
