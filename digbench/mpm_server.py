@@ -50,10 +50,20 @@ def run_request(req):
     ep = G.Episode(terr, M, mu, float(req.get("dx", ARGS.dx)), ARGS.arch, 1, r0=tr["r0"], ground_win=tr["groundY"] + tr["shift"],
                    seed=int(req.get("seed", 0)), min_floor_win=lip_min, poses=poses, col_depth=req.get("col_depth", ARGS.col_depth))
     r = ep.run_bite_lean(poses, limits=bool(req.get("limits", True)))
-    d = r.pop("H_after") - r.pop("H_before")
+    Ha, Hb_ = r.pop("H_after"), r.pop("H_before")
+    d = Ha - Hb_
     d[np.abs(d) < ARGS.min_delta] = 0.0
     r.update(delta=np.round(d, 4).ravel().tolist(), nx=int(d.shape[0]), ny=int(d.shape[1]), cell=G.CELL, margin=M,
              removed_m3=float(-d[d < 0].sum() * G.CELL ** 2), added_m3=float(d[d > 0].sum() * G.CELL ** 2))
+    if ARGS.save_dir:
+        # one training sample per bite: the app's terrain (window frame, bed crop), the bite's poses, MPM's settled
+        # surface before / after, the applied delta, soil and outcome scalars
+        from pathlib import Path
+        Path(ARGS.save_dir).mkdir(parents=True, exist_ok=True)
+        f = Path(ARGS.save_dir) / f"{req.get('run', 'run')}_{len(LOG):04d}.npz"
+        np.savez_compressed(f, terrain=terr.astype(np.float32), poses=np.array(poses, np.float32), H_before=Hb_.astype(np.float32),
+                            H_after=Ha.astype(np.float32), delta=d.astype(np.float32), margin=M, cell=G.CELL,
+                            soil=json.dumps({**soil, "mu": mu}), meta=json.dumps({k: v for k, v in r.items() if k != "delta"} | {"r0": tr["r0"], "shift": tr["shift"], "bite": tr["bite"], "pass": tr["pass"]}))
     return r
 
 
@@ -102,6 +112,7 @@ def main():
     ap.add_argument("--col-depth", type=float, default=None)
     ap.add_argument("--min-delta", type=float, default=0.01)
     ap.add_argument("--volume-correction", action="store_true")
+    ap.add_argument("--save-dir", default=None, help="write every bite as a training sample (npz)")
     ARGS = ap.parse_args()
     srv = HTTPServer(("127.0.0.1", ARGS.port), H)
     print(f"mpm_server on 127.0.0.1:{ARGS.port}", flush=True)
