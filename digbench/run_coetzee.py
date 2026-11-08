@@ -70,6 +70,7 @@ def main():
     ap.add_argument("--sink", type=float, default=-0.20, help="vertical mm per mm of drag (thesis figs, +-0.04)")
     ap.add_argument("--speed", type=float, default=0.10, help="drag speed m/s (experiment 0.01; no effect 0-0.1 per thesis)")
     ap.add_argument("--glass-deg", type=float, default=12.0)
+    ap.add_argument("--volume-correction", action="store_true", help="Tampubolon 2017 volume correction (no spurious bulking)")
     ap.add_argument("--tool-mu", type=float, default=None, help="override bucket-corn friction (default tan 14 deg = 0.249)")
     ap.add_argument("--drag", type=float, default=0.800, help="drag length (m); shorter for grid studies")
     ap.add_argument("--tag", default="v1")
@@ -86,7 +87,7 @@ def main():
     E, nu, rho = mat["E_MPa"] * 1e6, 0.2, mat["density_kg_m3"]
     sim = Sim3D((Lx, W, Lz), args.dx, mu_f=math.tan(math.radians(mat["friction_angle_deg"])), rho_bulk=rho, E=E, nu=nu,
                 mu_tool=args.tool_mu if args.tool_mu is not None else math.tan(math.radians(mat["friction_with_steel_deg"])), arch=args.arch, symmetry_y=False,
-                wall_mu=math.tan(math.radians(args.glass_deg)), tool_speed_max=max(0.2, args.speed * 1.5), n_boxes=16,
+                wall_mu=math.tan(math.radians(args.glass_deg)), tool_speed_max=max(0.2, args.speed * 1.5), n_boxes=16, volume_correction=args.volume_correction,
                 max_particles=int(1.05 * Lx * W * args.bed_depth / (args.dx / 2) ** 3) + 1000)
     n0 = sim.fill_box((0, 0, 0), (Lx, W, args.bed_depth))
     boxes = profile_boxes(poly, W, args.thick)

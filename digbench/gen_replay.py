@@ -35,6 +35,7 @@ from .solvers.sim3d import Sim3D, connected_surface
 from . import actuators as A
 
 CELL = 0.05
+VOLCORR = [False]  # set from --volume-correction
 NX, NY = 68, 40  # model window: 3.4 m (x, radial) x 2.0 m (lateral, -1..1 m)
 SURF = 1.2
 
@@ -103,7 +104,7 @@ class Episode:
                     near |= (np.abs(X - (px - 0.45)) < 0.45 + 1.0 + 0.3) & (np.abs(Y - (margin + 1.0)) < 0.6 + 1.0)
                 bottom = np.where(near, 0.0, bottom)
         npart = int(1.12 * float((Hb - (bottom if bottom is not None else 0)).sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
-        self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed,
+        self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed, volume_correction=VOLCORR[0],
                          mem_frac=0.85 / num_workers, max_particles=npart)
         self.n0 = self.sim.fill_heightfield(Hb, CELL, rng_seed=seed, bottom=bottom)
         if bottom is not None:
@@ -243,6 +244,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="max traces to run (0 = all)")
     ap.add_argument("--select", default="", help="comma list of trace indices to run (overrides --limit)")
     ap.add_argument("--no-limits", action="store_true")
+    ap.add_argument("--volume-correction", action="store_true", help="Tampubolon 2017 volume correction (no spurious bulking)")
     ap.add_argument("--particle-seed", type=int, default=0, help="offset added to the particle-jitter seed (aleatoric-variance runs)")
     ap.add_argument("--col-depth", type=float, default=None, help="per-column floor: simulate only this much soil below "
                     "the surface away from the bucket's reach (speed; validated against the full column)")
@@ -251,6 +253,7 @@ def main():
     ap.add_argument("--num-workers", type=int, default=1)
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
+    VOLCORR[0] = args.volume_correction
     M = args.margin
     nxb, nyb = int(round((3.4 + 2 * M) / CELL)), int(round((2.0 + 2 * M) / CELL))
     jobs = []
