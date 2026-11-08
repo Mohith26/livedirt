@@ -255,6 +255,7 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--max-train-eps", type=int, default=0)
+    ap.add_argument("--max-windows", type=int, default=0, help="cap training windows per epoch (random subset; 0 = all)")
     ap.add_argument("--tag", default="v3")
     ap.add_argument("--out", default="digbench/results")
     args = ap.parse_args()
@@ -308,9 +309,10 @@ def main():
         bs = max(4, args.batch * 4 // max(4, U))  # keep memory ~constant as the unroll grows
         for _ in range(per_stage[si]):
             rng.shuffle(wins)
+            ep_wins = wins[:args.max_windows] if args.max_windows else wins
             tot, nb = 0.0, 0
-            for b0 in range(0, len(wins), bs):
-                batch = wins[b0:b0 + bs]
+            for b0 in range(0, len(ep_wins), bs):
+                batch = ep_wins[b0:b0 + bs]
                 g = lambda key, k: tens(np.stack([train[e][key][t + k] for e, t in batch]))
                 H = g("H", 0)
                 mu = tens(np.array([train[e]["mu"] for e, t in batch], np.float32))
