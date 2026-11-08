@@ -70,6 +70,8 @@ def main():
     ap.add_argument("--sink", type=float, default=-0.20, help="vertical mm per mm of drag (thesis figs, +-0.04)")
     ap.add_argument("--speed", type=float, default=0.10, help="drag speed m/s (experiment 0.01; no effect 0-0.1 per thesis)")
     ap.add_argument("--glass-deg", type=float, default=12.0)
+    ap.add_argument("--tool-mu", type=float, default=None, help="override bucket-corn friction (default tan 14 deg = 0.249)")
+    ap.add_argument("--drag", type=float, default=0.800, help="drag length (m); shorter for grid studies")
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
@@ -77,13 +79,13 @@ def main():
     mat = ref.THESIS_MATERIAL["measured"]
     poly = ref.BUCKET_PROFILE_MM["polyline_inner_surface_mm"]
     W = 0.200
-    drag = 0.800
+    drag = args.drag
     x_tip0 = 0.40  # tooth tip start (bucket body extends 0.33 m behind it, toward -x)
     Lx = x_tip0 + drag + 0.35
     Lz = args.bed_depth + 0.40
     E, nu, rho = mat["E_MPa"] * 1e6, 0.2, mat["density_kg_m3"]
     sim = Sim3D((Lx, W, Lz), args.dx, mu_f=math.tan(math.radians(mat["friction_angle_deg"])), rho_bulk=rho, E=E, nu=nu,
-                mu_tool=math.tan(math.radians(mat["friction_with_steel_deg"])), arch=args.arch, symmetry_y=False,
+                mu_tool=args.tool_mu if args.tool_mu is not None else math.tan(math.radians(mat["friction_with_steel_deg"])), arch=args.arch, symmetry_y=False,
                 wall_mu=math.tan(math.radians(args.glass_deg)), tool_speed_max=max(0.2, args.speed * 1.5), n_boxes=16,
                 max_particles=int(1.05 * Lx * W * args.bed_depth / (args.dx / 2) ** 3) + 1000)
     n0 = sim.fill_box((0, 0, 0), (Lx, W, args.bed_depth))
@@ -108,6 +110,8 @@ def main():
     meas = ref.THESIS_BUCKET_MEASURED
     xb = np.array(meas["x_displacement_mm_bin_centres_25mm"])
     fb = np.array(meas["experiment_draft_force_N_bin_mean"])
+    keep = xb <= drag * 1000.0
+    xb, fb = xb[keep], fb[keep]
     sim_b = np.array([draft[(disp_mm >= x - 12.5) & (disp_mm < x + 12.5)].mean() for x in xb])
     ok = xb >= 25  # first bin is the engagement transient
     err = sim_b - fb
@@ -123,7 +127,7 @@ def main():
         "reference": {"citation": ref.CITATION, "source": meas["source"], "single_run_noise_N": "+-5-10"},
         "summary": {
             "draft_at_800mm_sim_N": float(sim_b[-1]), "draft_at_800mm_exp_N": float(fb[-1]),
-            "rel_err_at_800mm": float(err[-1] / fb[-1]),
+            "rel_err_at_800mm": float(err[-1] / fb[-1]), "end_mm": float(xb[-1]),
             "mae_N": float(np.abs(err[ok]).mean()), "rmse_N": float(np.sqrt((err[ok] ** 2).mean())),
             "mean_rel_err": float((err[ok] / fb[ok]).mean()), "mean_abs_rel_err": float(np.abs(err[ok] / fb[ok]).mean()),
             "fill_m3_end": fill_m3, "wall_s": wall, "steps": res["steps"],
