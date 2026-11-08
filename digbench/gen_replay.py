@@ -92,7 +92,8 @@ class Episode:
         self.nxb, self.nyb = terrain_win.shape
         self.zfloor = float(min(terrain_win.min(), min_floor_win)) - 0.5  # bed z = window z - zfloor
         Hb = terrain_win - self.zfloor
-        self.size = (self.nxb * CELL, self.nyb * CELL, float(Hb.max()) + 2.6)
+        # height and particle budget are rounded up so most beds share field shapes and hit Taichi's kernel cache
+        self.size = (self.nxb * CELL, self.nyb * CELL, math.ceil((float(Hb.max()) + 2.6) / 0.5) * 0.5)
         # per-column floor (speed): soil deeper than col_depth below the local surface is replaced by a sticky floor,
         # except within 1 m of anything the bucket sweeps, where the floor stays 0.5 m below the lowest lip point
         bottom = None
@@ -106,6 +107,7 @@ class Episode:
                     near |= (np.abs(X - (px - 0.45)) < 0.45 + 1.0 + 0.3) & (np.abs(Y - (margin + 1.0)) < 0.6 + 1.0)
                 bottom = np.where(near, 0.0, bottom)
         npart = int(1.12 * float((Hb - (bottom if bottom is not None else 0)).sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
+        npart = int(math.ceil(npart / 1_000_000) * 1_000_000)
         self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed, volume_correction=VOLCORR[0],
                          mem_frac=0.85 / num_workers, max_particles=npart, yield_model=YIELD["model"], phi_deg=YIELD["phi"],
                          cohesion=YIELD["c"], rho_bulk=YIELD.get("rho", 1600.0))
