@@ -31,7 +31,7 @@ def _arch(name):
 class Sim3D:
     def __init__(self, size, dx, *, mu_f=0.38, mu_tool=0.4, rho_bulk=1600.0, E=1.0e6, nu=0.3, ppc_side=2,
                  max_particles=4_000_000, n_boxes=8, arch="gpu", symmetry_y=True, seed=0, tool_speed_max=1.0,
-                 floor_sticky=True, wall_mu=0.0, mem_frac=0.85):
+                 floor_sticky=True, wall_mu=0.0, mem_frac=0.85, volume_correction=False):
         ti.reset()
         ti.init(arch=_arch(arch), default_fp=ti.f32, random_seed=seed, offline_cache=True, device_memory_fraction=mem_frac)
         self.dx, self.pad = dx, 3
@@ -66,6 +66,10 @@ class Sim3D:
         self.C = ti.Matrix.field(3, 3, ti.f32, max_particles)
         self.F = ti.Matrix.field(3, 3, ti.f32, max_particles)
         self.alive = ti.field(ti.i32, max_particles)
+        # Tampubolon et al. 2017 volume correction: log-volume discarded by the plastic projection (tension cutoff /
+        # yield) is remembered and added back to the trial trace, so spuriously bulked sand re-compacts freely
+        self.vc = ti.field(ti.f32, max_particles)
+        self.volume_correction = volume_correction
         self.n_p = ti.field(ti.i32, ())
         self.grid_v = ti.Vector.field(3, ti.f32, (nx, ny, nz))
         self.grid_m = ti.field(ti.f32, (nx, ny, nz))
@@ -86,6 +90,8 @@ class Sim3D:
         self.damp = ti.field(ti.f32, ())
         self.damp[None] = 1.0
         x, v, C, F, alive = self.x, self.v, self.C, self.F, self.alive
+        vcf = self.vc
+        use_vc = 1 if volume_correction else 0
         grid_v, grid_m = self.grid_v, self.grid_m
         nb, box_c, box_h, box_a = self.nb, self.box_c, self.box_h, self.box_a
         tpos, tang, tvel, tomg = self.tpos, self.tang, self.tvel, self.tomg
@@ -134,6 +140,9 @@ class Sim3D:
                     U, sig, V = ti.svd(Fp)
                     e = ti.Vector([ti.log(ti.max(ti.abs(sig[0, 0]), 1e-4)), ti.log(ti.max(ti.abs(sig[1, 1]), 1e-4)),
                                    ti.log(ti.max(ti.abs(sig[2, 2]), 1e-4))])
+                    tr_trial = e.sum()
+                    if ti.static(use_vc == 1):
+                        e = e + vcf[p] / 3.0
                     tr = e.sum()
                     ehat = e - tr / 3.0
                     ehn = ehat.norm() + 1e-12
@@ -143,6 +152,8 @@ class Sim3D:
                         yp = ehn + (3.0 * la + 2.0 * mu) / (2.0 * mu) * tr * alpha
                         if yp > 0.0:
                             e = e - (yp / ehn) * ehat
+                    if ti.static(use_vc == 1):
+                        vcf[p] += tr_trial - e.sum()
                     F[p] = U @ ti.Matrix([[ti.exp(e[0]), 0.0, 0.0], [0.0, ti.exp(e[1]), 0.0], [0.0, 0.0, ti.exp(e[2])]]) @ V.transpose()
                     tr2 = e.sum()
                     tau_d = ti.Matrix([[2.0 * mu * e[0] + la * tr2, 0.0, 0.0], [0.0, 2.0 * mu * e[1] + la * tr2, 0.0],
@@ -226,6 +237,7 @@ class Sim3D:
                 v[p] = ti.Vector([0.0, 0.0, 0.0])
                 C[p] = ti.Matrix.zero(ti.f32, 3, 3)
                 F[p] = ti.Matrix.identity(ti.f32, 3)
+                vcf[p] = 0.0
                 alive[p] = 1
 
         @ti.kernel

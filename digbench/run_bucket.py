@@ -153,6 +153,7 @@ def main():
                     "DX225LC-7 spec (ISO): arm digging force 11,500 kgf = 112.8 kN, bucket 16,500 kgf = 161.8 kN")
     ap.add_argument("--limits", choices=["none", "dx225"], default="none",
                     help="dx225: per-actuator cylinder limits + stability (digbench/actuators.py); none: loads logged only")
+    ap.add_argument("--volume-correction", action="store_true", help="Tampubolon et al. 2017 volume correction (no spurious bulking)")
     ap.add_argument("--boost", action="store_true", help="power-boost relief pressure (36.3 MPa) instead of 34.3 MPa")
     ap.add_argument("--attitude", choices=["physical", "legacy"], default="physical",
                     help="physical: teeth-first penetration and easing attack angle (digbench/attitude.py); legacy: flat floor at pitch 0")
@@ -164,7 +165,7 @@ def main():
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
 
-    sim = Sim3D(BED, args.dx, mu_f=args.mu_f, rho_bulk=args.rho, E=args.E, arch=args.arch, tool_speed_max=1.5,
+    sim = Sim3D(BED, args.dx, mu_f=args.mu_f, rho_bulk=args.rho, E=args.E, arch=args.arch, tool_speed_max=1.5, volume_correction=args.volume_correction,
                 max_particles=int(1.15 * BED[0] * BED[1] * SURF / (args.dx / 2) ** 3) + 1000)
     n0 = sim.fill_box((0, 0, 0), (BED[0], BED[1], SURF))
     sim.set_tool(bucket_boxes(args.dx))
@@ -197,7 +198,7 @@ def main():
     Hg = connected_surface(p[ground], nxy, cell, sim.sp)
     vol_total = 2 * len(p) * sim.sp ** 3
     vol_on_bucket_outside = 2 * on_bucket.sum() * sim.sp ** 3 - carried
-    drag = (ser[:, 0] > 1.2) & (ser[:, 1] < 3.0)
+    drag = (ser[:, 1] > 1.2) & (ser[:, 1] < 3.0)  # commanded drag phase (was wall time: averaged stalled penetration)
     i_pen = np.argmin(np.abs(ser[:, 1] - 1.0))
     lip_depth_end_pen = SURF - lip_world(ser[i_pen, 2:5], ser[i_pen, 5])[1]
     Hk, removed_k = kinematic_heightfield_baseline(cell, nxy, args.depth, path_fn)
@@ -216,7 +217,7 @@ def main():
         "task": "bucket_dig", "solver": "mls-mpm-dp-3d", "tag": args.tag, "device": device_name(args.arch), "git": git_rev(),
         "params": {**vars(args), "bucket": bucket_boxes(args.dx), "bed": BED, "surface": SURF, "dt": sim.dt, "particles": n0},
         "summary": {
-            "drag_force_mean_kN": float(ser[drag, 6].mean() / 1e3) if drag.any() else None,  # +x resists the -x drag
+            "drag_force_mean_kN": float(ser[drag, 6].mean() / 1e3) if drag.any() else None,  # +x resists the -x drag; None = drag never reached
             "drag_force_peak_kN": float(ser[:, 6].max() / 1e3),
             "vertical_force_peak_kN": float(np.abs(ser[:, 7]).max() / 1e3),
             "carried_bank_m3": float(carried),
@@ -236,6 +237,8 @@ def main():
             "trench_depth_footprint_livedirt_relax_m": float(SURF - Hr[int(0.6 / cell):int(1.4 / cell), :int(0.4 / cell)].mean()),
             "ground_removed_bank_m3": float(2 * (H0[zone].sum() - np.minimum(Hg, H0)[zone].sum() + 0.0) * cell * cell),
             "volume_total_bank_m3": float(vol_total),
+            # surface volume change + carried: ~0 for a volume-conserving solver (real dry-sand swell ~10-15% of moved soil)
+            "bulking_m3": float(2 * ((Hg - SURF).sum()) * cell * cell + carried),
             "volume_on_bucket_outside_m3": float(vol_on_bucket_outside),
             "wall_s": res["wall_s"], "steps": res["steps"], "rtf": res["steps"] * res["dt"] / res["wall_s"],
             "stall_phase": stall_phase(ser),
