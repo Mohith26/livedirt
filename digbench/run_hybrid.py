@@ -28,18 +28,26 @@ FOOT = (0.25 + SHIFT, 2.85 + SHIFT, 0.0, 0.5 + 0.1)   # swept bucket footprint (
 CELL = 0.1
 
 
-def run_mpm(size, x_off, args, wall_mu):
-    sim = Sim3D(size, args.dx, mu_f=args.mu_f, rho_bulk=1600.0, E=1.0e6, arch=args.arch, tool_speed_max=1.5,
-                wall_mu=wall_mu, max_particles=int(1.1 * size[0] * size[1] * SURF / (args.dx / 2) ** 3) + 1000)
-    sim.fill_box((0, 0, 0), (size[0], size[1], SURF))
+def run_mpm(size, x_off, args, wall_mu, E=1.0e6, floor_z=0.0):
+    """MPM over `size`; E: stiffness (lower = larger stable dt); floor_z: soil below this height is replaced by the
+    sticky floor (only the column above it is simulated; heights are reported in site coordinates)."""
+    t_setup = time.perf_counter()
+    col = SURF - floor_z
+    sim = Sim3D((size[0], size[1], size[2] - floor_z), args.dx, mu_f=args.mu_f, rho_bulk=1600.0, E=E, arch=args.arch,
+                tool_speed_max=1.5, wall_mu=wall_mu, max_particles=int(1.1 * size[0] * size[1] * col / (args.dx / 2) ** 3) + 1000)
+    sim.fill_box((0, 0, 0), (size[0], size[1], col))
     sim.set_tool(bucket_boxes(args.dx))
-    pth = lambda t: path(t, args.depth, SHIFT - x_off)
+    def pth(t):
+        pv, a = path(t, args.depth, SHIFT - x_off)
+        return pv - np.array([0.0, 0.0, floor_z]), a
     p0, a0 = pth(0.0)
     sim.set_pose(p0, a0)
     t0 = time.perf_counter()
     sim.settle(0.3)
+    t1 = time.perf_counter()
     res = sim.drive(pth, args.duration, sample_every=0.02)
-    wall = time.perf_counter() - t0
+    t2 = time.perf_counter()
+    wall = t2 - t0
     ser = res["series"]
     p = sim.particles()
     pv, pa = ser[-1, 2:5], ser[-1, 5]
@@ -49,10 +57,14 @@ def run_mpm(size, x_off, args, wall_mu):
     lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
     ground = ~((lx > -1.25) & (lx < 0.4) & (lz > -1.25) & (lz < 0.4) & (r[:, 1] < 0.85))
     nxy = (int(round(size[0] / CELL)), int(round(size[1] / CELL)))
-    H = connected_surface(p[ground], nxy, CELL, sim.sp)
+    H = connected_surface(p[ground], nxy, CELL, sim.sp) + floor_z
     drag = (ser[:, 1] > 1.2) & (ser[:, 1] < 3.0)
+    prof = {"setup_s": t0 - t_setup, "settle_s": t1 - t0, "drive_s": t2 - t1, "readout_s": time.perf_counter() - t2,
+            "substeps": res["steps"], "dt": res["dt"], "ms_per_substep": 1e3 * (t2 - t1) / max(1, res["steps"]),
+            "particles": int(sim.n_p[None]), "grid_nodes": int(np.prod(sim.n)),
+            "ns_per_particle_substep": 1e9 * (t2 - t1) / max(1, res["steps"]) / max(1, int(sim.n_p[None]))}
     return {"H": H, "carried": carried, "drag_mean": float(ser[drag, 6].mean()), "drag_peak": float(ser[:, 6].max()),
-            "wall_s": wall, "particles": int(sim.n_p[None]), "series": ser}
+            "wall_s": wall, "particles": int(sim.n_p[None]), "series": ser, "profile": prof}
 
 
 def relax_region(Hsite, x0, x1, y1, ang):
@@ -77,6 +89,8 @@ def main():
     ap.add_argument("--margins", default="0.25,0.5,1.0")
     ap.add_argument("--wall-mu", type=float, default=None, help="zone wall friction (default = mu_f)")
     ap.add_argument("--skip-ref", action="store_true")
+    ap.add_argument("--zone-E", type=float, default=1.0e6, help="zone stiffness (speed lever: larger stable dt)")
+    ap.add_argument("--zone-floor-below", type=float, default=None, help="zone floor = SURF - depth - this (particle culling)")
     ap.add_argument("--tag", default="hybrid")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
@@ -94,6 +108,7 @@ def main():
                "wall_s": float(z["wall_s"]), "particles": int(z["particles"])}
     else:
         ref = run_mpm(SITE, 0.0, args, 0.0)
+        out["reference_profile"] = ref["profile"]
         np.savez(cache, H=ref["H"], carried=ref["carried"], drag_mean=ref["drag_mean"], drag_peak=ref["drag_peak"],
                  wall_s=ref["wall_s"], particles=ref["particles"])
     Href = ref["H"]
@@ -129,7 +144,8 @@ def main():
         zx0 = max(0.0, FOOT[0] - m); zx1 = min(SITE[0], FOOT[1] + m); zy1 = min(SITE[1], FOOT[3] + m)
         zx0 = math.floor(zx0 / CELL) * CELL; zx1 = math.ceil(zx1 / CELL) * CELL; zy1 = math.ceil(zy1 / CELL) * CELL
         t0 = time.perf_counter()
-        z = run_mpm((zx1 - zx0, zy1, SITE[2]), zx0, args, wmu)
+        fz = max(0.0, SURF - args.depth - args.zone_floor_below) if args.zone_floor_below is not None else 0.0
+        z = run_mpm((zx1 - zx0, zy1, SITE[2]), zx0, args, wmu, E=args.zone_E, floor_z=fz)
         H = np.full(nsite, SURF)
         i0 = int(round(zx0 / CELL))
         H[i0:i0 + z["H"].shape[0], :z["H"].shape[1]] = z["H"]
@@ -139,7 +155,7 @@ def main():
                                            "carried": z["carried"], "carried_err": (z["carried"] - ref["carried"]) / ref["carried"],
                                            "drag_mean_err": (z["drag_mean"] - ref["drag_mean"]) / ref["drag_mean"],
                                            "drag_peak_err": (z["drag_peak"] - ref["drag_peak"]) / ref["drag_peak"],
-                                           "zone": [zx0, zx1, zy1]})
+                                           "zone": [zx0, zx1, zy1], "zone_E": args.zone_E, "zone_floor": fz, "profile": z["profile"]})
         out["H_" + f"hybrid_{m:g}"] = H.round(4).tolist()
     pth.write_text(json.dumps(out))
     print("->", pth)
