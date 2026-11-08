@@ -108,7 +108,10 @@ class Episode:
         r = p - np.array([pv[0], pv[1], pv[2]])
         ca, sa = math.cos(pa), math.sin(pa)
         lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
-        on_b = (lx > -1.05) & (lx < 2 * sh + 0.15) & (lz > -0.9 - 2 * sh - 0.15) & (lz < 2 * sh + 0.15) & (np.abs(r[:, 1]) < 0.5 + 2 * sh + 0.15)
+        # soil inside the bucket envelope (interior + shell, small mouth/top pad) is carried, not ground. Soil BELOW the
+        # floor plate is ground: an earlier padded envelope (0.15 m below the shell, as in the v1/v2 generator) carved
+        # the readout so the ground under the bucket was always >= 0.12 m below it, unlike the deployed window.
+        on_b = (lx > -0.95) & (lx < 2 * sh + 0.05) & (lz > -0.9 - 2 * sh) & (lz < 2 * sh + 0.1) & (np.abs(r[:, 1]) < 0.5 + 2 * sh + 0.05)
         Hb = connected_surface(p[~on_b], (self.nxb, self.nyb), CELL, self.sim.sp, zmax=self.size[2])
         return Hb[self.i0:self.i0 + NX, self.j0:self.j0 + NY] + self.zfloor
 
