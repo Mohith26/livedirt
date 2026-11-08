@@ -73,6 +73,7 @@ def main():
     ap.add_argument("--volume-correction", action="store_true", help="Tampubolon 2017 volume correction (no spurious bulking)")
     ap.add_argument("--tool-mu", type=float, default=None, help="override bucket-corn friction (default tan 14 deg = 0.249)")
     ap.add_argument("--drag", type=float, default=0.800, help="drag length (m); shorter for grid studies")
+    ap.add_argument("--yield-model", choices=["dp", "mc"], default="dp")
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--out", default=str(ROOT / "results"))
     args = ap.parse_args()
@@ -88,6 +89,7 @@ def main():
     sim = Sim3D((Lx, W, Lz), args.dx, mu_f=math.tan(math.radians(mat["friction_angle_deg"])), rho_bulk=rho, E=E, nu=nu,
                 mu_tool=args.tool_mu if args.tool_mu is not None else math.tan(math.radians(mat["friction_with_steel_deg"])), arch=args.arch, symmetry_y=False,
                 wall_mu=math.tan(math.radians(args.glass_deg)), tool_speed_max=max(0.2, args.speed * 1.5), n_boxes=16, volume_correction=args.volume_correction,
+                yield_model=args.yield_model, phi_deg=mat["friction_angle_deg"],
                 max_particles=int(1.05 * Lx * W * args.bed_depth / (args.dx / 2) ** 3) + 1000)
     n0 = sim.fill_box((0, 0, 0), (Lx, W, args.bed_depth))
     boxes = profile_boxes(poly, W, args.thick)
@@ -103,7 +105,7 @@ def main():
     sim.set_pose(*path(0.0))
     sim.settle(0.2)
     t0 = time.perf_counter()
-    res = sim.drive(path, T, sample_every=T / 400)
+    res = sim.drive_fast(path, T, sample_every=T / 400)
     wall = time.perf_counter() - t0
     ser = res["series"]  # t, t_cmd, px, py, pz, pitch, Fx, Fz, Ty, s
     disp_mm = ser[:, 1] * args.speed * 1000.0
