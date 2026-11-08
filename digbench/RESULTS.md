@@ -12,18 +12,21 @@ Reference: Sarlin et al. 2021, Phys. Rev. E 104, 064904 (arXiv:2112.11458), Seri
 | 2 | MPM dx=2.5 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=24.7, E=1e+06 | 6.0% | 15.4% | 10.2 s | Tesla T4 | `q2d-const-phi24.7` |
 | 3 | MPM dx=2.5 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 3.6% | 17.9% | 12.1 s | Tesla T4 | `q2d-const-dx2.5mm` |
 | 4 | MPM dx=1.25 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 2.4% | 20.4% | 146.8 s | Tesla T4 | `q2d-const-dx1.25mm` |
-| 5 | MPM dx=5 mm; const, plane_strain, phi=23.5, E=1e+06 | 6.4% | 23.7% | 6.8 s | Tesla T4 | `mpm-dx5mm` |
-| 6 | MPM dx=2.5 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=22.3, E=1e+06 | 10.3% | 20.0% | 11.4 s | Tesla T4 | `q2d-const-phi22.3` |
-| 7 | MPM dx=2.5 mm; const, plane_strain, phi=24.7, E=1e+06 | 9.3% | 22.5% | 13.2 s | Tesla T4 | `abl-phi24.7` |
-| 8 | MPM dx=2.5 mm; const, plane_strain, floor coulomb mu=0.462, phi=23.5, E=1e+06 | 9.2% | 25.4% | 12.4 s | Tesla T4 | `abl-coulombfloor` |
-| 9 | MPM dx=2.5 mm; muI, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 19.9% | 16.0% | 11.3 s | Tesla T4 | `q2d-muI-dx2.5mm` |
-| 10 | MPM dx=1.25 mm; const, plane_strain, phi=23.5, E=1e+06 | 12.7% | 25.3% | 140.8 s | Tesla T4 | `mpm-dx1.25mm` |
-| 11 | MPM dx=2.5 mm; const, plane_strain, phi=23.5, E=1e+06 | 14.1% | 24.7% | 13.2 s | Tesla T4 | `mpm-dx2.5mm` |
-| 12 | MPM dx=1.25 mm; muI, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 22.7% | 16.9% | 149.9 s | Tesla T4 | `q2d-muI-dx1.25mm` |
-| 13 | MPM dx=2.5 mm; const, plane_strain, phi=23.5, E=4e+06 | 14.8% | 29.4% | 41.6 s | Tesla T4 | `abl-E4e6` |
-| 14 | MPM dx=2.5 mm; const, plane_strain, phi=22.3, E=1e+06 | 22.6% | 27.0% | 11.0 s | Tesla T4 | `abl-phi22.3` |
-| 15 | MPM dx=2.5 mm; const, klar3d, phi=23.5, E=1e+06 | 28.8% | 30.6% | 12.7 s | Tesla T4 | `abl-klar3d` |
-| 16 | LiveDirt heightfield (cell 2.5 mm, repose 23.5 deg) | 66.0% | 49.4% | 3.8 s | cpu (node) | `heightfield-0.0025` |
+| 5 | MPM dx=1.25 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, dilatancy psi0=5.0 deg (ev_max 0.067), phi=23.5, E=1e+06 | 4.9% | 18.1% | 74.3 s | NVIDIA L4 | `q2d-dx1.25-dil5` |
+| 6 | MPM dx=1.25 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 2.4% | 20.6% | 76.8 s | NVIDIA L4 | `q2d-dx1.25-dil0` |
+| 7 | MPM dx=1.25 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, dilatancy psi0=10.0 deg (ev_max 0.067), phi=23.5, E=1e+06 | 5.5% | 17.5% | 69.2 s | NVIDIA L4 | `q2d-dx1.25-dil10` |
+| 8 | MPM dx=5 mm; const, plane_strain, phi=23.5, E=1e+06 | 6.4% | 23.7% | 6.8 s | Tesla T4 | `mpm-dx5mm` |
+| 9 | MPM dx=2.5 mm; const, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=22.3, E=1e+06 | 10.3% | 20.0% | 11.4 s | Tesla T4 | `q2d-const-phi22.3` |
+| 10 | MPM dx=2.5 mm; const, plane_strain, phi=24.7, E=1e+06 | 9.3% | 22.5% | 13.2 s | Tesla T4 | `abl-phi24.7` |
+| 11 | MPM dx=2.5 mm; const, plane_strain, floor coulomb mu=0.462, phi=23.5, E=1e+06 | 9.2% | 25.4% | 12.4 s | Tesla T4 | `abl-coulombfloor` |
+| 12 | MPM dx=2.5 mm; muI, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 19.9% | 16.0% | 11.3 s | Tesla T4 | `q2d-muI-dx2.5mm` |
+| 13 | MPM dx=1.25 mm; const, plane_strain, phi=23.5, E=1e+06 | 12.7% | 25.3% | 140.8 s | Tesla T4 | `mpm-dx1.25mm` |
+| 14 | MPM dx=2.5 mm; const, plane_strain, phi=23.5, E=1e+06 | 14.1% | 24.7% | 13.2 s | Tesla T4 | `mpm-dx2.5mm` |
+| 15 | MPM dx=1.25 mm; muI, plane_strain, sidewall W=0.15 mu=0.21, backwall mu=0.21, phi=23.5, E=1e+06 | 22.7% | 16.9% | 149.9 s | Tesla T4 | `q2d-muI-dx1.25mm` |
+| 16 | MPM dx=2.5 mm; const, plane_strain, phi=23.5, E=4e+06 | 14.8% | 29.4% | 41.6 s | Tesla T4 | `abl-E4e6` |
+| 17 | MPM dx=2.5 mm; const, plane_strain, phi=22.3, E=1e+06 | 22.6% | 27.0% | 11.0 s | Tesla T4 | `abl-phi22.3` |
+| 18 | MPM dx=2.5 mm; const, klar3d, phi=23.5, E=1e+06 | 28.8% | 30.6% | 12.7 s | Tesla T4 | `abl-klar3d` |
+| 19 | LiveDirt heightfield (cell 2.5 mm, repose 23.5 deg) | 66.0% | 49.4% | 3.8 s | cpu (node) | `heightfield-0.0025` |
 
 ### Per-case errors (runout / height)
 
@@ -33,6 +36,9 @@ Reference: Sarlin et al. 2021, Phys. Rev. E 104, 064904 (arXiv:2112.11458), Seri
 | `q2d-const-phi24.7` | +4% / -1% | +7% / -14% | +3% / -9% | -2% / -10% | -11% / -19% | -12% / -27% | -3% / -29% |
 | `q2d-const-dx2.5mm` | +7% / -1% | +5% / -16% | +1% / -11% | +4% / -13% | +4% / -21% | -2% / -29% | +1% / -34% |
 | `q2d-const-dx1.25mm` | -0% / -4% | +6% / -20% | +2% / -12% | -1% / -16% | +3% / -26% | +1% / -32% | -4% / -33% |
+| `q2d-dx1.25-dil5` | +7% / -2% | +13% / -16% | -2% / -10% | +3% / -15% | +5% / -23% | +4% / -28% | -1% / -31% |
+| `q2d-dx1.25-dil0` | +1% / -4% | +7% / -20% | +1% / -12% | -3% / -16% | +1% / -26% | +1% / -31% | -3% / -34% |
+| `q2d-dx1.25-dil10` | +7% / -2% | +12% / -17% | +5% / -10% | +2% / -11% | +6% / -24% | +4% / -30% | +3% / -29% |
 | `mpm-dx5mm` | +3% / -2% | +8% / -20% | +14% / -17% | -0% / -24% | +6% / -33% | -7% / -34% | +7% / -36% |
 | `q2d-const-phi22.3` | +15% / -2% | +18% / -19% | +14% / -14% | +13% / -15% | +8% / -24% | +4% / -32% | +1% / -36% |
 | `abl-phi24.7` | +9% / -4% | +8% / -18% | +9% / -15% | +11% / -24% | +10% / -30% | +5% / -31% | +12% / -35% |
@@ -56,18 +62,62 @@ Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 
 | `smoke-dx2mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.225; alpha_x(90,0) 0.099 (fit 0.091) | Tesla T4 |
 | `smoke-dx3mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.212; alpha_x(90,0) 0.098 (fit 0.091) | Tesla T4 |
 
-## Task 3: full-scale bucket dig cycle (3D MPM, closed loop)
+## Task 3: full-scale bucket dig cycle (3D MPM) with the DX225LC-7 force model
 
-1.0 m wide, 0.81 m^3 bucket; penetrate to 0.6 m, drag 1.2 m, curl 75 deg, lift. Sand mu = 0.38, 1600 kg/m^3. No public measured data at this scale; scored by grid convergence, conservation, and against the heightfield baselines.
+1.0 m wide, 0.81 m^3 bucket, sand mu = 0.38, 1600 kg/m^3. Attitude `physical` = teeth-first penetration at 40 deg, attack angle easing 40 -> 10 deg over the drag, curl to -75 deg (digbench/attitude.py); `legacy` = flat floor (pitch 0) until the curl. Limits `dx225` = per-cylinder torque from 34.3 MPa relief with ISO-calibrated moment arms (boom arm 0.65 m ASSUMED), plus front lift-off / forward tip / track sliding for a 23.6 t machine (digbench/actuators.py); `none` = prescribed motion, loads logged only. Fractions > 1 exceed the rated capacity. Trench depth = mean over the drag footprint (lip x 0.6-1.4 m, |y| < 0.4 m).
 
-| tag | drag mean / peak (kN) | vertical peak (kN) | carried (bank m^3) | trench depth MPM / kinematic / LiveDirt-relax (m) | terrain RMSE kinematic / LiveDirt-relax vs MPM (m) | trajectory done | wall (s) |
-|---|---|---|---|---|---|---|---|
-| `v2-dx2cm` | 40.3 / 60.5 | 187 | 0.79 | 0.22 / 0.60 / 0.55 | 0.420 / 0.310 | 100% (min speed x1.00) | 360 |
-| `v2-dx3cm` | 37.4 / 57.0 | 178 | 0.78 | 0.21 / 0.60 / 0.55 | 0.446 / 0.345 | 100% (min speed x1.00) | 75 |
-| `v2-dx4cm-d1.0-fmaxspec` | 2.2 / 4.9 | 152 | 0.22 | 0.94 / 1.00 / 0.71 | 0.701 / 0.561 | 12% (min speed x0.00) | 22 |
-| `v2-dx4cm-d1.0` | 107.0 / 133.9 | 853 | 0.52 | -0.08 / 1.00 / 0.71 | 0.982 / 0.790 | 100% (min speed x1.00) | 27 |
-| `v2-dx4cm-fmaxspec` | 3.1 / 6.1 | 133 | 0.19 | 0.88 / 0.60 / 0.55 | 0.564 / 0.524 | 17% (min speed x0.00) | 22 |
-| `v2-dx4cm` | 40.0 / 64.1 | 168 | 0.73 | 0.14 / 0.60 / 0.55 | 0.540 / 0.449 | 100% (min speed x1.00) | 25 |
+| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |
+|---|---|---|---|---|---|---|---|---|---|
+| `v3-legacy-dx4-d0.6-none` | 40.0 / 64.1 | 168 | 0.73 | 100% (no stall) | 0.56 / 0.43 / 3.86 | 3.12 / 0.35 / 0.46 | yes | -0.22 / 0.60 | 12 |
+| `v3-phys-dx2-d0.6-none` | 21.3 / 52.7 | 79 | 0.80 | 100% (no stall) | 0.49 / 0.25 / 1.42 | 1.37 / 0.31 / 0.38 | yes | 0.11 / 0.60 | 119 |
+| `v3-phys-dx3-d0.6-none` | 20.8 / 52.7 | 75 | 0.81 | 100% (no stall) | 0.49 / 0.25 / 1.35 | 1.31 / 0.31 / 0.38 | yes | 0.07 / 0.60 | 27 |
+| `v3-phys-dx4-d0.6-dx225` | 18.5 / 51.7 | 60 | 0.79 | 95% (no stall) | 0.47 / 0.24 / 1.09 | 1.05 / 0.29 / 0.37 | yes | 0.03 / 0.60 | 10 |
+| `v3-phys-dx4-d0.6-none` | 19.9 / 51.3 | 74 | 0.79 | 100% (no stall) | 0.48 / 0.24 / 1.33 | 1.28 / 0.30 / 0.37 | yes | 0.02 / 0.60 | 10 |
+| `v3-phys-dx4-d1.0-dx225` | -20.9 / 0.1 | 68 | 0.27 | 13% (penetrate) | 0.05 / 0.20 / 1.22 | 1.19 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 10 |
+| `v3-phys-dx4-d1.0-dx225boost` | -20.4 / 0.1 | 69 | 0.27 | 13% (penetrate) | 0.05 / 0.19 / 1.18 | 1.21 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 9 |
+| `v3-phys-dx4-d1.0-none` | 68.8 / 135.8 | 178 | 0.78 | 100% (no stall) | 1.04 / 0.63 / 3.18 | 3.07 / 0.35 / 0.98 | yes | -0.25 / 1.00 | 12 |
+
+Trench readout: the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m wide trench, and it is NOT grid-converged (it grows from dx 4 to 2 cm); drag force is converged within 7%. A cut deeper than the 0.9 m bucket overflows the shell and leaves a mound (negative depth). The legacy single-cell readout (x = 1.8 m) sat where the flat plunge compressed and heaved the soil.
+
+### Superseded: pre-fix task-3 runs (legacy flat-floor attitude; `fmaxspec` = a single 112.8 kN cap along the velocity)
+
+Kept for the record. The 1.0 m uncapped run's 853 kN vertical force is a flat 0.9 m x 1.0 m plate pushed straight down (unphysical, ~3.6x machine weight), and the capped runs stalled in penetration at ~3 kN drag because the cap read the vertical plunge force.
+
+| tag | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion | wall (s) |
+|---|---|---|---|---|---|
+| `v2-dx2cm` (SUPERSEDED) | 40.3 / 60.5 | 187 | 0.79 | 100% | 360 |
+| `v2-dx3cm` (SUPERSEDED) | 37.4 / 57.0 | 178 | 0.78 | 100% | 75 |
+| `v2-dx4cm-act` (SUPERSEDED) | 40.0 / 64.1 | 168 | 0.73 | 100% | 25 |
+| `v2-dx4cm-d1.0-act` (SUPERSEDED) | 108.7 / 110.3 | 842 | 0.37 | 20% | 24 |
+| `v2-dx4cm-d1.0-fmaxspec` (SUPERSEDED) | 2.2 / 4.9 | 152 | 0.22 | 12% | 22 |
+| `v2-dx4cm-d1.0` (SUPERSEDED) | 107.0 / 133.9 | 853 | 0.52 | 100% | 27 |
+| `v2-dx4cm-fmaxspec` (SUPERSEDED) | 3.1 / 6.1 | 133 | 0.19 | 17% | 22 |
+| `v2-dx4cm` (SUPERSEDED) | 40.0 / 64.1 | 168 | 0.73 | 100% | 25 |
+
+## Task 3b: measured lab bucket filling (Coetzee 2004 thesis Fig 6.25; Coetzee, Basson & Vermeer 2007)
+
+Dragline bucket profile dragged 800 mm through corn between glass panels 200 mm apart; measured draft force (single run, +-5-10 N). Reproduced with published inputs only (E 2.76 MPa, 778 kg/m^3, phi 26 deg, steel 14 deg, glass 12 deg; Fig 6.3 profile). ASSUMED (not published): bed depth 0.30 m, plate thickness 15 mm, sink -0.20 mm/mm (measured off the thesis' simulation figures), drag speed 100 mm/s (thesis: no significant speed effect 0-100 mm/s).
+
+| run | draft at 800 mm sim / exp (N) | error at 800 mm | mean rel. error (25-800 mm) | MAE (N) | wall (s) |
+|---|---|---|---|---|---|
+| `v1` | 536 / 250 | +114% | +117% | 146 | 963 |
+| published nonpolar MPM (Coetzee 2007) [PUBLISHED] | 209 / 250 (digitized) | -12% (text) / ~-16% (curve) | - | - | - |
+| published DEM [PUBLISHED] | 192 / 250 (digitized) | ~-23% | ~20 N low to 600 mm | - | - |
+
+## External baselines on task 3 (re-run) and published numbers (labelled)
+
+Project Chrono SCM (pychrono 10.0.0, Bekker-Wong dry sand: Kphi 1.528e6, Kc 990, n 1.1, Janosi K 0.025 m, phi atan(0.38); see digbench/CHRONO.md), same bucket boxes and physical path at 0.6 m. SCM cannot carry soil (carried = not modelled).
+
+| method | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | realtime factor |
+|---|---|---|---|---|
+| Chrono SCM `scm-d2.5cm` | 37.5 / 280 | 771 | not modelled | 0.31x |
+| Chrono SCM `scm-d5cm-c1.04kPa` | 35.3 / 284 | 781 | not modelled | 1.13x |
+| Chrono SCM `scm-d5cm-kphi0.5` | 16.0 / 150 | 415 | not modelled | 1.17x |
+| Chrono SCM `scm-d5cm-nobulldoze` | 32.4 / 224 | 618 | not modelled | 2.01x |
+| Chrono SCM `scm-d5cm` | 35.2 / 283 | 781 | not modelled | 1.13x |
+| 3D MPM dx 2 cm (this work) | 21.3 / 53 | 79 | 0.80 | 0.046x |
+
+Published (not re-run here): AGX multiscale terrain (Servin, Berglund, Nystedt 2021, Adv. Model. Simul. Eng. Sci. 8:11, arXiv:2011.00459): digging resistance and soil displacement agree with a high-resolution DEM reference within 10-25%, >1000x faster. AGX wheel-loader bucket filling vs field data (Aoshima & Servin, arXiv:2310.05765): sim-to-real gap ~10%, 1/10,000x to 5x real time. These are different set-ups and metrics; they bound what 'state of the art' means, they are not head-to-head numbers.
 
 ## Task 4: multiscale hybrid vs full-site MPM
 
@@ -84,20 +134,48 @@ Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 
 | `v2-dx4cm` | hybrid_margin_0.5m | 0.061 / 0.094 | +13% | +17% | 3.1x | 610500 |
 | `v2-dx4cm` | hybrid_margin_1m | 0.023 / 0.035 | +0% | +4% | 2.2x | 1128000 |
 
-## Task 5: calibration (observe a slump, infer friction, predict digging force)
+## Task 5: calibration `v1` (observe a slump, infer friction, predict digging force)
 
-Real data: friction angle fitted to the Sarlin et al. fits = 26.1 deg (loss 0.207); measured repose 23.5 +/- 1.2 deg.
 
-| mu_true | rep | mu_hat | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |
-|---|---|---|---|---|---|---|
-| 0.30 | 0 | 0.291 | 28.3 | 27.3 | -3.6% | +147.6% |
-| 0.30 | 1 | 0.296 | 28.3 | 27.8 | -1.7% | +147.6% |
-| 0.45 | 0 | 0.436 | 55.5 | 52.0 | -6.3% | +26.2% |
-| 0.45 | 1 | 0.441 | 55.5 | 53.1 | -4.3% | +26.2% |
-| 0.60 | 0 | 0.596 | 106.1 | 104.1 | -1.9% | -34.0% |
-| 0.60 | 1 | 0.609 | 106.1 | 109.9 | +3.6% | -34.0% |
+Real data (Sarlin et al. fits; measured repose 23.5 +/- 1.2 deg):
 
-## Task 6: learned terrain + force surrogate (held-out MPM episodes)
+| model variant | fitted phi (deg) | sigma from measured | fit loss |
+|---|---|---|---|
+| base | 26.1 | +2.1 | 0.207 |
+
+| mu_true | rep | mu_hat | mu error | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |
+|---|---|---|---|---|---|---|---|
+| 0.30 | 0 | 0.291 | -0.009 | 28.3 | 27.3 | -3.6% | +147.6% |
+| 0.30 | 1 | 0.296 | -0.004 | 28.3 | 27.8 | -1.7% | +147.6% |
+| 0.45 | 0 | 0.436 | -0.014 | 55.5 | 52.0 | -6.3% | +26.2% |
+| 0.45 | 1 | 0.441 | -0.009 | 55.5 | 53.1 | -4.3% | +26.2% |
+| 0.60 | 0 | 0.596 | -0.004 | 106.1 | 104.1 | -1.9% | -34.0% |
+| 0.60 | 1 | 0.609 | +0.009 | 106.1 | 109.9 | +3.6% | -34.0% |
+
+## Task 5: calibration `v2-noncirc-inv2.5` (observe a slump, infer friction, predict digging force)
+
+Non-circular protocol: observed slumps from MPM at dx 1.25 mm with particle seed 7 and an SfM error model (1 mm correlated noise, 1 cm correlation, 0.1% scale; ~1:1000 relative precision, James & Robson 2012); inverted with MPM at dx 2.5 mm. Drag transfer uses the `physical` bucket attitude.
+
+Real data (Sarlin et al. fits; measured repose 23.5 +/- 1.2 deg):
+
+| model variant | fitted phi (deg) | sigma from measured | fit loss |
+|---|---|---|---|
+| base | 25.7 | +1.9 | 0.205 |
+| tan | 23.0 | -0.4 | 0.183 |
+| side0 | 27.5 | +3.4 | 0.204 |
+| side04 | 24.1 | +0.5 | 0.196 |
+| muI | 17.1 | -5.3 | 0.309 |
+
+| mu_true | rep | mu_hat | mu error | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |
+|---|---|---|---|---|---|---|---|
+| 0.30 | 0 | 0.286 | -0.014 | 16.7 | 16.2 | -3.3% | +55.1% |
+| 0.30 | 1 | 0.286 | -0.014 | 16.7 | 16.2 | -3.3% | +55.1% |
+| 0.45 | 0 | 0.436 | -0.014 | 23.1 | 22.4 | -2.9% | +12.5% |
+| 0.45 | 1 | 0.442 | -0.008 | 23.1 | 22.7 | -1.6% | +12.5% |
+| 0.60 | 0 | 0.606 | +0.006 | 33.5 | 34.1 | +1.7% | -22.5% |
+| 0.60 | 1 | 0.593 | -0.007 | 33.5 | 32.9 | -2.0% | -22.5% |
+
+## SUPERSEDED Task 6 `v1`: scored on its own held-out episodes (not comparable across models; see v3 section)
 
 1,086,228 parameters, 85 training / 15 held-out episodes, 2.33 ms per 0.1 s step on cuda.
 
@@ -109,7 +187,19 @@ Real data: friction angle fitted to the Sarlin et al. fits = 26.1 deg (loss 0.20
 
 Drag-force relative error during the drag phase (surrogate): 11%.
 
-## Accuracy vs speed on the task-3 dig cycle
+## SUPERSEDED Task 6 `v2`: scored on its own held-out episodes (not comparable across models; see v3 section)
+
+1,086,228 parameters, 170 training / 30 held-out episodes, 2.14 ms per 0.1 s step on cuda.
+
+| model | final terrain RMSE, disturbed cells (m) | rollout RMSE, all cells (m) |
+|---|---|---|
+| surrogate | 0.146 | 0.090 |
+| livedirt | 0.339 | 0.263 |
+| persistence | 0.208 | 0.281 |
+
+Drag-force relative error during the drag phase (surrogate): 23%.
+
+## SUPERSEDED accuracy vs speed (v1-era, legacy flat attitude; see the v3 sections)
 
 Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.1 s over 5.4 s. Realtime factor = simulated seconds per wall second (MPM and surrogate on a Colab L4; LiveDirt row is the Python port of the TypeScript relax, so its speed is not representative of the browser).
 
@@ -119,3 +209,18 @@ Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.
 | livedirt_cut_relax_python | 0.426 | 0.318 | 0.10x | - |
 | surrogate_cuda | 0.108 | 0.056 | 47.10x | 9.8% |
 | surrogate_cpu | 0.108 | 0.056 | 12.91x | 9.8% |
+
+## Task 6 (v3): learned soil on ONE frozen, deployment-matched held-out set
+
+21 episodes generated once and never trained on: the standard task-3 dig, 10 chained bites on rough ground, and 10 replayed autonomy bites from a held-out trench (yaw +12 deg). Full-width open-ground MPM beds (window + 1.5 m margin), anchored as the app. Every model is rolled out from frame 0 with the deploy floor projection. Baselines on the same bucket rasters: cut+relax (LiveDirt-style) and persistence. Aleatoric floor: re-running one replay with a different particle seed changes the truth by ~0.10 m RMSE (see aleatoric results).
+
+| model | final RMSE disturbed (m) all / std / chained / replay | rollout RMSE (m) | abs volume error (m^3) | drag-force rel. error | clipped / floored |
+|---|---|---|---|---|---|
+| `v1` | 0.337 / 0.288 / 0.217 / 0.462 | 0.290 | 1.52 | 144% | 365731 / 1123992 |
+| cut_relax (baseline) | 0.313 / 0.209 / 0.155 / 0.482 | 0.226 | 1.6164058150813854 | - | - |
+| persistence (baseline) | 0.282 / 0.208 / 0.178 / 0.394 | 0.243 | - | - | - |
+| `v2` | 0.469 / 0.433 / 0.417 / 0.524 | 0.383 | 2.46 | 138% | 471661 / 933030 |
+
+## Determinism
+
+Two identical kinematic loop runs (fixed 0.05 s step, seeded lidar): outputs byte-identical (excluding wall time); on grade 34.5% both runs. The browser app now steps physics at the same fixed 0.05 s.

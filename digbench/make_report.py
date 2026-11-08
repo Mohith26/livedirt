@@ -16,6 +16,8 @@ for p in sorted(R.glob("collapse-*.json")):
             bits.append(f"backwall mu={pr['wall_mu']}")
         if pr.get("floor") != "sticky":
             bits.append(f"floor {pr.get('floor')} mu={pr.get('floor_mu')}")
+        if pr.get("dilatancy_deg"):
+            bits.append(f"dilatancy psi0={pr['dilatancy_deg']} deg (ev_max {pr.get('dilatancy_evmax')})")
         bits.append(f"phi={pr.get('phi_deg')}")
         bits.append(f"E={pr.get('E'):.0e}")
         cfg = f"MPM dx={pr['dx']*1000:g} mm; " + ", ".join(bits)
@@ -65,21 +67,74 @@ if plates:
             out.append(f"| `{d['tag']}` (grid check) | - | - | - | - | alpha_z(0,90) {a['alpha_z']:.3f}; alpha_x(90,0) {b['alpha_x']:.3f} (fit {b['ref_x']:.3f}) | {d['device']} |")
 
 # ---------------- Task 3: bucket ----------------
-bks = sorted(R.glob("bucket-v2-*.json")) or sorted(R.glob("bucket-dx*.json"))
-if bks:
-    out += ["", "## Task 3: full-scale bucket dig cycle (3D MPM, closed loop)", "",
-            "1.0 m wide, 0.81 m^3 bucket; penetrate to 0.6 m, drag 1.2 m, curl 75 deg, lift. Sand mu = 0.38, 1600 kg/m^3. "
-            "No public measured data at this scale; scored by grid convergence, conservation, and against the heightfield baselines.", "",
-            "| tag | drag mean / peak (kN) | vertical peak (kN) | carried (bank m^3) | trench depth MPM / kinematic / LiveDirt-relax (m) | terrain RMSE kinematic / LiveDirt-relax vs MPM (m) | trajectory done | wall (s) |",
-            "|---|---|---|---|---|---|---|---|"]
-    for p in bks:
+v3 = sorted(R.glob("bucket-v3-*.json"))
+if v3:
+    out += ["", "## Task 3: full-scale bucket dig cycle (3D MPM) with the DX225LC-7 force model", "",
+            "1.0 m wide, 0.81 m^3 bucket, sand mu = 0.38, 1600 kg/m^3. Attitude `physical` = teeth-first penetration at 40 deg, attack "
+            "angle easing 40 -> 10 deg over the drag, curl to -75 deg (digbench/attitude.py); `legacy` = flat floor (pitch 0) until the curl. "
+            "Limits `dx225` = per-cylinder torque from 34.3 MPa relief with ISO-calibrated moment arms (boom arm 0.65 m ASSUMED), plus "
+            "front lift-off / forward tip / track sliding for a 23.6 t machine (digbench/actuators.py); `none` = prescribed motion, loads "
+            "logged only. Fractions > 1 exceed the rated capacity. Trench depth = mean over the drag footprint (lip x 0.6-1.4 m, |y| < 0.4 m).", "",
+            "| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    for p in v3:
         d = json.loads(p.read_text()); s = d["summary"]
         out.append(f"| `{d['tag']}` | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.1f} | {s['vertical_force_peak_kN']:.0f} | {s['carried_bank_m3']:.2f} | "
-                   f"{s['trench_depth_centre_mpm_m']:.2f} / {s['trench_depth_centre_kinematic_m']:.2f} / {s['trench_depth_centre_livedirt_relax_m']:.2f} | "
-                   f"{s['terrain_rmse_kinematic_vs_mpm_m']:.3f} / {s['terrain_rmse_livedirt_relax_vs_mpm_m']:.3f} | {s['trajectory_completion']:.0%} (min speed x{s['min_speed_scale']:.2f}) | {s['wall_s']:.0f} |")
+                   f"{s['trajectory_completion']:.0%} ({s.get('stall_phase') or 'no stall'}) | {s['peak_bucket_frac']:.2f} / {s['peak_arm_frac']:.2f} / {s['peak_boom_frac']:.2f} | "
+                   f"{s['peak_front_liftoff_frac']:.2f} / {s['peak_forward_tip_frac']:.2f} / {s['peak_sliding_frac']:.2f} | {'yes' if s['would_tip_or_lift'] else 'no'} | "
+                   f"{s['trench_depth_footprint_mpm_m']:.2f} / {s['trench_depth_footprint_kinematic_m']:.2f} | {s['wall_s']:.0f} |")
+    out += ["", "Trench readout: the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m "
+            "wide trench, and it is NOT grid-converged (it grows from dx 4 to 2 cm); drag force is converged within 7%. A cut deeper than the "
+            "0.9 m bucket overflows the shell and leaves a mound (negative depth). The legacy single-cell readout (x = 1.8 m) sat where the flat "
+            "plunge compressed and heaved the soil."]
+bks = sorted(R.glob("bucket-v2-*.json"))
+if bks:
+    out += ["", "### Superseded: pre-fix task-3 runs (legacy flat-floor attitude; `fmaxspec` = a single 112.8 kN cap along the velocity)", "",
+            "Kept for the record. The 1.0 m uncapped run's 853 kN vertical force is a flat 0.9 m x 1.0 m plate pushed straight down (unphysical, "
+            "~3.6x machine weight), and the capped runs stalled in penetration at ~3 kN drag because the cap read the vertical plunge force.", "",
+            "| tag | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion | wall (s) |", "|---|---|---|---|---|---|"]
+    for p in bks:
+        d = json.loads(p.read_text()); s = d["summary"]
+        out.append(f"| `{d['tag']}` (SUPERSEDED) | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.1f} | {s['vertical_force_peak_kN']:.0f} | "
+                   f"{s['carried_bank_m3']:.2f} | {s['trajectory_completion']:.0%} | {s['wall_s']:.0f} |")
+
+# ---------------- Task 3b: measured lab bucket (Coetzee) ----------------
+cz = sorted(R.glob("coetzee-*.json"))
+if cz:
+    out += ["", "## Task 3b: measured lab bucket filling (Coetzee 2004 thesis Fig 6.25; Coetzee, Basson & Vermeer 2007)", "",
+            "Dragline bucket profile dragged 800 mm through corn between glass panels 200 mm apart; measured draft force (single run, +-5-10 N). "
+            "Reproduced with published inputs only (E 2.76 MPa, 778 kg/m^3, phi 26 deg, steel 14 deg, glass 12 deg; Fig 6.3 profile). "
+            "ASSUMED (not published): bed depth 0.30 m, plate thickness 15 mm, sink -0.20 mm/mm (measured off the thesis' simulation figures), "
+            "drag speed 100 mm/s (thesis: no significant speed effect 0-100 mm/s).", "",
+            "| run | draft at 800 mm sim / exp (N) | error at 800 mm | mean rel. error (25-800 mm) | MAE (N) | wall (s) |", "|---|---|---|---|---|---|"]
+    for p in cz:
+        d = json.loads(p.read_text()); s = d["summary"]
+        out.append(f"| `{d['tag']}` | {s['draft_at_800mm_sim_N']:.0f} / {s['draft_at_800mm_exp_N']:.0f} | {s['rel_err_at_800mm']:+.0%} | "
+                   f"{s['mean_rel_err']:+.0%} | {s['mae_N']:.0f} | {s['wall_s']:.0f} |")
+    out += ["| published nonpolar MPM (Coetzee 2007) [PUBLISHED] | 209 / 250 (digitized) | -12% (text) / ~-16% (curve) | - | - | - |",
+            "| published DEM [PUBLISHED] | 192 / 250 (digitized) | ~-23% | ~20 N low to 600 mm | - | - |"]
+
+# ---------------- External baselines ----------------
+ch = sorted(R.glob("chrono-bucket-*.json"))
+if ch:
+    out += ["", "## External baselines on task 3 (re-run) and published numbers (labelled)", "",
+            "Project Chrono SCM (pychrono 10.0.0, Bekker-Wong dry sand: Kphi 1.528e6, Kc 990, n 1.1, Janosi K 0.025 m, phi atan(0.38); "
+            "see digbench/CHRONO.md), same bucket boxes and physical path at 0.6 m. SCM cannot carry soil (carried = not modelled).", "",
+            "| method | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | realtime factor |", "|---|---|---|---|---|"]
+    for p in ch:
+        d = json.loads(p.read_text()); s = d["summary"]
+        out.append(f"| Chrono SCM `{d['tag']}` | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.0f} | {s['vertical_force_peak_kN']:.0f} | not modelled | {s['rtf']:.2f}x |")
+    ref = R / "bucket-v3-phys-dx2-d0.6-none.json"
+    if ref.exists():
+        s = json.loads(ref.read_text())["summary"]
+        out.append(f"| 3D MPM dx 2 cm (this work) | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.0f} | {s['vertical_force_peak_kN']:.0f} | {s['carried_bank_m3']:.2f} | {s.get('rtf', 0):.3f}x |")
+    out += ["", "Published (not re-run here): AGX multiscale terrain (Servin, Berglund, Nystedt 2021, Adv. Model. Simul. Eng. Sci. 8:11, arXiv:2011.00459): "
+            "digging resistance and soil displacement agree with a high-resolution DEM reference within 10-25%, >1000x faster. "
+            "AGX wheel-loader bucket filling vs field data (Aoshima & Servin, arXiv:2310.05765): sim-to-real gap ~10%, 1/10,000x to 5x real time. "
+            "These are different set-ups and metrics; they bound what 'state of the art' means, they are not head-to-head numbers."]
 
 # ---------------- Task 4: hybrid ----------------
-hys = sorted(R.glob("hybrid-v2-*.json")) or sorted(R.glob("hybrid-dx*.json"))
+hys = sorted(R.glob("hybrid-v2-*.json")) + sorted(R.glob("hybrid-v3-*.json"))
 if hys:
     out += ["", "## Task 4: multiscale hybrid vs full-site MPM", "",
             "8 m x 6 m site, same dig. Reference = MPM over the whole site. Hybrid = MPM only in a box around the swept footprint "
@@ -92,26 +147,39 @@ if hys:
         for r in d["runs"]:
             ce = f"{r['carried_err']:+.0%}" if "carried_err" in r else "-"
             de = f"{r['drag_mean_err']:+.0%}" if "drag_mean_err" in r else "-"
-            out.append(f"| `{d['tag']}` | {r['name']} | {r['rmse_region_m']:.3f} / {r['rmse_changed_m']:.3f} | {ce} | {de} | {r['speedup']:.1f}x | {r.get('particles', '-')} |")
+            extra = ""
+            if "zone_E" in r:
+                pf = r.get("profile", {})
+                extra = f" (zone E {r['zone_E']:.1e}, floor {r.get('zone_floor', 0):.2f} m; {pf.get('substeps', 0)} substeps, {pf.get('ns_per_particle_substep', 0):.1f} ns/particle-substep)"
+            out.append(f"| `{d['tag']}` | {r['name']}{extra} | {r['rmse_region_m']:.3f} / {r['rmse_changed_m']:.3f} | {ce} | {de} | {r['speedup']:.1f}x | {r.get('particles', '-')} |")
 
 # ---------------- Task 5: calibration ----------------
 for p in sorted(R.glob("calib-*.json")):
     d = json.loads(p.read_text())
-    out += ["", "## Task 5: calibration (observe a slump, infer friction, predict digging force)", ""]
-    if d.get("real"):
-        r = d["real"]
-        out.append(f"Real data: friction angle fitted to the Sarlin et al. fits = {r['phi_fit_deg']:.1f} deg (loss {r['loss_at_fit']:.3f}); "
-                   f"measured repose {r['measured_repose_deg']} +/- {r['measured_sd_deg']} deg.")
+    pr = d.get("params", {})
+    out += ["", f"## Task 5: calibration `{d['tag']}` (observe a slump, infer friction, predict digging force)", ""]
+    if pr.get("noise_model") == "sfm" or pr.get("obs_dx", 0.0025) != pr.get("inv_dx", 0.0025):
+        out.append(f"Non-circular protocol: observed slumps from MPM at dx {pr.get('obs_dx',0)*1000:g} mm with particle seed {pr.get('obs_seed')} "
+                   f"and an SfM error model (1 mm correlated noise, 1 cm correlation, 0.1% scale; ~1:1000 relative precision, James & Robson 2012); "
+                   f"inverted with MPM at dx {pr.get('inv_dx',0)*1000:g} mm. Drag transfer uses the `{pr.get('attitude','legacy')}` bucket attitude.")
+    r = d.get("real") or {}
+    if "phi_fit_deg" in r:
+        r = {"base": r}
+    if r:
+        out += ["", "Real data (Sarlin et al. fits; measured repose 23.5 +/- 1.2 deg):", "", "| model variant | fitted phi (deg) | sigma from measured | fit loss |", "|---|---|---|---|"]
+        for k, v in r.items():
+            sg = v.get("sigma_from_measured", (v["phi_fit_deg"] - 23.5) / 1.2)
+            out.append(f"| {k} | {v['phi_fit_deg']:.1f} | {sg:+.1f} | {v['loss_at_fit']:.3f} |")
     if d.get("synthetic"):
-        out += ["", "| mu_true | rep | mu_hat | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |", "|---|---|---|---|---|---|---|"]
-        for s in d["synthetic"]:
-            out.append(f"| {s['mu_true']:.2f} | {s['rep']} | {s['mu_hat']:.3f} | {s.get('drag_true_N', float('nan'))/1e3:.1f} | "
-                       f"{s.get('drag_pred_N', float('nan'))/1e3:.1f} | {s.get('drag_err', float('nan')):+.1%} | {s.get('drag_err_default_mu0.5', float('nan')):+.1%} |")
+        out += ["", "| mu_true | rep | mu_hat | mu error | drag true (kN) | drag predicted (kN) | drag error | error with default mu=0.5 |", "|---|---|---|---|---|---|---|---|"]
+        for s_ in d["synthetic"]:
+            out.append(f"| {s_['mu_true']:.2f} | {s_['rep']} | {s_['mu_hat']:.3f} | {s_['mu_hat']-s_['mu_true']:+.3f} | {s_.get('drag_true_N', float('nan'))/1e3:.1f} | "
+                       f"{s_.get('drag_pred_N', float('nan'))/1e3:.1f} | {s_.get('drag_err', float('nan')):+.1%} | {s_.get('drag_err_default_mu0.5', float('nan')):+.1%} |")
 
 # ---------------- Task 6: surrogate ----------------
 for p in sorted(x for x in R.glob("surrogate-*.json") if not x.name.endswith("-fixture.json")):
     d = json.loads(p.read_text()); s = d["summary"]
-    out += ["", "## Task 6: learned terrain + force surrogate (held-out MPM episodes)", "",
+    out += ["", f"## SUPERSEDED Task 6 `{d.get('tag', p.stem)}`: scored on its own held-out episodes (not comparable across models; see v3 section)", "",
             f"{s['params']:,} parameters, {s['train_episodes']} training / {s['val_episodes']} held-out episodes, {s['ms_per_step']:.2f} ms per 0.1 s step on {s['device']}.", "",
             "| model | final terrain RMSE, disturbed cells (m) | rollout RMSE, all cells (m) |", "|---|---|---|"]
     for m in ("surrogate", "livedirt", "persistence"):
@@ -121,7 +189,7 @@ for p in sorted(x for x in R.glob("surrogate-*.json") if not x.name.endswith("-f
 fr = R / "frontier-task3.json"
 if fr.exists():
     d = json.loads(fr.read_text())
-    out += ["", "## Accuracy vs speed on the task-3 dig cycle", "",
+    out += ["", "## SUPERSEDED accuracy vs speed (v1-era, legacy flat attitude; see the v3 sections)", "",
             f"Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.1 s over {d['sim_seconds']:.1f} s. "
             "Realtime factor = simulated seconds per wall second (MPM and surrogate on a Colab L4; LiveDirt row is the Python port of "
             "the TypeScript relax, so its speed is not representative of the browser).", "",
@@ -129,6 +197,45 @@ if fr.exists():
     for k, r in d["rows"].items():
         fe = f"{r['drag_force_rel_err']:.1%}" if "drag_force_rel_err" in r else "-"
         out.append(f"| {k} | {r['final_rmse_disturbed_m']:.3f} | {r['rollout_rmse_m']:.3f} | {r['realtime_factor']:.2f}x | {fe} |")
+
+# ---------------- Task 6 v3: shared frozen held-out set ----------------
+hv = sorted(R.glob("v3eval/heldout-*.json")) + sorted(R.glob("v3models/heldout-*.json"))
+if hv:
+    out += ["", "## Task 6 (v3): learned soil on ONE frozen, deployment-matched held-out set", "",
+            "21 episodes generated once and never trained on: the standard task-3 dig, 10 chained bites on rough ground, and 10 replayed "
+            "autonomy bites from a held-out trench (yaw +12 deg). Full-width open-ground MPM beds (window + 1.5 m margin), anchored as the app. "
+            "Every model is rolled out from frame 0 with the deploy floor projection. Baselines on the same bucket rasters: cut+relax "
+            "(LiveDirt-style) and persistence. Aleatoric floor: re-running one replay with a different particle seed changes the truth by "
+            "~0.10 m RMSE (see aleatoric results).", "",
+            "| model | final RMSE disturbed (m) all / std / chained / replay | rollout RMSE (m) | abs volume error (m^3) | drag-force rel. error | clipped / floored |",
+            "|---|---|---|---|---|---|"]
+    base_done = False
+    for p in hv:
+        d = json.loads(p.read_text()); S = d["summary"]
+        f = lambda k: (f"{S[k]['final_rmse_disturbed_m']['model']:.3f}" if S.get(k) and S[k]['final_rmse_disturbed_m']['model'] is not None else "-")
+        out.append(f"| `{d['tag']}` | {f('all')} / {f('standard')} / {f('chained')} / {f('replay')} | {S['all']['rollout_rmse_all_m']['model']:.3f} | "
+                   f"{S['all']['abs_volume_err_m3']['model']:.2f} | {(S['all']['force_x_rel_err_drag'] or float('nan')):.0%} | {S['all']['clipped']} / {S['all']['floored']} |")
+        if not base_done:
+            g = lambda k, m: (f"{S[k]['final_rmse_disturbed_m'][m]:.3f}" if S.get(k) else "-")
+            for m in ("cut_relax", "persistence"):
+                out.append(f"| {m} (baseline) | {g('all', m)} / {g('standard', m)} / {g('chained', m)} / {g('replay', m)} | {S['all']['rollout_rmse_all_m'][m]:.3f} | "
+                           f"{S['all']['abs_volume_err_m3'].get(m, float('nan')) if m in S['all']['abs_volume_err_m3'] else '-'} | - | - |")
+            base_done = True
+
+lg = R / "loop-gate.md"
+if lg.exists():
+    out += ["", "## Closed-loop gate (the deployment target)", "",
+            "app/bench/autonomy.ts on sandy-gravel, 1:1 trench, the captured site; the heightfield (cut+relax) baseline is the deployed default. "
+            "Lidar-surveyed grade, 3 cm tolerance.", "", lg.read_text().strip()]
+
+det = sorted((R.parent.parent / "app" / "bench" / "results").glob("autonomy-*det-*.json"))
+if len(det) >= 2:
+    a, b = (json.loads(x.read_text()) for x in det[:2])
+    for x in (a, b):
+        x.pop("wallSeconds", None)
+    same = json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    out += ["", "## Determinism", "", f"Two identical kinematic loop runs (fixed 0.05 s step, seeded lidar): outputs {'byte-identical' if same else 'DIFFERENT'} "
+            f"(excluding wall time); on grade {a['final']['onGradePct']}% both runs. The browser app now steps physics at the same fixed 0.05 s."]
 
 (R.parent / "RESULTS.md").write_text("\n".join(out) + "\n")
 print("wrote", R.parent / "RESULTS.md", len(out), "lines")
