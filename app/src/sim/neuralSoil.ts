@@ -161,6 +161,8 @@ export class NeuralSoilWindow {
   lastForce: [number, number, number] = [0, 0, 0];
   clipped = 0; // count of clipped/non-finite cell updates (out-of-distribution indicator)
   floored = 0; // count of cell updates raised to the swept floor
+  floorAddedM3 = 0; // volume created by the floor projection
+  modelDvM3 = 0; // net volume change from the model's dh (after clipping, before the projection)
   stats: FeatureStats | null = null;
   /** physical projection: no cell may end below min(its anchored height, the lowest bucket point that passed over it) */
   floorProject = true;
@@ -234,7 +236,8 @@ export class NeuralSoilWindow {
       if (!Number.isFinite(d)) { d = 0; this.clipped++; }
       else if (d > 0.3 || d < -0.3) { d = Math.max(-0.3, Math.min(0.3, d)); this.clipped++; }
       let h = Math.max(SURF - 2.0, Math.min(SURF + 1.5, this.H[k] + d));
-      if (this.floorProject && h < this.floor[k]) { h = Math.max(h, Math.min(this.floor[k], this.H[k])); this.floored++; }
+      this.modelDvM3 += (h - this.H[k]) * CELL * CELL;
+      if (this.floorProject && h < this.floor[k]) { const h2 = Math.max(h, Math.min(this.floor[k], this.H[k])); this.floorAddedM3 += (h2 - h) * CELL * CELL; h = h2; this.floored++; }
       dv += h - this.H[k];
       this.H[k] = h;
     }

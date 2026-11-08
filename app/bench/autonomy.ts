@@ -29,6 +29,7 @@ const lenT = parseFloat(opt('--length')?.[0] ?? '3.6');
 const depthT = parseFloat(opt('--depth')?.[0] ?? '1.0');
 const legacyPitch = flag('--legacy-pitch');
 const legacyRelief = flag('--legacy-relief');
+const noRelief = flag('--no-relief'); // ablation: model forces never slow the machine
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
@@ -68,7 +69,7 @@ if (neuralModel) {
   const urls = neuralModel.split(',');
   const mdl = urls.length > 1 ? await loadEnsemble(ort, urls) : await loadNeuralModel(ort, urls[0]);
   const gate = gateOpt ? { maxStd: parseFloat(gateOpt[0]), maxOOR: parseFloat(gateOpt[1]), ranges } : undefined;
-  auto.neural = { model: mdl, mu: neuralMu, fMax: 112800, floor: !noFloor, gate, stats: fstats, legacyRelief };
+  auto.neural = { model: mdl, mu: neuralMu, fMax: noRelief ? Infinity : 112800, floor: !noFloor, gate, stats: fstats, legacyRelief: legacyRelief || noRelief };
 }
 if (legacyPitch) auto.attitude = 'legacy';
 const traces: unknown[] = [];
@@ -108,10 +109,10 @@ const res = {
   volume: { terrainStartM3: +vol0.toFixed(3), terrainEndM3: +vol1.toFixed(3), inBucketM3: +auto.bucketLoad.toFixed(3), carriedLedgerM3: +hf.ledger.carried.toFixed(3),
     deltaM3: +(vol1 + hf.ledger.carried - vol0).toFixed(3), bankCutM3: +hf.ledger.bankCut.toFixed(3), swellExpectedM3: +(hf.ledger.bankCut * (hf.soil.swell - 1)).toFixed(3) },
   neural: neuralModel ? { model: neuralModel.split(',').map((u) => path.basename(u)), mu: neuralMu, peakDragKN: +(auto.peakDragN / 1e3).toFixed(1), steps: auto.neuralSteps,
-    clippedCells: auto.neuralClipped, flooredCells: auto.neuralFloored, spilledM3: +auto.neuralSpilled.toFixed(3), netRemovedM3: +auto.neuralNetRemoved.toFixed(3), floorProjection: !noFloor,
+    clippedCells: auto.neuralClipped, flooredCells: auto.neuralFloored, spilledM3: +auto.neuralSpilled.toFixed(3), netRemovedM3: +auto.neuralNetRemoved.toFixed(3), modelDvM3: +auto.neuralModelDvM3.toFixed(3), floorAddedM3: +auto.neuralFloorAddedM3.toFixed(3), floorProjection: !noFloor,
     gate: gateOpt ? { maxStd: +gateOpt[0], maxOOR: +gateOpt[1] } : null, gateSteps: auto.gateSteps, fallbackSteps: auto.fallbackSteps,
     networkShare: auto.gateSteps + auto.fallbackSteps ? +(auto.gateSteps / (auto.gateSteps + auto.fallbackSteps)).toFixed(3) : null,
-    attitude: auto.attitude, relief: legacyRelief ? 'legacy fMax on Fx' : 'dx225 per-actuator', peakDemand: auto.peakDemand,
+    attitude: auto.attitude, relief: noRelief ? 'off (ablation)' : legacyRelief ? 'legacy fMax on Fx' : 'dx225 per-actuator', peakDemand: auto.peakDemand,
     maxPoseGapS: auto.maxPoseGapS, inputRanges: fstats.summary(ranges), oorSteps: fstats.oorSteps, meanEnsembleStd: fstats.steps ? +(fstats.stdSum / Math.max(1, auto.gateSteps + auto.fallbackSteps)).toFixed(5) : null } : null,
   traces: traceFile ? traces.length : undefined,
 };

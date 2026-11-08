@@ -479,6 +479,8 @@ export class DigAutonomy {
     w.commit();
     this.neuralClipped += w.clipped;
     this.neuralFloored += w.floored;
+    this.neuralFloorAddedM3 += w.floorAddedM3;
+    this.neuralModelDvM3 += w.modelDvM3;
     // mass accounting: what the model removed goes into the bucket (and the heightfield ledger, so dump() can place it);
     // anything beyond the bucket's room spills back onto the terrain at the cutting edge instead of vanishing
     const removed = Math.max(0, w.carried);
@@ -496,7 +498,9 @@ export class DigAutonomy {
     }
     this.win = null;
   }
-  neuralNetRemoved = 0; // sum of window volume removed by the model (negative = net material created)
+  neuralNetRemoved = 0;
+  neuralFloorAddedM3 = 0; // volume created by the floor projection (all windows)
+  neuralModelDvM3 = 0; // net volume change from model dh (all windows) // sum of window volume removed by the model (negative = net material created)
 
   /** end of a dig (left penetrate/drag/curl): flush queued steps, commit, reset per-bite state */
   private endNeuralBite() {

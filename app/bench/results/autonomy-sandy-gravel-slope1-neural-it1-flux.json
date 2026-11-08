@@ -1,0 +1,165 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 632.2,
+  "wallSeconds": 327.599,
+  "phase": "done",
+  "verified": false,
+  "cycles": 32,
+  "avgCycleS": 19.61,
+  "avgFill": 0,
+  "productivityM3h": 0,
+  "bankRemoved": 0,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 321.1,
+      "points": 4941,
+      "coverage": 0.615,
+      "inTolFrac": 0.041,
+      "lidarMeanAboveCm": 60.5,
+      "truthMeanAboveCm": 60.38
+    },
+    {
+      "t": 632.2,
+      "points": 4369,
+      "coverage": 0.479,
+      "inTolFrac": 0.033,
+      "lidarMeanAboveCm": 81.75,
+      "truthMeanAboveCm": 81.78
+    }
+  ],
+  "final": {
+    "onGradePct": 2,
+    "meanAbsErrorCm": 78.19,
+    "remainingCutM3": 4.973,
+    "overDigM3": 0.008,
+    "unplannedCutM3": 0.039,
+    "sloughedM3": 0,
+    "maxAboveCm": 170,
+    "maxBelowCm": 16.3
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "319.6s survey: holding still to scan",
+    "321.1s survey (1.6 s dwell): 4941 pts, coverage 62%, lidar 60.5 cm vs truth 60.4 cm above grade, 376 cells out of tol",
+    "321.1s pass 2",
+    "630.7s survey: holding still to scan",
+    "632.2s survey (1.6 s dwell): 4369 pts, coverage 48%, lidar 81.8 cm vs truth 81.8 cm above grade, 294 cells out of tol",
+    "632.2s stopped: no further improvement; 3% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 66.361,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 6.11,
+    "bankCutM3": 0,
+    "swellExpectedM3": 0
+  },
+  "neural": {
+    "model": [
+      "soil-it1-flux.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 125.1,
+    "steps": 2467,
+    "clippedCells": 90125,
+    "flooredCells": 1480175,
+    "spilledM3": 0,
+    "netRemovedM3": -13.7,
+    "floorProjection": true,
+    "gate": null,
+    "gateSteps": 2467,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 0.779438709741119,
+      "arm": 0.8520088236679809,
+      "boom": 5.510661198071746,
+      "frontLiftoff": 4.3345422775370315,
+      "forwardTip": 0.08454169943378864,
+      "sliding": 0.900286555518841
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 118416,
+        "p01": -1.4649548530578613,
+        "p50": -0.017859840765595436,
+        "p99": 1.5353015661239624,
+        "min": -2.4914212226867676,
+        "max": 3,
+        "fracOutsideTrain": 0.00913727874611539
+      },
+      {
+        "channel": "pen0",
+        "n": 24923,
+        "p01": -0.2473442554473877,
+        "p50": 0.09938561916351318,
+        "p99": 1,
+        "min": -0.7712987661361694,
+        "max": 1,
+        "fracOutsideTrain": 0.024836496408939535
+      },
+      {
+        "channel": "occ0",
+        "n": 118416,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "pen1",
+        "n": 24869,
+        "p01": -0.5653817653656006,
+        "p50": 0.11876648664474487,
+        "p99": 1,
+        "min": -1,
+        "max": 1,
+        "fracOutsideTrain": 0.011781736298202582
+      },
+      {
+        "channel": "occ1",
+        "n": 118416,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "mu",
+        "n": 118416,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": 0
+      }
+    ],
+    "oorSteps": 0,
+    "meanEnsembleStd": 0
+  }
+}

@@ -207,6 +207,7 @@ def evaluate(predict, eps, floor_proj=True, baselines=None):
             "final_rmse_disturbed_m": {m: agg("final_rmse_disturbed_m", m, src) for m in ("model", "cut_relax", "persistence")},
             "rollout_rmse_all_m": {m: agg("rollout_rmse_all_m", m, src) for m in ("model", "cut_relax", "persistence")},
             "abs_volume_err_m3": {m: (float(np.mean([abs(r["volume_err_m3"][m]) for r in rows if src is None or r["source"] == src])) if rows else None) for m in ("model", "cut_relax")},
+            "mean_volume_bias_m3": {m: (float(np.mean([r["volume_err_m3"][m] for r in rows if src is None or r["source"] == src])) if rows else None) for m in ("model", "cut_relax")},
             "force_x_rel_err_drag": (lambda v: float(np.mean(v)) if v else None)([r["force_x_rel_err_drag"] for r in rows if (src is None or r["source"] == src) and r["force_x_rel_err_drag"] is not None]),
             "clipped": int(sum(r["clipped"] for r in rows if src is None or r["source"] == src)),
             "floored": int(sum(r["floored"] for r in rows if src is None or r["source"] == src)),
@@ -250,6 +251,8 @@ def main():
     ap.add_argument("--curriculum", default="4,16,32")
     ap.add_argument("--noise", default="auto")
     ap.add_argument("--sym", action="store_true")
+    ap.add_argument("--vol-loss", type=float, default=0.0, help="weight of the per-step window volume-change loss "
+                    "((sum dh_pred - sum dh_true) * cell^2)^2 / (0.01 m^3)^2: trains the net removal (sink) directly")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--lr", type=float, default=1e-3)
@@ -280,7 +283,9 @@ def main():
             dh, f = sess.run(None, {"x": x})
             return dh[0, 0], f[0]
         rows, summary = evaluate(predict, held, baselines=baselines)
-        (outd / f"heldout-{args.tag}.json").write_text(json.dumps({"tag": args.tag, "model": args.eval_onnx, "summary": summary, "episodes": rows}, indent=1))
+        rows_nf, summary_nf = evaluate(predict, held, floor_proj=False, baselines=baselines)
+        (outd / f"heldout-{args.tag}.json").write_text(json.dumps({"tag": args.tag, "model": args.eval_onnx, "summary": summary,
+            "summary_nofloor": summary_nf, "episodes": rows, "episodes_nofloor": rows_nf}, indent=1))
         print(json.dumps(summary, indent=1))
         return
 
@@ -327,8 +332,13 @@ def main():
                     if args.floor_train:
                         floor = torch.minimum(floor, torch.where(torch.isfinite(Tn1), Tn1, torch.full_like(Tn1, 1e9)))
                         Hn = floor_project(torch, Hn, H, floor)
-                    H = Hn
                     Ht, Ft = g("H", k + 1), g("F", k + 1)
+                    if args.vol_loss > 0:
+                        Hprev_t = g("H", k)
+                        dv_pred = (Hn - H).sum(dim=(-2, -1)) * CELL * CELL
+                        dv_true = (Ht - Hprev_t).sum(dim=(-2, -1)) * CELL * CELL
+                        loss = loss + args.vol_loss * (((dv_pred - dv_true) / 0.01) ** 2).mean()
+                    H = Hn
                     loss = loss + ((H - Ht) ** 2).mean() / 0.01 ** 2 + (((f - Ft) / 1e4) ** 2).mean() * 0.1
                 loss = loss / U
                 opt.zero_grad()
@@ -370,7 +380,8 @@ def main():
             dh, f = model(x)
             return dh[0, 0].cpu().numpy(), f[0].cpu().numpy()
     rows, summary = evaluate(predict, held, baselines=baselines)
-    res = {"tag": args.tag, "summary": summary, "episodes": rows, "params": vars(args), "n_params": nparam,
+    rows_nf, summary_nf = evaluate(predict, held, floor_proj=False, baselines=baselines)
+    res = {"tag": args.tag, "summary": summary, "summary_nofloor": summary_nf, "episodes_nofloor": rows_nf, "episodes": rows, "params": vars(args), "n_params": nparam,
            "train_episodes": len(train), "train_s": t_train, "device": dev, "log": log}
     (outd / f"heldout-{args.tag}.json").write_text(json.dumps(res, indent=1))
     (outd / f"soil-{args.tag}.stats.json").write_text(json.dumps(stats, indent=1))
