@@ -1,0 +1,92 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.5737855253723487,
+      3.16218201025186
+    ],
+    "p1": [
+      4.247571050744698,
+      4.74436402050372
+    ],
+    "bottomWidth": 1.1,
+    "depth": 1,
+    "sideSlope": 1.5
+  },
+  "simSeconds": 541.4,
+  "wallSeconds": 281.863,
+  "phase": "done",
+  "verified": true,
+  "cycles": 25,
+  "avgCycleS": 21.54,
+  "avgFill": 0.636,
+  "productivityM3h": 33.1,
+  "bankRemoved": 4.963,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 541.4,
+      "points": 20529,
+      "coverage": 0.518,
+      "inTolFrac": 0.859,
+      "lidarMeanAboveCm": 1.25,
+      "truthMeanAboveCm": 1.23
+    }
+  ],
+  "final": {
+    "onGradePct": 77.6,
+    "meanAbsErrorCm": 1.99,
+    "remainingCutM3": 0.522,
+    "overDigM3": 0,
+    "unplannedCutM3": 0,
+    "sloughedM3": 9.002,
+    "maxAboveCm": 35.5,
+    "maxBelowCm": 0
+  },
+  "bottom": {
+    "cells": 441,
+    "onGradePct": 86.2,
+    "meanAbsErrorCm": 1.18,
+    "remainingCutM3": 0.052,
+    "overDigM3": 0,
+    "maxAboveCm": 16.4,
+    "maxBelowCm": 0
+  },
+  "slopes": {
+    "cells": 2182,
+    "onGradePct": 75.9,
+    "meanAbsErrorCm": 2.16,
+    "remainingCutM3": 0.47,
+    "overDigM3": 0,
+    "maxAboveCm": 35.5,
+    "maxBelowCm": 0
+  },
+  "backend": "heightfield",
+  "controller": "legacy",
+  "designClamp": true,
+  "log": [
+    "0.0s plan: 5 lane(s) x 5 bites, trench 4.0 m, spoil 4.0 m off centreline",
+    "0.0s start",
+    "3.3s waypoint unreachable (2.06 m), skipping",
+    "3.4s waypoint unreachable (0.57 m), skipping",
+    "108.4s waypoint unreachable (1.04 m), skipping",
+    "216.3s waypoint unreachable (0.79 m), skipping",
+    "326.5s waypoint unreachable (0.61 m), skipping",
+    "435.7s waypoint unreachable (2.06 m), skipping",
+    "435.7s waypoint unreachable (0.42 m), skipping",
+    "539.9s survey: holding still to scan",
+    "541.4s survey (1.6 s dwell): 20529 pts, coverage 52%, lidar 1.2 cm vs truth 1.2 cm above grade, 176 cells out of tol",
+    "541.4s done: 86% of measured cells within tolerance (lidar survey)"
+  ],
+  "debugCuts": [],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 4.963,
+    "swellExpectedM3": 0.596
+  },
+  "neural": null
+}
