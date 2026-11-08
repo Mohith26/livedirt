@@ -106,6 +106,12 @@ class Sim3D:
         self.torque = ti.Vector.field(3, ti.f32, ())
         self.damp = ti.field(ti.f32, ())
         self.damp[None] = 1.0
+        # pre-uploaded pose schedule (drive_fast): one kernel launch per step, no host round trips
+        self.SCH = 4096
+        self.sch_pos = ti.Vector.field(3, ti.f32, self.SCH)
+        self.sch_vel = ti.Vector.field(3, ti.f32, self.SCH)
+        self.sch_ang = ti.field(ti.f32, self.SCH)
+        self.sch_omg = ti.field(ti.f32, self.SCH)
         x, v, C, F, alive = self.x, self.v, self.C, self.F, self.alive
         vcf = self.vc
         use_vc = 1 if volume_correction else 0
@@ -113,6 +119,7 @@ class Sim3D:
         nb, box_c, box_h, box_a = self.nb, self.box_c, self.box_h, self.box_a
         tpos, tang, tvel, tomg = self.tpos, self.tang, self.tvel, self.tomg
         force, torque, damp, n_p = self.force, self.torque, self.damp, self.n_p
+        sch_pos, sch_vel, sch_ang, sch_omg = self.sch_pos, self.sch_vel, self.sch_ang, self.sch_omg
         floor_k = self.floor_k
         mu_t = mu_tool
 
@@ -144,7 +151,12 @@ class Sim3D:
             return n.normalized(1e-9)
 
         @ti.kernel
-        def substep(use_tool: ti.i32):
+        def substep_k(use_tool: ti.i32, k: ti.i32):
+            if k >= 0:
+                tpos[None] = sch_pos[k]
+                tang[None] = sch_ang[k]
+                tvel[None] = sch_vel[k]
+                tomg[None] = sch_omg[k]
             for I in ti.grouped(grid_m):
                 grid_v[I] = ti.Vector([0.0, 0.0, 0.0])
                 grid_m[I] = 0.0
@@ -276,7 +288,8 @@ class Sim3D:
                 if alive[p] == 1 and tool_sdf(x[p]) < 0.0:
                     alive[p] = 0
 
-        self._substep = substep
+        self._substep_k = substep_k
+        self._substep = lambda use_tool: substep_k(use_tool, -1)
         self._reset = reset_particles
         self._mark_inside_tool = mark_inside_tool
         self.n_p[None] = 0
@@ -411,6 +424,55 @@ class Sim3D:
                 if on_sample is not None and on_sample(self, rows[-1]) is True:
                     n_steps = k + 1  # caller asked to stop (e.g. the commanded path is complete)
                     break
+        ti.sync()
+        self.t += n_steps * dt
+        return {"series": np.array(rows), "wall_s": time.perf_counter() - t0, "steps": n_steps, "dt": dt}
+
+    def drive_fast(self, path_fn, duration, *, limiter=None, sample_every=0.01, use_tool=1, speed_floor=0.0, on_sample=None):
+        """Same contract and output as drive() (f_max not supported), but the commanded poses of each sample window are
+        computed on the host and uploaded once, and every step is a single asynchronous kernel launch."""
+        dt = self.dt
+        every = max(1, int(sample_every / dt))
+        if every + 1 > self.SCH:
+            raise ValueError("sample window longer than the pose schedule buffer")
+        t_cmd, s = 0.0, 1.0
+        rows = []
+        self.force[None] = ti.Vector([0.0, 0.0, 0.0])
+        self.torque[None] = ti.Vector([0.0, 0.0, 0.0])
+        n_steps = int(duration / dt)
+        o = self.origin.astype(np.float32)
+        P = np.zeros((self.SCH, 3), np.float32); V = np.zeros((self.SCH, 3), np.float32)
+        Aa = np.zeros(self.SCH, np.float32); Om = np.zeros(self.SCH, np.float32)
+        k, t0 = 0, time.perf_counter()
+        mult = 2.0 if self.symmetry_y else 1.0
+        while k < n_steps:
+            m = min(every, n_steps - k)
+            ts = t_cmd + s * dt * np.arange(m + 1)
+            poses = [path_fn(t) for t in ts]
+            pp = np.array([np.asarray(q[0], np.float64) for q in poses]); aa = np.array([float(q[1]) for q in poses])
+            P[:m] = pp[:m] + o; V[:m] = (pp[1:] - pp[:-1]) / dt
+            Aa[:m] = aa[:m]; Om[:m] = (aa[1:] - aa[:-1]) / dt
+            self.sch_pos.from_numpy(P); self.sch_vel.from_numpy(V); self.sch_ang.from_numpy(Aa); self.sch_omg.from_numpy(Om)
+            for j in range(m):
+                self._substep_k(use_tool, j)
+            k += m
+            t_cmd = float(ts[m])
+            pb, ab = pp[m], aa[m]
+            self.set_pose(pb, ab)
+            fwin = self.force.to_numpy() / m
+            twin = self.torque.to_numpy() / m
+            self.force[None] = ti.Vector([0.0, 0.0, 0.0])
+            self.torque[None] = ti.Vector([0.0, 0.0, 0.0])
+            fx, fz, ty = mult * fwin[0], mult * fwin[2], mult * twin[1]
+            if limiter is not None:
+                if limiter(fx, fz, ty, pb, ab):
+                    s = max(speed_floor, s * 0.85)
+                else:
+                    s = min(1.0, s + 0.05)
+            rows.append([k * dt, t_cmd, *pb, ab, fx, fz, ty, s])
+            if on_sample is not None and on_sample(self, rows[-1]) is True:
+                n_steps = k
+                break
         ti.sync()
         self.t += n_steps * dt
         return {"series": np.array(rows), "wall_s": time.perf_counter() - t0, "steps": n_steps, "dt": dt}
