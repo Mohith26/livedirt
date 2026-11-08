@@ -37,6 +37,27 @@ Cycle times average 19 s, consistent with a 22 t excavator. Designing a slope st
 
 **Own reconstruction from the raw footage** (`pipeline/train/`): from the original 4K drone video, pycolmap registered 200 / 200 frames (0.46 px reprojection error); Brush trained 7000 steps in 337 s on a MacBook. On 25 held-out frames: **PSNR 23.5 dB, SSIM 0.723, LPIPS 0.330**. The articulated dump truck driving through the footage renders as a smeared ghost, a live example of the static-scene assumption breaking on a real job site.
 
+## Closed-loop soil simulation (DigBench)
+
+![3D MPM bucket dig cycle](digbench/results/bucket-cycle.gif)
+
+The machine changes the ground and the ground pushes back. `digbench/` is a benchmark plus a simulator stack
+(3D MLS-MPM sand with a two-way coupled rigid bucket, a force-limited closed-loop drive, a multiscale MPM/heightfield
+hybrid, per-site calibration, and a learned surrogate that runs in the browser). Method: [docs/SIMULATION.md](docs/SIMULATION.md).
+Every number below is generated from run outputs in [digbench/RESULTS.md](digbench/RESULTS.md).
+
+| Task | Reference | Result |
+|---|---|---|
+| Granular column collapse (7 aspect ratios) | Sarlin et al. 2021 experiments | runout error 2.4% (converged grid), height 20% low; LiveDirt heightfield: 66% / 49% |
+| Plate intrusion stress maps (36 angle pairs) | Li, Zhang, Goldman 2013 (Science) | correlation 0.94, no fitted parameters |
+| Full-scale bucket cycle | grid convergence 4/3/2 cm | drag 40.0 / 37.4 / 40.3 kN; at 1.0 m depth drag (107 kN mean, 134 kN peak) exceeds the DX225 arm force |
+| Multiscale hybrid vs full-site MPM | full-site MPM | 1 m margin: terrain RMSE 2.3 cm, drag +4%, 2.2x faster; LiveDirt: 15 cm |
+| Calibration from one noisy slump | hidden friction | friction within 0.014; bucket drag within 6% (default friction guess: 26-148% off) |
+| Learned surrogate, held-out MPM episodes | 3D MPM | final terrain 0.13 m vs LiveDirt 0.38 m; drag force within 11%; 47x real time on GPU, 13x on CPU |
+
+Known gaps are listed in docs/SIMULATION.md (collapse height, fit-vs-measurement in the plate data, and the
+surrogate's training distribution, which does not yet cover multi-pass autonomy on dug terrain).
+
 ## What's real
 
 | | |
