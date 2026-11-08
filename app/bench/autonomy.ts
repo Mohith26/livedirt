@@ -29,7 +29,8 @@ const lenT = parseFloat(opt('--length')?.[0] ?? '3.6');
 const depthT = parseFloat(opt('--depth')?.[0] ?? '1.0');
 const legacyPitch = flag('--legacy-pitch');
 const legacyRelief = flag('--legacy-relief');
-const noRelief = flag('--no-relief'); // ablation: model forces never slow the machine
+const noRelief = flag('--no-relief');
+const consistency = flag('--consistency-gate'); // a priori physical consistency gate (capacity / creation) // ablation: model forces never slow the machine
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
@@ -68,8 +69,8 @@ if (neuralModel) {
   const { loadNeuralModel, loadEnsemble } = await import('../src/sim/neuralSoil');
   const urls = neuralModel.split(',');
   const mdl = urls.length > 1 ? await loadEnsemble(ort, urls) : await loadNeuralModel(ort, urls[0]);
-  const gate = gateOpt ? { maxStd: parseFloat(gateOpt[0]), maxOOR: parseFloat(gateOpt[1]), ranges } : undefined;
-  auto.neural = { model: mdl, mu: neuralMu, fMax: noRelief ? Infinity : 112800, floor: !noFloor, gate, stats: fstats, legacyRelief: legacyRelief || noRelief };
+  const gate = gateOpt ? { maxStd: parseFloat(gateOpt[0]), maxOOR: parseFloat(gateOpt[1]), ranges } : (consistency ? { maxStd: Infinity, maxOOR: Infinity, ranges } : undefined);
+  auto.neural = { model: mdl, mu: neuralMu, fMax: noRelief ? Infinity : 112800, floor: !noFloor, gate, stats: fstats, legacyRelief: legacyRelief || noRelief, consistency };
 }
 if (legacyPitch) auto.attitude = 'legacy';
 const traces: unknown[] = [];
@@ -113,7 +114,7 @@ const res = {
     gate: gateOpt ? { maxStd: +gateOpt[0], maxOOR: +gateOpt[1] } : null, gateSteps: auto.gateSteps, fallbackSteps: auto.fallbackSteps,
     networkShare: auto.gateSteps + auto.fallbackSteps ? +(auto.gateSteps / (auto.gateSteps + auto.fallbackSteps)).toFixed(3) : null,
     attitude: auto.attitude, relief: noRelief ? 'off (ablation)' : legacyRelief ? 'legacy fMax on Fx' : 'dx225 per-actuator', peakDemand: auto.peakDemand,
-    maxPoseGapS: auto.maxPoseGapS, inputRanges: fstats.summary(ranges), oorSteps: fstats.oorSteps, meanEnsembleStd: fstats.steps ? +(fstats.stdSum / Math.max(1, auto.gateSteps + auto.fallbackSteps)).toFixed(5) : null } : null,
+    maxPoseGapS: auto.maxPoseGapS, inputRanges: fstats.summary(ranges), oorSteps: fstats.oorSteps, capSteps: fstats.capSteps, consistencyGate: consistency, meanEnsembleStd: fstats.steps ? +(fstats.stdSum / Math.max(1, auto.gateSteps + auto.fallbackSteps)).toFixed(5) : null } : null,
   traces: traceFile ? traces.length : undefined,
 };
 void forwardPlanar; void planarToWorld;

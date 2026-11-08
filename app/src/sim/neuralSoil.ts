@@ -120,12 +120,17 @@ export async function loadEnsemble(ort: any, urls: string[], opts: Record<string
  * cells have an input channel outside the training range [lo, hi] (per channel; from the trainer's percentiles), or
  * (b) the ensemble's mean dh spread over bucket-near cells exceeds maxStd (m per 0.1 s).
  */
-export interface NeuralGate { ranges?: [number, number][]; maxOOR: number; maxStd: number }
+export interface NeuralGate {
+  ranges?: [number, number][]; maxOOR: number; maxStd: number;
+  /** physical consistency (a priori, not tuned): fall back when this window would have removed more than maxCarried
+   * m^3 (set per step from the bucket's remaining heaped capacity x 1.2) or created more than maxCreate m^3 */
+  maxCarried?: number; maxCreate?: number;
+}
 
 /** loop-side samples of each input channel (for comparing deployment inputs to training percentiles) */
 export class FeatureStats {
   samples: number[][] = [[], [], [], [], [], []];
-  oorSteps = 0; steps = 0; stdSum = 0; stdMax = 0;
+  oorSteps = 0; capSteps = 0; steps = 0; stdSum = 0; stdMax = 0;
   private seed = 7;
   add(f: Float32Array) {
     const n = NX * NY;
@@ -226,6 +231,13 @@ export class NeuralSoilWindow {
       const m = cnt ? sum / cnt : 0;
       if (this.stats) { this.stats.stdSum += m; this.stats.stdMax = Math.max(this.stats.stdMax, m); }
       if (m > gate.maxStd) return { force: this.lastForce, carried: this.carried, gated: true, reason: 'std' };
+    }
+    if (gate && (gate.maxCarried !== undefined || gate.maxCreate !== undefined)) {
+      let dvp = 0;
+      for (let k = 0; k < n; k++) { const d = dh[k]; if (Number.isFinite(d)) dvp += Math.max(-0.3, Math.min(0.3, d)); }
+      const carriedNext = this.carried - dvp * CELL * CELL;
+      if (gate.maxCarried !== undefined && carriedNext > gate.maxCarried) { if (this.stats) this.stats.capSteps++; return { force: this.lastForce, carried: this.carried, gated: true, reason: 'cap' }; }
+      if (gate.maxCreate !== undefined && -carriedNext > gate.maxCreate) { if (this.stats) this.stats.capSteps++; return { force: this.lastForce, carried: this.carried, gated: true, reason: 'create' }; }
     }
     for (let k = 0; k < T1.length; k++) if (Number.isFinite(T1[k]) && T1[k] < this.floor[k]) this.floor[k] = T1[k];
     const force = raw.map((f) => (Number.isFinite(f) ? f : 0)) as [number, number, number];

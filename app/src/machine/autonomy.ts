@@ -93,7 +93,7 @@ export class DigAutonomy {
    * 3.4 m x 2 m window around the bucket instead of the kinematic cut, and the predicted drag force drives a relief
    * valve: above fMax (DX225LC-7 ISO arm digging force, 112.8 kN) the boom and arm slow down.
    */
-  neural: { model: NeuralModel; mu: number; fMax: number; floor?: boolean; gate?: NeuralGate; stats?: FeatureStats; legacyRelief?: boolean } | null = null;
+  neural: { model: NeuralModel; mu: number; fMax: number; floor?: boolean; gate?: NeuralGate; stats?: FeatureStats; legacyRelief?: boolean; consistency?: boolean } | null = null;
   private win: NeuralSoilWindow | null = null;
   private winR0 = 0;
   private winT = 0;
@@ -418,10 +418,12 @@ export class DigAutonomy {
   gateSteps = 0; // model steps where the gate passed (network handled)
   fallbackSteps = 0; // 0.1 s steps handled by cut+relax because the gate failed
   private fallback = false; // current 0.1 s interval is in fallback (cut+relax) mode
+  private biteFallback = false; // consistency gate failed: cut+relax for the rest of this bite
 
   private neuralTick(dt: number, phase: AutoPhase) {
     const P = this.surrogatePose(phase);
     if (this.traceRec) this.traceTick(dt, P);
+    if (this.biteFallback) { this.cutAtTip(); this.prevPose = P; return; }
     if (!this.win && !this.fallback) this.anchorWindow(P);
     if (this.fallback) this.cutAtTip();
     const prev = this.prevPose ?? P;
@@ -452,12 +454,16 @@ export class DigAutonomy {
       const q = this.nq.shift()!;
       if (!this.win) this.anchorWindow(q);
       const w = this.win!;
-      const r = await w.step(q.px - this.winR0, q.pz, q.pitch, nn.gate);
+      // physical consistency limits are per bite: the window may not remove more than the bucket's remaining heaped room
+      const g = nn.gate && nn.consistency ? { ...nn.gate, maxCarried: 1.2 * Math.max(0, this.bucketCapacity - this.load), maxCreate: 0.2 } : nn.gate;
+      const r = await w.step(q.px - this.winR0, q.pz, q.pitch, g);
       if (r.gated) {
         // gate failed: write back what the model did so far and let cut+relax handle this 0.1 s interval
+        // (a consistency failure hands the rest of the bite to cut+relax)
         this.fallbackSteps++;
         this.commitWindow();
         this.fallback = true;
+        if (r.reason === 'cap' || r.reason === 'create') this.biteFallback = true;
         continue;
       }
       this.fallback = false;
@@ -506,6 +512,7 @@ export class DigAutonomy {
   private endNeuralBite() {
     if (this.win) this.commitWindow();
     this.fallback = false;
+    this.biteFallback = false;
     this.prevPose = null;
     this.winT = 0;
     this.reliefScale = 1;
