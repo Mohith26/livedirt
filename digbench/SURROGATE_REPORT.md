@@ -4,6 +4,15 @@ Target: the closed loop (`app/bench/autonomy.ts`, sandy-gravel, 1:1 trench, capt
 heightfield (cut+relax) baseline: **34.5% on grade, 5.34 cm MAE** (re-run twice, byte-identical). Every number below is
 from a run; files under `digbench/results/` (held-out: `results/v3models/`, loop table: `results/loop-gate.md`) and `app/bench/results/`.
 
+> **Corrections (2026-11-08, v4 work):**
+> 1. The loop bench's `volume` block (terrain start/end, `volume delta`) summed the *masked* cells outside the simulation
+>    (`M[k]` instead of `!M[k]`). Every `volume delta` in this report and in `results/loop-gate.md` is invalid. The
+>    model-side counters (model dh volume, floor added, net removed, bank cut) are separate and unaffected.
+> 2. The "~0.10 m seed-to-seed spread of the MPM truth" quoted below came from the v3 frame readout with the legacy
+>    yield cone. Measured again with the Mohr-Coulomb solver and the lean before/after readout, the particle-seed spread
+>    on disturbed cells is 0.016-0.031 m over 5 replayed bites (`results/v4/`, bed experiment). The truth is far less
+>    noisy than stated, so the 4.5 cm grade tolerance is not below the teacher's noise floor.
+
 ## Frozen evaluation
 
 * Held-out set (generated once, never trained on): standard task-3 dig, 10 chained bites on rough ground (seed 900),

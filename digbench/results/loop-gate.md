@@ -1,3 +1,5 @@
+> The `volume delta` column is INVALID (the bench summed masked cells; fixed 2026-11-08).
+
 | run | model | on grade % | MAE cm | over-dig m^3 | unplanned cut m^3 | volume delta m^3 | clipped | floored | peak drag kN | network share | verified |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `baseline` | heightfield (cut+relax) | 34.5 | 5.34 | 0.331 | 0.077 | +nan | 0 | 0 | - | - | False |
