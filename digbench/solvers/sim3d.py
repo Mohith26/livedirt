@@ -31,7 +31,12 @@ def _arch(name):
 class Sim3D:
     def __init__(self, size, dx, *, mu_f=0.38, mu_tool=0.4, rho_bulk=1600.0, E=1.0e6, nu=0.3, ppc_side=2,
                  max_particles=4_000_000, n_boxes=8, arch="gpu", symmetry_y=True, seed=0, tool_speed_max=1.0,
-                 floor_sticky=True, wall_mu=0.0, mem_frac=0.85, volume_correction=False):
+                 floor_sticky=True, wall_mu=0.0, mem_frac=0.85, volume_correction=False, yield_model="dp", phi_deg=None,
+                 cohesion=0.0, tension=None):
+        """yield_model: 'dp' (legacy Drucker-Prager cone, alpha = sqrt(2)/3 mu_f; equals Mohr-Coulomb with sin(phi) = mu_f in
+        plane strain and is stronger than tan(phi) = mu_f there) or 'mc' (Mohr-Coulomb in principal Kirchhoff stresses with
+        friction angle phi_deg (default atan(mu_f)), cohesion (Pa) and a hydrostatic tension limit (Pa, default the MC
+        apex c cot(phi)); plastic flow is Lode-angle-preserving radial return at constant pressure (zero dilatancy)."""
         ti.reset()
         ti.init(arch=_arch(arch), default_fp=ti.f32, random_seed=seed, offline_cache=True, device_memory_fraction=mem_frac)
         self.dx, self.pad = dx, 3
@@ -46,6 +51,18 @@ class Sim3D:
         la = E * nu / ((1 + nu) * (1 - 2 * nu))
         self.mu_f, self.mu_tool = mu_f, mu_tool
         alpha = math.sqrt(2.0) / 3.0 * mu_f
+        self.yield_model = yield_model
+        phi_r = math.atan(mu_f) if phi_deg is None else math.radians(phi_deg)
+        self.phi_deg = math.degrees(phi_r)
+        self.cohesion = float(cohesion)
+        sphi, cphi = math.sin(phi_r), math.cos(phi_r)
+        Kb = la + 2.0 * mu / 3.0
+        apex_p = (cohesion * cphi / sphi) if sphi > 1e-6 else 0.0
+        if tension is not None:
+            apex_p = min(apex_p, float(tension))
+        tr_apex = apex_p / Kb  # largest (tensile) log-volume the soil can carry
+        use_mc = 1 if yield_model == "mc" else 0
+        coh2 = 2.0 * cohesion * cphi
         c_wave = math.sqrt((la + 2 * mu) / rho_bulk)
         self.dt = min(0.35 * dx / c_wave, 0.2 * dx / tool_speed_max)
         self.symmetry_y = symmetry_y
@@ -146,12 +163,25 @@ class Sim3D:
                     tr = e.sum()
                     ehat = e - tr / 3.0
                     ehn = ehat.norm() + 1e-12
-                    if tr >= 0.0:
-                        e = ti.Vector([0.0, 0.0, 0.0])
+                    if ti.static(use_mc == 1):
+                        if tr >= tr_apex:
+                            e = ti.Vector([tr_apex / 3.0, tr_apex / 3.0, tr_apex / 3.0])
+                        else:
+                            sdev = 2.0 * mu * ehat
+                            smax = ti.max(sdev[0], ti.max(sdev[1], sdev[2]))
+                            smin = ti.min(sdev[0], ti.min(sdev[1], sdev[2]))
+                            pk = -Kb * tr  # Kirchhoff pressure, compression positive
+                            den = (smax - smin) + (smax + smin) * sphi
+                            cap = 2.0 * pk * sphi + coh2
+                            if den > cap and den > 1e-12:
+                                e = tr / 3.0 + (ti.max(cap, 0.0) / den) * ehat
                     else:
-                        yp = ehn + (3.0 * la + 2.0 * mu) / (2.0 * mu) * tr * alpha
-                        if yp > 0.0:
-                            e = e - (yp / ehn) * ehat
+                        if tr >= 0.0:
+                            e = ti.Vector([0.0, 0.0, 0.0])
+                        else:
+                            yp = ehn + (3.0 * la + 2.0 * mu) / (2.0 * mu) * tr * alpha
+                            if yp > 0.0:
+                                e = e - (yp / ehn) * ehat
                     if ti.static(use_vc == 1):
                         vcf[p] += tr_trial - e.sum()
                     F[p] = U @ ti.Matrix([[ti.exp(e[0]), 0.0, 0.0], [0.0, ti.exp(e[1]), 0.0], [0.0, 0.0, ti.exp(e[2])]]) @ V.transpose()
