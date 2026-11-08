@@ -37,7 +37,7 @@ from . import actuators as A
 CELL = 0.05
 VOLCORR = [False]  # set from --volume-correction
 # soil model for new beds: {"model": "dp"|"mc", "phi": deg or None (atan(mu)), "c": cohesion Pa}; set from CLI / server
-YIELD = {"model": "dp", "phi": None, "c": 0.0}
+YIELD = {"model": "dp", "phi": None, "c": 0.0, "rho": 1600.0}
 NX, NY = 68, 40  # model window: 3.4 m (x, radial) x 2.0 m (lateral, -1..1 m)
 SURF = 1.2
 
@@ -108,7 +108,7 @@ class Episode:
         npart = int(1.12 * float((Hb - (bottom if bottom is not None else 0)).sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
         self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed, volume_correction=VOLCORR[0],
                          mem_frac=0.85 / num_workers, max_particles=npart, yield_model=YIELD["model"], phi_deg=YIELD["phi"],
-                         cohesion=YIELD["c"])
+                         cohesion=YIELD["c"], rho_bulk=YIELD.get("rho", 1600.0))
         self.n0 = self.sim.fill_heightfield(Hb, CELL, rng_seed=seed, bottom=bottom)
         if bottom is not None:
             self.sim.set_floor(bottom, CELL)

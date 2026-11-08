@@ -24,6 +24,7 @@ import numpy as np
 
 from . import gen_replay as G
 from .attitude import lip_offset
+from .soil_presets import mc_params
 
 ARGS = None
 LOG = []
@@ -33,7 +34,9 @@ def run_request(req):
     tr = req["trace"]
     soil = req.get("soil", {})
     G.VOLCORR[0] = bool(req.get("vc", ARGS.volume_correction))
-    G.YIELD.update(model=soil.get("model", "mc"), phi=soil.get("phi"), c=float(soil.get("c", 0.0)))
+    if "preset" in soil:
+        soil = {**mc_params(soil["preset"]), **{k: v for k, v in soil.items() if k != "preset"}}
+    G.YIELD.update(model=soil.get("model", "mc"), phi=soil.get("phi"), c=float(soil.get("c", 0.0)), rho=float(soil.get("rho", 1600.0)))
     mu = float(soil.get("mu", math.tan(math.radians(soil.get("phi", 30.0)))))
     M = float(req.get("margin", ARGS.margin))
     terr = np.array(tr["terrain"], dtype=np.float64).reshape(tr["nx"], tr["ny"])
