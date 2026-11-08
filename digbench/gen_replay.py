@@ -84,16 +84,30 @@ def synthetic_poses(depth, drag, x_pivot0=2.7, surf=SURF, t_pen=1.0, t_drag=2.0,
 class Episode:
     """One bed (MPM sim) that can run several bites; frames are cropped to the window and anchored per bite."""
 
-    def __init__(self, terrain_win, margin, mu, dx, arch, num_workers, r0, ground_win, seed, min_floor_win):
+    def __init__(self, terrain_win, margin, mu, dx, arch, num_workers, r0, ground_win, seed, min_floor_win, poses=None, col_depth=None):
         self.M = margin
         self.nxb, self.nyb = terrain_win.shape
         self.zfloor = float(min(terrain_win.min(), min_floor_win)) - 0.5  # bed z = window z - zfloor
         Hb = terrain_win - self.zfloor
         self.size = (self.nxb * CELL, self.nyb * CELL, float(Hb.max()) + 2.6)
-        npart = int(1.12 * float(Hb.sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
+        # per-column floor (speed): soil deeper than col_depth below the local surface is replaced by a sticky floor,
+        # except within 1 m of anything the bucket sweeps, where the floor stays 0.5 m below the lowest lip point
+        bottom = None
+        if col_depth is not None:
+            bottom = np.maximum(0.0, Hb - col_depth)
+            if poses is not None:
+                X, Y = np.meshgrid((np.arange(self.nxb) + 0.5) * CELL, (np.arange(self.nyb) + 0.5) * CELL, indexing="ij")
+                near = np.zeros_like(Hb, bool)
+                for pp in poses:
+                    px = pp[1] + margin
+                    near |= (np.abs(X - (px - 0.45)) < 0.45 + 1.0 + 0.3) & (np.abs(Y - (margin + 1.0)) < 0.6 + 1.0)
+                bottom = np.where(near, 0.0, bottom)
+        npart = int(1.12 * float((Hb - (bottom if bottom is not None else 0)).sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
         self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed,
                          mem_frac=0.85 / num_workers, max_particles=npart)
-        self.n0 = self.sim.fill_heightfield(Hb, CELL, rng_seed=seed)
+        self.n0 = self.sim.fill_heightfield(Hb, CELL, rng_seed=seed, bottom=bottom)
+        if bottom is not None:
+            self.sim.set_floor(bottom, CELL)
         self.boxes = bucket_boxes_full(dx)
         self.sim.set_tool(self.boxes)
         self.TP = tool_points(self.boxes)
@@ -152,7 +166,7 @@ class Episode:
             return limits and d["max_frac"] > 1.0
 
         Hs, Ts, poses_w, forces, carried, srel, tcmd, dem = [], [], [], [], [], [], [], []
-        done = {"n": 0}
+        done = {"n": 0, "stall": 0}
 
         def rec(s, row):
             if done["n"] > 3:
@@ -167,10 +181,12 @@ class Episode:
             srel.append(row[9]); tcmd.append(row[1]); dem.append(dem_log[-1] if dem_log else 0.0)
             if row[1] >= T_end - 1e-6:
                 done["n"] += 1
-            return done["n"] > 3
+            # the app's relief never stops the bucket (speed >= 0.05x); end a bite stalled at the floor for 3 s
+            done["stall"] = done["stall"] + 1 if row[9] <= 0.051 else 0
+            return done["n"] > 3 or done["stall"] >= 30
 
         t0 = time.perf_counter()
-        res = self.sim.drive(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec)
+        res = self.sim.drive(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec, speed_floor=0.05)
         H = np.array(Hs)
         # anchor exactly as the app: window frame shift so the first frame's window mean is 1.2
         zs = SURF - float(H[0].mean())
@@ -227,6 +243,8 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="max traces to run (0 = all)")
     ap.add_argument("--select", default="", help="comma list of trace indices to run (overrides --limit)")
     ap.add_argument("--no-limits", action="store_true")
+    ap.add_argument("--col-depth", type=float, default=None, help="per-column floor: simulate only this much soil below "
+                    "the surface away from the bucket's reach (speed; validated against the full column)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--worker", type=int, default=0)
     ap.add_argument("--num-workers", type=int, default=1)
@@ -258,7 +276,7 @@ def main():
             terr = np.full((nxb, nyb), SURF)
             poses = synthetic_poses(0.6, 1.2)
             ep = Episode(terr, M, 0.38, args.dx, args.arch, args.num_workers, r0=4.0, ground_win=SURF, seed=k,
-                         min_floor_win=min(p[2] for p in poses) - 1.0)
+                         min_floor_win=min(p[2] for p in poses) - 1.0, poses=poses, col_depth=args.col_depth)
             r = ep.run_bite(poses, f, {"source": "standard", "depth": 0.6, "drag": 1.2}, limits=not args.no_limits)
             print(f"{name}: frames={r['frames']} carried={r['carried']:.2f} completion={r['completion']:.2f} "
                   f"peak_demand={r['peak_demand']:.2f} wall={r['wall']:.0f}s particles={ep.n0}", flush=True)
@@ -294,7 +312,7 @@ def main():
             poses = tr["poses"]
             lip_min = min(p[2] + lip_offset(p[3])[1] for p in poses)
             ep = Episode(terr, M, mu, args.dx, args.arch, args.num_workers, r0=tr["r0"], ground_win=tr["groundY"] + tr["shift"],
-                         seed=k, min_floor_win=lip_min)
+                         seed=k, min_floor_win=lip_min, poses=poses, col_depth=args.col_depth)
             meta = {"source": "replay", "name": name, "bite": tr["bite"], "pass": tr["pass"],
                     "soil": tr["soil"], "neural": tr["neural"], "attitude": tr.get("attitude", "")}
             r = ep.run_bite(poses, f, meta, limits=not args.no_limits)

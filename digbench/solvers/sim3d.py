@@ -69,6 +69,9 @@ class Sim3D:
         self.n_p = ti.field(ti.i32, ())
         self.grid_v = ti.Vector.field(3, ti.f32, (nx, ny, nz))
         self.grid_m = ti.field(ti.f32, (nx, ny, nz))
+        # per-column sticky floor (node z index); default = the flat floor at the domain bottom
+        self.floor_k = ti.field(ti.i32, (nx, ny))
+        self.floor_k.fill(pad)
         # tool: boxes in tool frame (centre, half extents), pose, twist
         self.nb = ti.field(ti.i32, ())
         self.box_c = ti.Vector.field(3, ti.f32, n_boxes)
@@ -87,6 +90,7 @@ class Sim3D:
         nb, box_c, box_h, box_a = self.nb, self.box_c, self.box_h, self.box_a
         tpos, tang, tvel, tomg = self.tpos, self.tang, self.tvel, self.tomg
         force, torque, damp, n_p = self.force, self.torque, self.damp, self.n_p
+        floor_k = self.floor_k
         mu_t = mu_tool
 
         @ti.func
@@ -178,7 +182,7 @@ class Sim3D:
                                 force[None] += f
                                 torque[None] += r.cross(f)
                                 gv = gnew
-                    if I[2] <= pad:
+                    if I[2] <= floor_k[I[0], I[1]]:
                         if ti.static(sticky):
                             gv = ti.Vector([0.0, 0.0, 0.0])
                         elif gv[2] < 0:
@@ -259,16 +263,33 @@ class Sim3D:
         pos += (np.random.default_rng(rng_seed).random(pos.shape) - 0.5) * 0.1 * sp
         return self.add_particles(pos)
 
-    def fill_heightfield(self, H, cell, x_off=0.0, y_off=0.0, rng_seed=0):
-        """Fill soil below heightfield H[ix, iy] (domain coordinates, metres; cell = H grid spacing)."""
+    def set_floor(self, Hf, cell):
+        """Per-column sticky floor: grid nodes at or below Hf[ix, iy] (domain metres, cell = Hf spacing) are held
+        fixed, standing in for the static soil beneath (soil below it need not be simulated)."""
+        nx, ny = self.n[0], self.n[1]
+        xs = (np.arange(nx) - self.pad) * self.dx
+        ys = (np.arange(ny) - self.pad) * self.dx
+        ix = np.clip((xs / cell).astype(int), 0, Hf.shape[0] - 1)
+        iy = np.clip((ys / cell).astype(int), 0, Hf.shape[1] - 1)
+        h = Hf[ix[:, None], iy[None, :]]
+        self.floor_k.from_numpy((self.pad + np.floor(h / self.dx)).astype(np.int32))
+
+    def fill_heightfield(self, H, cell, x_off=0.0, y_off=0.0, rng_seed=0, bottom=None):
+        """Fill soil below heightfield H[ix, iy] (domain coordinates, metres; cell = H grid spacing); with `bottom`
+        (same grid) only the soil between bottom and H is created."""
         sp = self.sp
         xs = (np.arange(int(H.shape[0] * cell / sp)) + 0.5) * sp
         ys = (np.arange(int(H.shape[1] * cell / sp)) + 0.5) * sp
         X, Y = np.meshgrid(xs, ys, indexing="ij")
         top = H[np.clip((X / cell).astype(int), 0, H.shape[0] - 1), np.clip((Y / cell).astype(int), 0, H.shape[1] - 1)]
         nz = np.maximum(0, np.floor(top / sp).astype(int))
-        cols = np.repeat(np.arange(X.size), nz.ravel())
-        k = np.concatenate([np.arange(n) for n in nz.ravel()]) if cols.size else np.zeros(0, int)
+        k0 = np.zeros_like(nz)
+        if bottom is not None:
+            bot = bottom[np.clip((X / cell).astype(int), 0, H.shape[0] - 1), np.clip((Y / cell).astype(int), 0, H.shape[1] - 1)]
+            k0 = np.clip(np.floor(bot / sp).astype(int), 0, None)
+        cnt = np.maximum(0, nz - k0)
+        cols = np.repeat(np.arange(X.size), cnt.ravel())
+        k = np.concatenate([np.arange(a, b) for a, b in zip(k0.ravel(), nz.ravel()) if b > a]) if cols.size else np.zeros(0, int)
         pos = np.stack([X.ravel()[cols] + x_off, Y.ravel()[cols] + y_off, (k + 0.5) * sp], 1)
         pos += (np.random.default_rng(rng_seed).random(pos.shape) - 0.5) * 0.1 * sp
         return self.add_particles(pos)
