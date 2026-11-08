@@ -390,6 +390,21 @@ export class Heightfield {
           else D = floor + r / s;
           if (D < this.H0[k] - 0.005) { this.design[k] = D; this.designFloor[k] = r <= 1e-9 ? 1 : 0; }
         }
+      // daylighting: a cut slope ends where it first meets the ground; keep only design cells connected to the floor
+      // (cells where the projected slope dips under rising terrain far beyond the daylight line are not part of the cut)
+      const keep = new Uint8Array(N * N), stack: number[] = [];
+      for (let k = 0; k < N * N; k++) if (this.designFloor[k]) { keep[k] = 1; stack.push(k); }
+      while (stack.length) {
+        const k = stack.pop()!, i = k % N, j = (k - i) / N;
+        for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const ii = i + di, jj = j + dj;
+          if (ii < 0 || jj < 0 || ii >= N || jj >= N) continue;
+          const kk = jj * N + ii;
+          if (keep[kk] || Number.isNaN(this.design[kk])) continue;
+          keep[kk] = 1; stack.push(kk);
+        }
+      }
+      for (let k = 0; k < N * N; k++) if (!keep[k]) { this.design[k] = NaN; this.designFloor[k] = 0; }
     }
   }
 
@@ -419,6 +434,39 @@ export class Heightfield {
     st.onGradePct = st.cells ? (100 * on) / st.cells : 0;
     st.meanAbsError = st.cells ? abs / st.cells : 0;
     return st;
+  }
+
+  /**
+   * Remove material above a (possibly tilted) straight cutting edge: cells within halfL along (dirX, dirZ) and halfW
+   * across (latX, latZ) of (x, z) are cut down to edgeY + tanTilt * lateral offset (at most maxTake per call). Unlike
+   * dig(), nothing outside the bucket's width is touched and nothing goes below the edge line.
+   */
+  cutStrip(x: number, z: number, dirX: number, dirZ: number, latX: number, latZ: number, halfW: number, halfL: number, edgeY: number, tanTilt: number, maxTake: number): DigResult {
+    const res: DigResult = { bank: 0, loose: 0 };
+    const R = Math.hypot(halfW, halfL);
+    const [ci, cj] = this.cellOf(x, z);
+    const r = Math.ceil(R / this.cell) + 1;
+    for (let j = cj - r; j <= cj + r; j++)
+      for (let i = ci - r; i <= ci + r; i++) {
+        if (!this.inGrid(i, j)) continue;
+        const k = j * this.N + i;
+        if (this.mask[k] || !this.zone[k]) continue;
+        const [px, pz] = this.center(i, j);
+        const a = (px - x) * dirX + (pz - z) * dirZ, o = (px - x) * latX + (pz - z) * latZ;
+        if (Math.abs(a) > halfL || Math.abs(o) > halfW) continue;
+        const take = Math.min(maxTake, this.h(k) - (edgeY + tanTilt * o));
+        if (take <= 0) continue;
+        const fromLoose = Math.min(this.L[k], take);
+        this.L[k] -= fromLoose;
+        this.B[k] -= take - fromLoose;
+        res.loose += fromLoose * this.area;
+        res.bank += (take - fromLoose) * this.area;
+        this.touch(i, j);
+      }
+    this.ledger.bankCut += res.bank;
+    this.ledger.looseHandled += res.loose;
+    this.ledger.carried += res.bank * this.soil.swell + res.loose;
+    return res;
   }
 
   /** add d metres of surface height at cell k (negative: remove loose first, then bank; positive: loose) */

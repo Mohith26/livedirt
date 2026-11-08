@@ -35,6 +35,7 @@ const backend = opt('--soil-backend')?.[0] ?? 'heightfield'; // heightfield | mp
 const mpmUrl = opt('--mpm-url')?.[0] ?? 'http://127.0.0.1:8765';
 const mpmReq = JSON.parse(opt('--mpm-req')?.[0] ?? '{}'); // extra request fields: soil {model, phi, c}, margin, col_depth, seed
 const ctrl = opt('--controller')?.[0] ?? 'legacy';
+const dumpGrid = opt('--dump-grid')?.[0] ?? null; // write H, design, H0 over the design's bounding box (json)
 const noClamp = flag('--no-clamp');
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
@@ -137,6 +138,7 @@ const res = {
   final: { onGradePct: +g.onGradePct.toFixed(1), meanAbsErrorCm: +(g.meanAbsError * 100).toFixed(2), remainingCutM3: +g.remainingCut.toFixed(3), overDigM3: +g.overDig.toFixed(3), unplannedCutM3: +g.unplannedCut.toFixed(3), sloughedM3: +hf.ledger.sloughed.toFixed(3), maxAboveCm: +(g.maxAbove * 100).toFixed(1), maxBelowCm: +(g.maxBelow * 100).toFixed(1) },
   bottom: gs(gB), slopes: gs(gS), backend, controller: ctrl, designClamp: auto.designClamp, adaptive: ctrl === 'adaptive' ? { fillEff: +auto.fillEff.toFixed(3), log: auto.adaptiveLog } : undefined, mpm: backend === 'mpm' ? { url: mpmUrl, req: mpmReq, bites: mpmLog } : undefined,
   log: auto.log,
+  debugCuts: auto.debugCuts,
   volume: { terrainStartM3: +vol0.toFixed(3), terrainEndM3: +vol1.toFixed(3), inBucketM3: +auto.bucketLoad.toFixed(3), carriedLedgerM3: +hf.ledger.carried.toFixed(3),
     deltaM3: +(vol1 + hf.ledger.carried - vol0).toFixed(3), bankCutM3: +hf.ledger.bankCut.toFixed(3), swellExpectedM3: +(hf.ledger.bankCut * (hf.soil.swell - 1)).toFixed(3) },
   neural: neuralModel ? { model: neuralModel.split(',').map((u) => path.basename(u)), mu: neuralMu, peakDragKN: +(auto.peakDragN / 1e3).toFixed(1), steps: auto.neuralSteps,
@@ -148,6 +150,14 @@ const res = {
   traces: traceFile ? traces.length : undefined,
 };
 void forwardPlanar; void planarToWorld;
+if (dumpGrid) {
+  let i0 = N, i1 = -1, j0 = N, j1 = -1;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (!Number.isNaN(hf.design[j * N + i])) { i0 = Math.min(i0, i); i1 = Math.max(i1, i); j0 = Math.min(j0, j); j1 = Math.max(j1, j); }
+  i0 = Math.max(0, i0 - 10); j0 = Math.max(0, j0 - 10); i1 = Math.min(N - 1, i1 + 10); j1 = Math.min(N - 1, j1 + 10);
+  const g: Record<string, number[]> = { H: [], D: [], H0: [], F: [] };
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * N + i; g.H.push(+(hf.B[k] + hf.L[k]).toFixed(4)); g.D.push(Number.isNaN(hf.design[k]) ? -999 : +hf.design[k].toFixed(4)); g.H0.push(+hf.H0[k].toFixed(4)); g.F.push(hf.designFloor[k]); }
+  fs.writeFileSync(dumpGrid, JSON.stringify({ i0, j0, ni: i1 - i0 + 1, nj: j1 - j0 + 1, cell: meta.cell, ...g }));
+}
 fs.mkdirSync('bench/results', { recursive: true });
 const outName = `bench/results/autonomy-${soilId}-slope${slope}${neuralModel ? '-neural' + (noFloor ? '-nofloor' : '') : ''}${tag ? '-' + tag : ''}.json`;
 fs.writeFileSync(outName, JSON.stringify(res, null, 2));

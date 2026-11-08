@@ -79,6 +79,7 @@ export class DigAutonomy {
   private laneFar: [number, number] = [0, 0];
   private laneNear: [number, number] = [0, 0];
   private laneV: [number, number] = [0, 0];
+  private sideSlope = 1;
   private laneIdx = 0;
   private laneT = 0; // progress along the current lane, 0 (far end) -> 1 (near end)
   private biteBank0 = 0;
@@ -86,6 +87,8 @@ export class DigAutonomy {
   tilt = 0;
   maxTilt = 40 * DEG;
   private curTilt = 0; // tilt of the waypoint being executed
+  debugCuts: string[] = [];
+  private seg: { wp: Waypoint; from: [number, number, number]; fromAbs: number; u: number; len: number } | null = null;
   private biteSwept = 0;
   lastBiteCompletion = 1; // set by external backends (1 = path completed)
   adaptiveLog: { lane: number; t0: number; t1: number; swept: number; measured: number; eff: number; cut: number; completion: number }[] = [];
@@ -180,11 +183,19 @@ export class DigAutonomy {
     this.spoil = [mx + vx * side * setback, mz + vz * side * setback];
     this.biteIdx = 0;
     // adaptive lanes: the floor lane on the centreline, then slope lanes outward on both sides (0.8 bucket widths apart)
-    this.lanesA = [{ off: 0, kind: 'floor' }];
-    const step = this.bucketWidth * 0.8;
-    for (let o = design.bottomWidth / 2 + this.bucketWidth / 2 - 0.1; o - this.bucketWidth / 2 < topW / 2; o += step) {
-      this.lanesA.push({ off: o, kind: 'slope' }, { off: -o, kind: 'slope' });
+    this.lanesA = [];
+    const oIn = design.bottomWidth / 2 + this.bucketWidth / 2, oOut = topW / 2 - this.bucketWidth / 2;
+    if (oOut > 0.05 && design.sideSlope > 1e-6) {
+      const nS = Math.max(1, Math.ceil((oOut - oIn) / (this.bucketWidth * 0.8)) + 1);
+      // slopes first, outer lanes before inner ones (top-down), so material sloughing off the cuts lands on the floor
+      // before the floor lane cleans it up last
+      for (let q = nS - 1; q >= 0; q--) {
+        const o = nS === 1 ? Math.max(oIn, oOut) : oIn + ((oOut - oIn) * q) / (nS - 1);
+        this.lanesA.push({ off: o, kind: 'slope' }, { off: -o, kind: 'slope' });
+      }
     }
+    this.lanesA.push({ off: 0, kind: 'floor' });
+    this.sideSlope = design.sideSlope;
     this.laneFar = far; this.laneNear = near; this.laneV = [vx, vz];
     this.laneIdx = 0; this.laneT = 0;
     this.note(`plan: ${lanes} lane(s) x ${nb} bites, trench ${len.toFixed(1)} m, spoil ${setback.toFixed(1)} m off centreline` + (this.controller === 'adaptive' ? `; adaptive: ${this.lanesA.length} lanes` : ''));
@@ -240,20 +251,27 @@ export class DigAutonomy {
     const v = this.hf.inGrid(i, j) ? this.hf.design[j * this.hf.N + i] : NaN;
     return Number.isNaN(v) ? this.hf.heightAt(x, z, 'H0') : v;
   }
-  /** cross-slope of the design under the bucket at a lane point -> tilt (clamped to the tiltrotator range) */
-  private laneTilt(x: number, z: number) {
-    const lx = this.laneV[0], lz = this.laneV[1], h = this.bucketWidth / 2;
-    const g = (this.designOrGround(x + lx * h, z + lz * h) - this.designOrGround(x - lx * h, z - lz * h)) / this.bucketWidth;
-    return Math.max(-this.maxTilt, Math.min(this.maxTilt, Math.atan(g)));
+  /** true when the trench floor (not an end slope) is under the bucket centre */
+  private floorUnder(x: number, z: number) {
+    const [i, j] = this.hf.cellOf(x, z);
+    return this.hf.inGrid(i, j) && this.hf.designFloor[j * this.hf.N + i] === 1;
   }
   /** machine-control edge height (at the lane centre) for the current tilt: the tilted edge line never goes below the
    * design (or the original ground outside the footprint) anywhere across the bucket width */
   private edgeFloor(x: number, z: number) {
     const lx = this.laneV[0], lz = this.laneV[1], tn = Math.tan(this.tilt);
+    const floorLane = this.lanesA[this.laneIdx]?.kind === 'floor' && this.floorUnder(x, z);
     let m = -Infinity;
     for (let k = 0; k <= 6; k++) {
       const o = -this.bucketWidth / 2 + (this.bucketWidth * k) / 6;
-      m = Math.max(m, this.designOrGround(x + lx * o, z + lz * o) - tn * o);
+      const px = x + lx * o, pz = z + lz * o;
+      // the floor lane grades the floor: a bucket wider than the floor may nick the toe of the slopes (<= half the
+      // width difference / slope), as with any bucket wider than the design bottom
+      if (floorLane) {
+        const [i, j] = this.hf.cellOf(px, pz);
+        if (this.hf.inGrid(i, j) && !this.hf.designFloor[j * this.hf.N + i] && !Number.isNaN(this.hf.design[j * this.hf.N + i])) continue;
+      }
+      m = Math.max(m, this.designOrGround(px, pz) - tn * o);
     }
     return m;
   }
@@ -279,7 +297,7 @@ export class DigAutonomy {
     const ds = 0.05, minLen = 0.4, maxLen = 2.2;
     const want = (this.targetFill * this.bucketCapacity) / ((this.hf.soil?.swell ?? 1) * this.fillEff);
     while (this.laneIdx < this.lanesA.length) {
-      { const [mx, mz] = this.lanePoint(this.laneIdx, 0.5); this.tilt = this.lanesA[this.laneIdx].kind === 'floor' ? 0 : this.laneTilt(mx, mz); }
+      { const L = this.lanesA[this.laneIdx]; this.tilt = L.kind === 'floor' ? 0 : Math.sign(L.off) * Math.min(this.maxTilt, Math.atan(1 / this.sideSlope)); }
       // skip ahead to the first point on this lane with material above the cut line
       while (this.laneT < 1) {
         const [x, z] = this.lanePoint(this.laneIdx, this.laneT);
@@ -448,7 +466,23 @@ export class DigAutonomy {
     const wp = this.queue[0];
     this.phase = wp.phase;
     this.curTilt = wp.tilt ?? 0;
-    const ik = solveIkFlexible(this.g, this.cx, this.groundY, this.cz, wp.tip, wp.bucketAbs, this.joints.swing);
+    // adaptive controller: coordinated (Cartesian) tip motion on cutting waypoints - the cutting edge follows the
+    // straight line between waypoints (machine-control style), so it never dips below the planned cut line the way
+    // independent rate-limited joint moves do
+    let segTarget: { tip: [number, number, number]; abs: number; uNext: number } | null = null;
+    if (this.controller === 'adaptive' && wp.cut) {
+      if (!this.seg || this.seg.wp !== wp) {
+        const fk0 = forwardPlanar(this.g, this.joints);
+        const from = planarToWorld(this.cx, this.groundY, this.cz, this.joints.swing, fk0.tip[0], fk0.tip[1]) as [number, number, number];
+        this.seg = { wp, from, fromAbs: fk0.bucketAbs, u: 0, len: Math.hypot(wp.tip[0] - from[0], wp.tip[1] - from[1], wp.tip[2] - from[2]) };
+      }
+      const sp = wp.phase === 'penetrate' ? 0.4 : 0.6; // m/s along the line
+      const uNext = Math.min(1, this.seg.u + (sp * dt) / Math.max(this.seg.len, 1e-3));
+      const f = this.seg.from, lerp = (a: number, b: number) => a + (b - a) * uNext;
+      segTarget = { tip: [lerp(f[0], wp.tip[0]), lerp(f[1], wp.tip[1]), lerp(f[2], wp.tip[2])], abs: lerp(this.seg.fromAbs, wp.bucketAbs), uNext };
+    }
+    const ik = segTarget ? solveIkFlexible(this.g, this.cx, this.groundY, this.cz, segTarget.tip, segTarget.abs, this.joints.swing)
+      : solveIkFlexible(this.g, this.cx, this.groundY, this.cz, wp.tip, wp.bucketAbs, this.joints.swing);
     if (!ik.reachable && ik.error > 0.25) {
       this.note(`waypoint unreachable (${ik.error.toFixed(2)} m), skipping`);
       this.queue.shift();
@@ -464,6 +498,11 @@ export class DigAutonomy {
       else this.joints[key] = tgt;
     };
     move('swing'); move('boom'); move('arm'); move('bucket');
+    if (segTarget && this.seg) {
+      // advance along the line only once the joints have caught up with the current intermediate target
+      if (done) this.seg.u = segTarget.uNext;
+      done = done && this.seg.u >= 1;
+    }
     const digging = wp.phase === 'penetrate' || wp.phase === 'drag' || wp.phase === 'curl';
     if (this.externalSoil) {
       // soil lives outside (e.g. MPM): record the bite's poses, hand the whole bite over when the dig phases end
@@ -502,6 +541,19 @@ export class DigAutonomy {
     const fk = forwardPlanar(this.g, this.joints);
     const [tx, ty, tz] = planarToWorld(this.cx, this.groundY, this.cz, this.joints.swing, fk.tip[0], fk.tip[1]);
     const sx = -Math.sin(this.joints.swing), sz = Math.cos(this.joints.swing); // lateral axis
+    if (!this.designClamp) {
+      // edge-line cut over exactly the bucket width (no design clamp in the soil): material above the tilted edge goes in
+      const before0 = this.hf.ledger.carried;
+      if (this.debugCuts.length < 40) {
+        const [ci, cj] = this.hf.cellOf(tx, tz);
+        const D = this.hf.inGrid(ci, cj) ? this.hf.design[cj * this.hf.N + ci] : NaN;
+        if (!Number.isNaN(D) && ty < D - 0.05) this.debugCuts.push(`${this.stats.elapsed.toFixed(1)}s ${this.phase} lane ${this.laneIdx} tip ${tx.toFixed(2)},${ty.toFixed(2)},${tz.toFixed(2)} D ${D.toFixed(2)} tilt ${(this.curTilt / DEG).toFixed(0)} q ${this.queue.length} wp ${this.queue[0]?.tip.map((v) => v.toFixed(2)).join(',')}`);
+      }
+      const r = this.hf.cutStrip(tx, tz, Math.cos(this.joints.swing), Math.sin(this.joints.swing), sx, sz, this.bucketWidth / 2, 0.12, ty, Math.tan(this.curTilt), 0.25);
+      this.load += this.hf.ledger.carried - before0;
+      this.stats.bankRemoved += r.bank;
+      return;
+    }
     const lanes = 4;
     let bank = 0, loose = 0;
     const before = this.hf.ledger.carried;
