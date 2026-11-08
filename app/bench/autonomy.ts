@@ -113,11 +113,14 @@ const runExternal = async () => {
   }
   if (!r) throw new Error('MPM backend failed 3 times');
   auto.applyExternal(tr, r);
+  hf.clearActive(); // the backend's surface is final: the heightfield's relax only acts on later dumps (the spoil pile)
   const { delta, ...meta } = r; void delta;
   mpmLog.push({ bite: tr.bite, pass: tr.pass, ...meta });
   console.error(`[mpm] bite ${mpmLog.length} pass ${tr.pass}: carried ${r.carried.toFixed(3)} completion ${r.completion.toFixed(2)} demand ${r.peak_demand.toFixed(2)} wall ${r.wall.toFixed(0)}s`);
 };
-const volNow = () => { let v = 0; for (let k = 0; k < n; k++) if (M[k]) v += hf.B[k] + hf.L[k]; return v * hf.area; };
+// terrain volume over the valid (unmasked) cells. NOTE: before 2026-11-08 this summed the MASKED cells (M[k] = 1), so
+// every earlier 'volume' block (terrainStart/End, deltaM3) measured cells outside the sim and is invalid.
+const volNow = () => { let v = 0; for (let k = 0; k < n; k++) if (!M[k]) v += hf.B[k] + hf.L[k]; return v * hf.area; };
 const vol0 = volNow();
 auto.plan(design);
 auto.start();
@@ -128,7 +131,7 @@ while (auto.phase !== 'done' && auto.phase !== 'unreachable' && t < 3600) {
   auto.step(dt, false);
   if (neuralModel) await auto.settleNeural();
   if (auto.pendingBite) await runExternal();
-  if (backend !== 'mpm') hf.relax(3);
+  hf.relax(3);
   t += dt; scanAcc += dt; rayAcc += dt;
   if (Math.round(t / dt) % 1200 === 0) console.error(`[progress] sim ${t.toFixed(0)} s wall ${((Date.now() - t0) / 1000).toFixed(0)} s phase ${auto.phase} cycles ${auto.stats.cycles} pass ${auto.stats.passes}`);
   if (rayAcc > 0.5) { refreshRay(); rayAcc = 0; }

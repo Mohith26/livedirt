@@ -149,6 +149,10 @@ export class Heightfield {
   isSettling() {
     return this.active !== null;
   }
+  /** forget pending relaxation (an external soil backend already settled the cells it wrote) */
+  clearActive() {
+    this.active = null;
+  }
   markAllDirty() {
     this.dirty = { i0: 0, j0: 0, i1: this.N - 1, j1: this.N - 1 };
   }
