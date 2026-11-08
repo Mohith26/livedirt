@@ -67,7 +67,7 @@ if plates:
             out.append(f"| `{d['tag']}` (grid check) | - | - | - | - | alpha_z(0,90) {a['alpha_z']:.3f}; alpha_x(90,0) {b['alpha_x']:.3f} (fit {b['ref_x']:.3f}) | {d['device']} |")
 
 # ---------------- Task 3: bucket ----------------
-v3 = sorted(R.glob("bucket-v3-*.json"))
+v3 = sorted(R.glob("bucket-v3-*.json")) + sorted(R.glob("bucket-v4*.json"))
 if v3:
     out += ["", "## Task 3: full-scale bucket dig cycle (3D MPM) with the DX225LC-7 force model", "",
             "1.0 m wide, 0.81 m^3 bucket, sand mu = 0.38, 1600 kg/m^3. Attitude `physical` = teeth-first penetration at 40 deg, attack "
@@ -75,15 +75,22 @@ if v3:
             "Limits `dx225` = per-cylinder torque from 34.3 MPa relief with ISO-calibrated moment arms (boom arm 0.65 m ASSUMED), plus "
             "front lift-off / forward tip / track sliding for a 23.6 t machine (digbench/actuators.py); `none` = prescribed motion, loads "
             "logged only. Fractions > 1 exceed the rated capacity. Trench depth = mean over the drag footprint (lip x 0.6-1.4 m, |y| < 0.4 m).", "",
-            "| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |",
-            "|---|---|---|---|---|---|---|---|---|---|"]
+            "| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | bulking (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |",
+            "|---|---|---|---|---|---|---|---|---|---|---|"]
     for p in v3:
         d = json.loads(p.read_text()); s = d["summary"]
-        out.append(f"| `{d['tag']}` | {s['drag_force_mean_kN']:.1f} / {s['drag_force_peak_kN']:.1f} | {s['vertical_force_peak_kN']:.0f} | {s['carried_bank_m3']:.2f} | "
+        dm = "no drag phase" if s['drag_force_mean_kN'] is None else f"{s['drag_force_mean_kN']:.1f}"
+        bk = f"{s['bulking_m3']:+.2f}" if "bulking_m3" in s else "-"
+        out.append(f"| `{d['tag']}` | {dm} / {s['drag_force_peak_kN']:.1f} | {s['vertical_force_peak_kN']:.0f} | {s['carried_bank_m3']:.2f} | {bk} | "
                    f"{s['trajectory_completion']:.0%} ({s.get('stall_phase') or 'no stall'}) | {s['peak_bucket_frac']:.2f} / {s['peak_arm_frac']:.2f} / {s['peak_boom_frac']:.2f} | "
                    f"{s['peak_front_liftoff_frac']:.2f} / {s['peak_forward_tip_frac']:.2f} / {s['peak_sliding_frac']:.2f} | {'yes' if s['would_tip_or_lift'] else 'no'} | "
                    f"{s['trench_depth_footprint_mpm_m']:.2f} / {s['trench_depth_footprint_kinematic_m']:.2f} | {s['wall_s']:.0f} |")
-    out += ["", "Trench readout: the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m "
+    out += ["", "`v4vc-*` = with the Tampubolon et al. (2017) volume correction; `v3-*`/`v4novc-*` without. Bulking = surface volume change + carried "
+            "volume (~0 for a volume-conserving solver; real dry-sand swell is ~10-15% of moved soil). Without the correction the solver gains "
+            "50-80% of the carried volume (grid-dependent), which filled the trench and made the mound; with it bulking is +0.05/+0.02/-0.01 m^3 "
+            "at dx 4/3/2 cm, the footprint trench depth converges (0.25/0.25/0.24 m) and drag changes < 2%. `v3-*` drag means from runs that "
+            "stalled before the drag phase were averaged over the stalled plunge (a wall-time window bug); fixed in `v4*` (commanded-time window).",
+            "", "Earlier note (v3, uncorrected): the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m "
             "wide trench, and it is NOT grid-converged (it grows from dx 4 to 2 cm); drag force is converged within 7%. A cut deeper than the "
             "0.9 m bucket overflows the shell and leaves a mound (negative depth). The legacy single-cell readout (x = 1.8 m) sat where the flat "
             "plunge compressed and heaved the soil."]

@@ -1,0 +1,154 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 324.4,
+  "wallSeconds": 155.621,
+  "phase": "done",
+  "verified": false,
+  "cycles": 16,
+  "avgCycleS": 20.12,
+  "avgFill": 0,
+  "productivityM3h": 0,
+  "bankRemoved": 0,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 324.4,
+      "points": 3647,
+      "coverage": 0.287,
+      "inTolFrac": 0,
+      "lidarMeanAboveCm": 127.19,
+      "truthMeanAboveCm": 127.64
+    }
+  ],
+  "final": {
+    "onGradePct": 0.5,
+    "meanAbsErrorCm": 108.35,
+    "remainingCutM3": 6.876,
+    "overDigM3": 0.025,
+    "unplannedCutM3": 0.067,
+    "sloughedM3": 0,
+    "maxAboveCm": 250,
+    "maxBelowCm": 58.5
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "322.8s survey: holding still to scan",
+    "324.4s survey (1.6 s dwell): 3647 pts, coverage 29%, lidar 127.2 cm vs truth 127.6 cm above grade, 183 cells out of tol",
+    "324.4s stopped: survey coverage 29% is too low to verify grade; check sensor placement"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 67.828,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 7.577,
+    "bankCutM3": 0,
+    "swellExpectedM3": 0
+  },
+  "neural": {
+    "model": [
+      "soil-v1.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 39.9,
+    "steps": 1331,
+    "clippedCells": 385022,
+    "flooredCells": 1001850,
+    "spilledM3": 0,
+    "netRemovedM3": -18.287,
+    "floorProjection": true,
+    "gate": null,
+    "gateSteps": 1331,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 1.222588799630982,
+      "arm": 1.2121821759567504,
+      "boom": 5.112718221430092,
+      "frontLiftoff": 4.259218161688612,
+      "forwardTip": 0.4123423578344581,
+      "sliding": 0.287010738458681
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 63888,
+        "p01": -2.284641981124878,
+        "p50": 0.11547360569238663,
+        "p99": 1.9092050790786743,
+        "min": -2.7967026233673096,
+        "max": 3,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen0",
+        "n": 13419,
+        "p01": -0.47815555334091187,
+        "p50": 0.19961965084075928,
+        "p99": 1,
+        "min": -1,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ0",
+        "n": 63888,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen1",
+        "n": 13373,
+        "p01": -0.7905566692352295,
+        "p50": 0.19911766052246094,
+        "p99": 1,
+        "min": -1,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ1",
+        "n": 63888,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "mu",
+        "n": 63888,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": null
+      }
+    ],
+    "oorSteps": 0,
+    "meanEnsembleStd": 0
+  }
+}

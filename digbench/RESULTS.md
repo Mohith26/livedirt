@@ -66,18 +66,28 @@ Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 
 
 1.0 m wide, 0.81 m^3 bucket, sand mu = 0.38, 1600 kg/m^3. Attitude `physical` = teeth-first penetration at 40 deg, attack angle easing 40 -> 10 deg over the drag, curl to -75 deg (digbench/attitude.py); `legacy` = flat floor (pitch 0) until the curl. Limits `dx225` = per-cylinder torque from 34.3 MPa relief with ISO-calibrated moment arms (boom arm 0.65 m ASSUMED), plus front lift-off / forward tip / track sliding for a 23.6 t machine (digbench/actuators.py); `none` = prescribed motion, loads logged only. Fractions > 1 exceed the rated capacity. Trench depth = mean over the drag footprint (lip x 0.6-1.4 m, |y| < 0.4 m).
 
-| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3-legacy-dx4-d0.6-none` | 40.0 / 64.1 | 168 | 0.73 | 100% (no stall) | 0.56 / 0.43 / 3.86 | 3.12 / 0.35 / 0.46 | yes | -0.22 / 0.60 | 12 |
-| `v3-phys-dx2-d0.6-none` | 21.3 / 52.7 | 79 | 0.80 | 100% (no stall) | 0.49 / 0.25 / 1.42 | 1.37 / 0.31 / 0.38 | yes | 0.11 / 0.60 | 119 |
-| `v3-phys-dx3-d0.6-none` | 20.8 / 52.7 | 75 | 0.81 | 100% (no stall) | 0.49 / 0.25 / 1.35 | 1.31 / 0.31 / 0.38 | yes | 0.07 / 0.60 | 27 |
-| `v3-phys-dx4-d0.6-dx225` | 18.5 / 51.7 | 60 | 0.79 | 95% (no stall) | 0.47 / 0.24 / 1.09 | 1.05 / 0.29 / 0.37 | yes | 0.03 / 0.60 | 10 |
-| `v3-phys-dx4-d0.6-none` | 19.9 / 51.3 | 74 | 0.79 | 100% (no stall) | 0.48 / 0.24 / 1.33 | 1.28 / 0.30 / 0.37 | yes | 0.02 / 0.60 | 10 |
-| `v3-phys-dx4-d1.0-dx225` | -20.9 / 0.1 | 68 | 0.27 | 13% (penetrate) | 0.05 / 0.20 / 1.22 | 1.19 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 10 |
-| `v3-phys-dx4-d1.0-dx225boost` | -20.4 / 0.1 | 69 | 0.27 | 13% (penetrate) | 0.05 / 0.19 / 1.18 | 1.21 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 9 |
-| `v3-phys-dx4-d1.0-none` | 68.8 / 135.8 | 178 | 0.78 | 100% (no stall) | 1.04 / 0.63 / 3.18 | 3.07 / 0.35 / 0.98 | yes | -0.25 / 1.00 | 12 |
+| run | drag mean / peak (kN) | vertical peak (kN) | carried (m^3) | bulking (m^3) | completion (stall phase) | peak bucket / arm / boom cyl. | peak front lift-off / fwd tip / sliding | tips or lifts | footprint trench depth MPM / kinematic (m) | wall (s) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3-legacy-dx4-d0.6-none` | 40.0 / 64.1 | 168 | 0.73 | - | 100% (no stall) | 0.56 / 0.43 / 3.86 | 3.12 / 0.35 / 0.46 | yes | -0.22 / 0.60 | 12 |
+| `v3-phys-dx2-d0.6-none` | 21.3 / 52.7 | 79 | 0.80 | - | 100% (no stall) | 0.49 / 0.25 / 1.42 | 1.37 / 0.31 / 0.38 | yes | 0.11 / 0.60 | 119 |
+| `v3-phys-dx3-d0.6-none` | 20.8 / 52.7 | 75 | 0.81 | - | 100% (no stall) | 0.49 / 0.25 / 1.35 | 1.31 / 0.31 / 0.38 | yes | 0.07 / 0.60 | 27 |
+| `v3-phys-dx4-d0.6-dx225` | 18.5 / 51.7 | 60 | 0.79 | - | 95% (no stall) | 0.47 / 0.24 / 1.09 | 1.05 / 0.29 / 0.37 | yes | 0.03 / 0.60 | 10 |
+| `v3-phys-dx4-d0.6-none` | 19.9 / 51.3 | 74 | 0.79 | - | 100% (no stall) | 0.48 / 0.24 / 1.33 | 1.28 / 0.30 / 0.37 | yes | 0.02 / 0.60 | 10 |
+| `v3-phys-dx4-d1.0-dx225` | -20.9 / 0.1 | 68 | 0.27 | - | 13% (penetrate) | 0.05 / 0.20 / 1.22 | 1.19 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 10 |
+| `v3-phys-dx4-d1.0-dx225boost` | -20.4 / 0.1 | 69 | 0.27 | - | 13% (penetrate) | 0.05 / 0.19 / 1.18 | 1.21 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 9 |
+| `v3-phys-dx4-d1.0-none` | 68.8 / 135.8 | 178 | 0.78 | - | 100% (no stall) | 1.04 / 0.63 / 3.18 | 3.07 / 0.35 / 0.98 | yes | -0.25 / 1.00 | 12 |
+| `v4novc-phys-dx4-d0.6-none` | 19.9 / 51.3 | 74 | 0.79 | +0.65 | 100% (no stall) | 0.48 / 0.24 / 1.33 | 1.28 / 0.30 / 0.37 | yes | 0.02 / 0.60 | 10 |
+| `v4novc-phys-dx4-d1.0-dx225` | no drag phase / 0.1 | 68 | 0.27 | -1.60 | 13% (penetrate) | 0.05 / 0.20 / 1.22 | 1.19 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 10 |
+| `v4vc-phys-dx2-d0.6-none` | 20.9 / 51.1 | 78 | 0.82 | -0.01 | 100% (no stall) | 0.48 / 0.24 / 1.42 | 1.37 / 0.32 / 0.37 | yes | 0.24 / 0.60 | 119 |
+| `v4vc-phys-dx3-d0.6-none` | 20.4 / 50.6 | 75 | 0.82 | +0.02 | 100% (no stall) | 0.48 / 0.24 / 1.35 | 1.31 / 0.32 / 0.36 | yes | 0.25 / 0.60 | 27 |
+| `v4vc-phys-dx4-d0.6-dx225` | 19.7 / 48.7 | 60 | 0.80 | +0.04 | 95% (no stall) | 0.45 / 0.23 / 1.09 | 1.05 / 0.29 / 0.35 | yes | 0.25 / 0.60 | 10 |
+| `v4vc-phys-dx4-d0.6-none` | 19.6 / 48.4 | 74 | 0.80 | +0.05 | 100% (no stall) | 0.46 / 0.23 / 1.33 | 1.28 / 0.31 / 0.35 | yes | 0.25 / 0.60 | 10 |
+| `v4vc-phys-dx4-d1.0-dx225` | no drag phase / 0.1 | 68 | 0.27 | -1.60 | 13% (penetrate) | 0.06 / 0.20 / 1.22 | 1.19 / -0.00 / 0.15 | yes | 0.27 / 1.00 | 10 |
+| `v4vc-phys-dx4-d1.0-none` | 65.8 / 132.9 | 177 | 0.81 | +0.09 | 100% (no stall) | 1.04 / 0.63 / 3.17 | 3.06 / 0.40 / 0.96 | yes | 0.18 / 1.00 | 12 |
 
-Trench readout: the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m wide trench, and it is NOT grid-converged (it grows from dx 4 to 2 cm); drag force is converged within 7%. A cut deeper than the 0.9 m bucket overflows the shell and leaves a mound (negative depth). The legacy single-cell readout (x = 1.8 m) sat where the flat plunge compressed and heaved the soil.
+`v4vc-*` = with the Tampubolon et al. (2017) volume correction; `v3-*`/`v4novc-*` without. Bulking = surface volume change + carried volume (~0 for a volume-conserving solver; real dry-sand swell is ~10-15% of moved soil). Without the correction the solver gains 50-80% of the carried volume (grid-dependent), which filled the trench and made the mound; with it bulking is +0.05/+0.02/-0.01 m^3 at dx 4/3/2 cm, the footprint trench depth converges (0.25/0.25/0.24 m) and drag changes < 2%. `v3-*` drag means from runs that stalled before the drag phase were averaged over the stalled plunge (a wall-time window bug); fixed in `v4*` (commanded-time window).
+
+Earlier note (v3, uncorrected): the footprint depth after a 0.6 m physical cut is small because 21 deg cohesionless walls slump into a 1 m wide trench, and it is NOT grid-converged (it grows from dx 4 to 2 cm); drag force is converged within 7%. A cut deeper than the 0.9 m bucket overflows the shell and leaves a mound (negative depth). The legacy single-cell readout (x = 1.8 m) sat where the flat plunge compressed and heaved the soil.
 
 ### Superseded: pre-fix task-3 runs (legacy flat-floor attitude; `fmaxspec` = a single 112.8 kN cap along the velocity)
 
