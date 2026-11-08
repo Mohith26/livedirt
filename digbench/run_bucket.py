@@ -93,42 +93,31 @@ DX225 = {"boom_foot": (0.18, 2.05), "boom": 5.7, "arm": 2.9, "x_machine": -4.0,
          "bucket_force": 161.8e3, "bucket_r": 1.45, "arm_force": 112.8e3}
 
 
-def make_dx225_limiter(log):
-    g = DX225
-    fx0, fz0 = g["x_machine"] + g["boom_foot"][0], SURF + g["boom_foot"][1]
-
-    def elbow_of(px, pz):
-        dx, dz = px - fx0, pz - fz0
-        d = math.hypot(dx, dz)
-        a, b = g["boom"], g["arm"]
-        d = min(d, a + b - 1e-6)
-        ang = math.atan2(dz, dx) + math.acos(max(-1.0, min(1.0, (a * a + d * d - b * b) / (2 * a * d))))  # elbow up
-        return fx0 + a * math.cos(ang), fz0 + a * math.sin(ang)
+def make_dx225_limiter(log, enforce=True, pressure=None):
+    """Per-actuator DX225LC-7 limits (digbench/actuators.py): boom/arm/bucket cylinder torque from relief pressure and
+    ISO-calibrated moment arms, plus front lift-off, forward tip and track sliding. Swing axis at x = -4 m on the bed
+    surface; the rig pivot stands in for the bucket (wrist) pin. With enforce=False the loads are logged only."""
+    from . import actuators as A
+    xm = DX225["x_machine"]
 
     def limiter(fx, fz, ty, pb, ab):
-        px, pz = pb[0], pb[2]
-        ex, ez = elbow_of(px, pz)
-        ca, sa = math.cos(ab), math.sin(ab)
-        lipx, lipz = px + ca * LIP[0] - sa * LIP[1], pz + sa * LIP[0] + ca * LIP[1]
-        tau_bucket = abs(ty)
-        tau_arm = abs(ty + ((pz - ez) * fx - (px - ex) * fz))
-        tau_boom = abs(ty + ((pz - fz0) * fx - (px - fx0) * fz))
-        lim_b = g["bucket_force"] * g["bucket_r"]
-        lim_a = g["arm_force"] * math.hypot(lipx - ex, lipz - ez)
-        log.append((tau_bucket / lim_b, tau_arm / lim_a, tau_boom))
-        return tau_bucket > lim_b or tau_arm > lim_a
+        piv = (pb[0] - xm, pb[2] - SURF)
+        lip = lip_world(pb, ab)
+        d = A.demand(fx, fz, ty, piv, bucket_xy=(lip[0] - xm, lip[1] - SURF), pressure=pressure or A.P_RELIEF)
+        log.append(d)
+        return enforce and d["max_frac"] > 1.0
 
     return limiter
 
 
-def kinematic_heightfield_baseline(cell, nxy, depth):
+def kinematic_heightfield_baseline(cell, nxy, depth, path_fn=None):
     """Swept-volume cut: every column the bucket floor passes below the surface is cut down to the floor;
     removed bank volume is 'carried' up to the bucket's geometric capacity; overflow is lost (not modelled).
     This is the standard real-time approach (and how LiveDirt's dig() treats the bucket)."""
     H = np.full(nxy, SURF)
     removed = 0.0
     for t in np.linspace(0.0, 4.5, 2000):
-        pv, a = path(t, depth)
+        pv, a = path_fn(t) if path_fn else path(t, depth)
         ca, sa = math.cos(a), math.sin(a)
         # floor plate segment in world x-z
         for s in np.linspace(0.0, 1.0, 20):
@@ -144,6 +133,17 @@ def kinematic_heightfield_baseline(cell, nxy, depth):
     return H, 2 * removed
 
 
+def stall_phase(ser):
+    """Where the commanded trajectory stopped progressing (phase timing shared by the legacy and physical paths)."""
+    s = ser[:, 9]
+    tc = ser[:, 1]
+    stalled = np.where(s < 0.05)[0]
+    t = tc[stalled[0]] if len(stalled) else None
+    if t is None:
+        return None
+    return "penetrate" if t < 1.0 else "drag" if t < 3.0 else "curl" if t < 4.5 else "lift"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arch", default="gpu")
@@ -151,9 +151,11 @@ def main():
     ap.add_argument("--depth", type=float, default=0.6)
     ap.add_argument("--fmax", type=float, default=None, help="drive force limit (N); None = prescribed motion. "
                     "DX225LC-7 spec (ISO): arm digging force 11,500 kgf = 112.8 kN, bucket 16,500 kgf = 161.8 kN")
-    ap.add_argument("--actuator-limits", action="store_true",
-                    help="DX225LC-7 linkage: limit bucket-cylinder torque (ISO bucket force 161.8 kN x 1.45 m) and arm torque "
-                         "(ISO arm force 112.8 kN x elbow-to-lip distance); boom torque reported, not limited")
+    ap.add_argument("--limits", choices=["none", "dx225"], default="none",
+                    help="dx225: per-actuator cylinder limits + stability (digbench/actuators.py); none: loads logged only")
+    ap.add_argument("--boost", action="store_true", help="power-boost relief pressure (36.3 MPa) instead of 34.3 MPa")
+    ap.add_argument("--attitude", choices=["physical", "legacy"], default="physical",
+                    help="physical: teeth-first penetration and easing attack angle (digbench/attitude.py); legacy: flat floor at pitch 0")
     ap.add_argument("--mu-f", type=float, default=0.38)
     ap.add_argument("--E", type=float, default=1.0e6)
     ap.add_argument("--rho", type=float, default=1600.0)
@@ -166,15 +168,21 @@ def main():
                 max_particles=int(1.15 * BED[0] * BED[1] * SURF / (args.dx / 2) ** 3) + 1000)
     n0 = sim.fill_box((0, 0, 0), (BED[0], BED[1], SURF))
     sim.set_tool(bucket_boxes(args.dx))
-    p0, a0 = path(0.0, args.depth)
+    from .attitude import physical_path
+    if args.attitude == "physical":
+        path_fn, _T = physical_path(args.depth, SURF)
+    else:
+        path_fn = lambda t: path(t, args.depth)
+    p0, a0 = path_fn(0.0)
     sim.set_pose(p0, a0)
     sim.settle(0.3)
     cell = 0.1
     nxy = (int(BED[0] / cell), int(BED[1] / cell))
     H0 = sim.heightfield(cell, nxy, mode="volume")
     log = []
-    limiter = make_dx225_limiter(log) if args.actuator_limits else None
-    res = sim.drive(lambda t: path(t, args.depth), args.duration, f_max=args.fmax, limiter=limiter, sample_every=0.02)
+    from . import actuators as A
+    limiter = make_dx225_limiter(log, enforce=args.limits == "dx225", pressure=A.P_BOOST if args.boost else A.P_RELIEF) if args.fmax is None else None
+    res = sim.drive(path_fn, args.duration, f_max=args.fmax, limiter=limiter, sample_every=0.02)
     ser = res["series"]  # t, t_cmd, px, py, pz, pitch, Fx, Fz, Ty, s
     p = sim.particles()
     pv, pa = ser[-1, 2:5], ser[-1, 5]
@@ -190,8 +198,9 @@ def main():
     vol_total = 2 * len(p) * sim.sp ** 3
     vol_on_bucket_outside = 2 * on_bucket.sum() * sim.sp ** 3 - carried
     drag = (ser[:, 0] > 1.2) & (ser[:, 1] < 3.0)
-    lip_depth_end_pen = SURF - lip_world(ser[np.argmin(np.abs(ser[:, 1] - 1.0)), 2:5], 0.0)[1]
-    Hk, removed_k = kinematic_heightfield_baseline(cell, nxy, args.depth)
+    i_pen = np.argmin(np.abs(ser[:, 1] - 1.0))
+    lip_depth_end_pen = SURF - lip_world(ser[i_pen, 2:5], ser[i_pen, 5])[1]
+    Hk, removed_k = kinematic_heightfield_baseline(cell, nxy, args.depth, path_fn)
     # LiveDirt-style: kinematic cut, then LiveDirt's relax (repose = bank = friction angle for dry sand),
     # mirrored across the symmetry plane so the y = 0 row relaxes like an interior row
     ang = math.degrees(math.atan(args.mu_f))
@@ -218,15 +227,22 @@ def main():
             "min_speed_scale": float(ser[:, 9].min()),
             "terrain_rmse_kinematic_vs_mpm_m": float(np.sqrt(((Hk - Hg)[zone] ** 2).mean())),
             "terrain_rmse_livedirt_relax_vs_mpm_m": float(np.sqrt(((Hr - Hg)[zone] ** 2).mean())),
-            "trench_depth_centre_mpm_m": float(SURF - Hg[int(1.8 / cell), 0]),
-            "trench_depth_centre_kinematic_m": float(SURF - Hk[int(1.8 / cell), 0]),
-            "trench_depth_centre_livedirt_relax_m": float(SURF - Hr[int(1.8 / cell), 0]),
+            # legacy single-cell readout (x = 1.8 m, y = 0): kept for comparison; it sits where the legacy flat
+            # plunge compressed and heaved the soil, so it is not a trench-depth measure
+            "trench_depth_cell_x1.8_mpm_m": float(SURF - Hg[int(1.8 / cell), 0]),
+            # footprint mean over the drag path (lip x 0.6-1.4 m, |y| < 0.4 m)
+            "trench_depth_footprint_mpm_m": float(SURF - Hg[int(0.6 / cell):int(1.4 / cell), :int(0.4 / cell)].mean()),
+            "trench_depth_footprint_kinematic_m": float(SURF - Hk[int(0.6 / cell):int(1.4 / cell), :int(0.4 / cell)].mean()),
+            "trench_depth_footprint_livedirt_relax_m": float(SURF - Hr[int(0.6 / cell):int(1.4 / cell), :int(0.4 / cell)].mean()),
+            "ground_removed_bank_m3": float(2 * (H0[zone].sum() - np.minimum(Hg, H0)[zone].sum() + 0.0) * cell * cell),
             "volume_total_bank_m3": float(vol_total),
             "volume_on_bucket_outside_m3": float(vol_on_bucket_outside),
             "wall_s": res["wall_s"], "steps": res["steps"], "rtf": res["steps"] * res["dt"] / res["wall_s"],
-            "actuator_peak_bucket_frac": float(max((l[0] for l in log), default=0.0)),
-            "actuator_peak_arm_frac": float(max((l[1] for l in log), default=0.0)),
-            "actuator_peak_boom_torque_kNm": float(max((l[2] for l in log), default=0.0) / 1e3),
+            "stall_phase": stall_phase(ser),
+            "attitude": args.attitude, "limits": args.limits if args.fmax is None else f"fmax {args.fmax}",
+            **({f"peak_{k}_frac": float(max(d[k] for d in log)) for k in ("bucket", "arm", "boom", "front_liftoff", "forward_tip", "sliding")} if log else {}),
+            "peak_governing": (max(log, key=lambda d: d["max_frac"])["governing"] if log else None),
+            "would_tip_or_lift": bool(log and max(max(d["front_liftoff"], d["forward_tip"]) for d in log) > 1.0),
         },
         "series": ser[::2].round(5).tolist(),
         "H_mpm": Hg.round(4).tolist(), "H_kinematic": Hk.round(4).tolist(), "H_livedirt_relax": Hr.round(4).tolist(), "H0_volume": H0.round(4).tolist(),
