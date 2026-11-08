@@ -298,7 +298,7 @@ class Sim3D:
         self.damp[None] = 1.0
         ti.sync()
 
-    def drive(self, path_fn, duration, *, f_max=None, sample_every=0.01, use_tool=1, speed_floor=0.0, on_sample=None):
+    def drive(self, path_fn, duration, *, f_max=None, limiter=None, sample_every=0.01, use_tool=1, speed_floor=0.0, on_sample=None):
         """Closed-loop tool drive. path_fn(t_cmd) -> (pos(3), pitch); the commanded trajectory parameter
         t_cmd advances at rate s in [0, 1]: s drops when the soil force opposing motion exceeds f_max (relief
         valve), so the soil can stall the tool. Returns a time series."""
@@ -332,11 +332,15 @@ class Sim3D:
                 mult = 2.0 if self.symmetry_y else 1.0
                 fx, fz = mult * fwin[0], mult * fwin[2]
                 ty = mult * twin[1]
-                if f_max is not None:
+                exceeded = None
+                if limiter is not None:
+                    exceeded = limiter(fx, fz, ty, pb, ab)
+                elif f_max is not None:
                     vdir = vel / (np.linalg.norm(vel) + 1e-12)
-                    resist = -(fx * vdir[0] + fz * vdir[2])
+                    exceeded = -(fx * vdir[0] + fz * vdir[2]) > f_max
+                if exceeded is not None:
                     # relief valve: proportional back-off above the limit, recover below it
-                    if resist > f_max:
+                    if exceeded:
                         s = max(speed_floor, s * 0.85)
                     else:
                         s = min(1.0, s + 0.05)

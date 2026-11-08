@@ -87,6 +87,40 @@ def carried_volume(p, sp, pivot, pitch):
     return 2 * inside.sum() * sp ** 3  # x2 for symmetry
 
 
+# DX225LC-7 linkage (app/src/machine/kinematics.ts) placed so the bucket digs toward the machine: swing axis at
+# x = -4 m on the bed surface; ISO digging forces from the Develon spec sheet.
+DX225 = {"boom_foot": (0.18, 2.05), "boom": 5.7, "arm": 2.9, "x_machine": -4.0,
+         "bucket_force": 161.8e3, "bucket_r": 1.45, "arm_force": 112.8e3}
+
+
+def make_dx225_limiter(log):
+    g = DX225
+    fx0, fz0 = g["x_machine"] + g["boom_foot"][0], SURF + g["boom_foot"][1]
+
+    def elbow_of(px, pz):
+        dx, dz = px - fx0, pz - fz0
+        d = math.hypot(dx, dz)
+        a, b = g["boom"], g["arm"]
+        d = min(d, a + b - 1e-6)
+        ang = math.atan2(dz, dx) + math.acos(max(-1.0, min(1.0, (a * a + d * d - b * b) / (2 * a * d))))  # elbow up
+        return fx0 + a * math.cos(ang), fz0 + a * math.sin(ang)
+
+    def limiter(fx, fz, ty, pb, ab):
+        px, pz = pb[0], pb[2]
+        ex, ez = elbow_of(px, pz)
+        ca, sa = math.cos(ab), math.sin(ab)
+        lipx, lipz = px + ca * LIP[0] - sa * LIP[1], pz + sa * LIP[0] + ca * LIP[1]
+        tau_bucket = abs(ty)
+        tau_arm = abs(ty + ((pz - ez) * fx - (px - ex) * fz))
+        tau_boom = abs(ty + ((pz - fz0) * fx - (px - fx0) * fz))
+        lim_b = g["bucket_force"] * g["bucket_r"]
+        lim_a = g["arm_force"] * math.hypot(lipx - ex, lipz - ez)
+        log.append((tau_bucket / lim_b, tau_arm / lim_a, tau_boom))
+        return tau_bucket > lim_b or tau_arm > lim_a
+
+    return limiter
+
+
 def kinematic_heightfield_baseline(cell, nxy, depth):
     """Swept-volume cut: every column the bucket floor passes below the surface is cut down to the floor;
     removed bank volume is 'carried' up to the bucket's geometric capacity; overflow is lost (not modelled).
@@ -117,6 +151,9 @@ def main():
     ap.add_argument("--depth", type=float, default=0.6)
     ap.add_argument("--fmax", type=float, default=None, help="drive force limit (N); None = prescribed motion. "
                     "DX225LC-7 spec (ISO): arm digging force 11,500 kgf = 112.8 kN, bucket 16,500 kgf = 161.8 kN")
+    ap.add_argument("--actuator-limits", action="store_true",
+                    help="DX225LC-7 linkage: limit bucket-cylinder torque (ISO bucket force 161.8 kN x 1.45 m) and arm torque "
+                         "(ISO arm force 112.8 kN x elbow-to-lip distance); boom torque reported, not limited")
     ap.add_argument("--mu-f", type=float, default=0.38)
     ap.add_argument("--E", type=float, default=1.0e6)
     ap.add_argument("--rho", type=float, default=1600.0)
@@ -135,7 +172,9 @@ def main():
     cell = 0.1
     nxy = (int(BED[0] / cell), int(BED[1] / cell))
     H0 = sim.heightfield(cell, nxy, mode="volume")
-    res = sim.drive(lambda t: path(t, args.depth), args.duration, f_max=args.fmax, sample_every=0.02)
+    log = []
+    limiter = make_dx225_limiter(log) if args.actuator_limits else None
+    res = sim.drive(lambda t: path(t, args.depth), args.duration, f_max=args.fmax, limiter=limiter, sample_every=0.02)
     ser = res["series"]  # t, t_cmd, px, py, pz, pitch, Fx, Fz, Ty, s
     p = sim.particles()
     pv, pa = ser[-1, 2:5], ser[-1, 5]
@@ -185,6 +224,9 @@ def main():
             "volume_total_bank_m3": float(vol_total),
             "volume_on_bucket_outside_m3": float(vol_on_bucket_outside),
             "wall_s": res["wall_s"], "steps": res["steps"], "rtf": res["steps"] * res["dt"] / res["wall_s"],
+            "actuator_peak_bucket_frac": float(max((l[0] for l in log), default=0.0)),
+            "actuator_peak_arm_frac": float(max((l[1] for l in log), default=0.0)),
+            "actuator_peak_boom_torque_kNm": float(max((l[2] for l in log), default=0.0) / 1e3),
         },
         "series": ser[::2].round(5).tolist(),
         "H_mpm": Hg.round(4).tolist(), "H_kinematic": Hk.round(4).tolist(), "H_livedirt_relax": Hr.round(4).tolist(), "H0_volume": H0.round(4).tolist(),
