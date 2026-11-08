@@ -345,8 +345,9 @@ class Sim3D:
                     else:
                         s = min(1.0, s + 0.05)
                 rows.append([(k + 1) * dt, t_cmd, *pb, ab, fx, fz, ty, s])
-                if on_sample is not None:
-                    on_sample(self, rows[-1])
+                if on_sample is not None and on_sample(self, rows[-1]) is True:
+                    n_steps = k + 1  # caller asked to stop (e.g. the commanded path is complete)
+                    break
         ti.sync()
         self.t += n_steps * dt
         return {"series": np.array(rows), "wall_s": time.perf_counter() - t0, "steps": n_steps, "dt": dt}

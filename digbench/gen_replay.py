@@ -153,7 +153,7 @@ class Episode:
 
         def rec(s, row):
             if done["n"] > 3:
-                return
+                return True
             pv, pa = np.array(row[2:5]), row[5]
             p = s.particles()
             Hs.append(self.window_H(p, pv, pa).astype(np.float32))
@@ -164,6 +164,7 @@ class Episode:
             srel.append(row[9]); tcmd.append(row[1]); dem.append(dem_log[-1] if dem_log else 0.0)
             if row[1] >= T_end - 1e-6:
                 done["n"] += 1
+            return done["n"] > 3
 
         t0 = time.perf_counter()
         res = self.sim.drive(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec)
