@@ -1,0 +1,64 @@
+{
+  "soil": "wet-clay",
+  "design": {
+    "p0": [
+      1.0981514125014127,
+      1.455401774842535
+    ],
+    "p1": [
+      4.696566908931196,
+      1.3486032961361363
+    ],
+    "bottomWidth": 0.9,
+    "depth": 0.8,
+    "sideSlope": 1.25
+  },
+  "simSeconds": 304.8,
+  "wallSeconds": 140.304,
+  "phase": "done",
+  "verified": true,
+  "cycles": 16,
+  "avgCycleS": 18.9,
+  "avgFill": 0.438,
+  "productivityM3h": 49.5,
+  "bankRemoved": 4.166,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 304.8,
+      "points": 11477,
+      "coverage": 0.582,
+      "inTolFrac": 0.902,
+      "lidarMeanAboveCm": 1.04,
+      "truthMeanAboveCm": 0.91
+    }
+  ],
+  "final": {
+    "onGradePct": 74.1,
+    "meanAbsErrorCm": 4.64,
+    "remainingCutM3": 0.619,
+    "overDigM3": 0,
+    "unplannedCutM3": 0,
+    "sloughedM3": 1.595,
+    "maxAboveCm": 63.4,
+    "maxBelowCm": 0
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "303.2s survey: holding still to scan",
+    "304.8s survey (1.6 s dwell): 11477 pts, coverage 58%, lidar 1.0 cm vs truth 0.9 cm above grade, 70 cells out of tol",
+    "304.8s done: 90% of measured cells within tolerance (lidar survey)"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 4.166,
+    "swellExpectedM3": 1.25
+  },
+  "neural": null,
+  "traces": 16
+}

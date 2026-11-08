@@ -1,0 +1,73 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      1.1740098290566583,
+      -0.12083508345961436
+    ],
+    "p1": [
+      4.5188870865792605,
+      -1.4519234096453997
+    ],
+    "bottomWidth": 0.9,
+    "depth": 0.9,
+    "sideSlope": 1.5
+  },
+  "simSeconds": 496.3,
+  "wallSeconds": 230.416,
+  "phase": "done",
+  "verified": true,
+  "cycles": 25,
+  "avgCycleS": 19.74,
+  "avgFill": 0.202,
+  "productivityM3h": 14,
+  "bankRemoved": 1.919,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 496.3,
+      "points": 12765,
+      "coverage": 0.686,
+      "inTolFrac": 0.893,
+      "lidarMeanAboveCm": 1.07,
+      "truthMeanAboveCm": 1.05
+    }
+  ],
+  "final": {
+    "onGradePct": 81.8,
+    "meanAbsErrorCm": 1.97,
+    "remainingCutM3": 0.259,
+    "overDigM3": 0,
+    "unplannedCutM3": 0,
+    "sloughedM3": 2.832,
+    "maxAboveCm": 37.5,
+    "maxBelowCm": 0
+  },
+  "log": [
+    "0.0s plan: 5 lane(s) x 5 bites, trench 3.6 m, spoil 3.7 m off centreline",
+    "0.0s start",
+    "3.3s waypoint unreachable (2.07 m), skipping",
+    "3.4s waypoint unreachable (1.11 m), skipping",
+    "97.6s waypoint unreachable (2.05 m), skipping",
+    "97.6s waypoint unreachable (0.56 m), skipping",
+    "199.7s waypoint unreachable (1.68 m), skipping",
+    "199.7s waypoint unreachable (0.49 m), skipping",
+    "302.0s waypoint unreachable (1.27 m), skipping",
+    "405.4s waypoint unreachable (1.10 m), skipping",
+    "405.4s waypoint unreachable (1.20 m), skipping",
+    "494.7s survey: holding still to scan",
+    "496.3s survey (1.6 s dwell): 12765 pts, coverage 69%, lidar 1.1 cm vs truth 1.0 cm above grade, 93 cells out of tol",
+    "496.3s done: 89% of measured cells within tolerance (lidar survey)"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 1.919,
+    "swellExpectedM3": 0.23
+  },
+  "neural": null,
+  "traces": 25
+}

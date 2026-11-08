@@ -1,0 +1,165 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 1131.7,
+  "wallSeconds": 576.541,
+  "phase": "done",
+  "verified": false,
+  "cycles": 32,
+  "avgCycleS": 35.22,
+  "avgFill": 0.029,
+  "productivityM3h": 3.2,
+  "bankRemoved": 0.996,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 691.4,
+      "points": 5738,
+      "coverage": 0.495,
+      "inTolFrac": 0,
+      "lidarMeanAboveCm": 201.01,
+      "truthMeanAboveCm": 200.87
+    },
+    {
+      "t": 1131.7,
+      "points": 6414,
+      "coverage": 0.582,
+      "inTolFrac": 0,
+      "lidarMeanAboveCm": 204.61,
+      "truthMeanAboveCm": 204.63
+    }
+  ],
+  "final": {
+    "onGradePct": 0,
+    "meanAbsErrorCm": 192.61,
+    "remainingCutM3": 12.269,
+    "overDigM3": 0,
+    "unplannedCutM3": 0.052,
+    "sloughedM3": 0.014,
+    "maxAboveCm": 277.8,
+    "maxBelowCm": 0
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "689.8s survey: holding still to scan",
+    "691.4s survey (1.6 s dwell): 5738 pts, coverage 49%, lidar 201.0 cm vs truth 200.9 cm above grade, 315 cells out of tol",
+    "691.4s pass 2",
+    "1130.2s survey: holding still to scan",
+    "1131.7s survey (1.6 s dwell): 6414 pts, coverage 58%, lidar 204.6 cm vs truth 204.6 cm above grade, 371 cells out of tol",
+    "1131.7s stopped: no further improvement; 0% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 69.305,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 9.053,
+    "bankCutM3": 0.996,
+    "swellExpectedM3": 0.12
+  },
+  "neural": {
+    "model": [
+      "soil-v2.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 151.2,
+    "steps": 7532,
+    "clippedCells": 187569,
+    "flooredCells": 0,
+    "spilledM3": 0,
+    "netRemovedM3": -37.245,
+    "floorProjection": false,
+    "gate": null,
+    "gateSteps": 7532,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 1.7637822505841219,
+      "arm": 2.9252749920501286,
+      "boom": 12.632735466874086,
+      "frontLiftoff": 10.55048437102398,
+      "forwardTip": 0.2262682065970325,
+      "sliding": 1.0886685702428054
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 361536,
+        "p01": -2.883206844329834,
+        "p50": 0.2709980905056,
+        "p99": 2.069270133972168,
+        "min": -4,
+        "max": 3,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen0",
+        "n": 82061,
+        "p01": -0.02350914478302002,
+        "p50": 0.273706316947937,
+        "p99": 1,
+        "min": -0.6782107353210449,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ0",
+        "n": 361536,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen1",
+        "n": 81992,
+        "p01": -0.05068063735961914,
+        "p50": 0.27051591873168945,
+        "p99": 1,
+        "min": -0.8590372800827026,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ1",
+        "n": 361536,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "mu",
+        "n": 361536,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": null
+      }
+    ],
+    "oorSteps": 0,
+    "meanEnsembleStd": 0
+  }
+}

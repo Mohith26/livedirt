@@ -1,0 +1,97 @@
+{
+  "soil": "saturated-silt",
+  "design": {
+    "p0": [
+      -0.9039087280074733,
+      -1.763229445473081
+    ],
+    "p1": [
+      0.8529642895865481,
+      -4.437813001851546
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 1365.9,
+  "wallSeconds": 729.891,
+  "phase": "done",
+  "verified": false,
+  "cycles": 64,
+  "avgCycleS": 21.2,
+  "avgFill": 0.294,
+  "productivityM3h": 4.5,
+  "bankRemoved": 1.719,
+  "passes": 4,
+  "surveys": [
+    {
+      "t": 341.1,
+      "points": 9902,
+      "coverage": 0.481,
+      "inTolFrac": 0.103,
+      "lidarMeanAboveCm": 5.67,
+      "truthMeanAboveCm": 5.55
+    },
+    {
+      "t": 682.3,
+      "points": 10408,
+      "coverage": 0.471,
+      "inTolFrac": 0.117,
+      "lidarMeanAboveCm": 2.75,
+      "truthMeanAboveCm": 2.57
+    },
+    {
+      "t": 1024.1,
+      "points": 10312,
+      "coverage": 0.474,
+      "inTolFrac": 0.141,
+      "lidarMeanAboveCm": 0.39,
+      "truthMeanAboveCm": 0.24
+    },
+    {
+      "t": 1365.9,
+      "points": 10244,
+      "coverage": 0.472,
+      "inTolFrac": 0.166,
+      "lidarMeanAboveCm": -1.15,
+      "truthMeanAboveCm": -1.28
+    }
+  ],
+  "final": {
+    "onGradePct": 22.9,
+    "meanAbsErrorCm": 13.76,
+    "remainingCutM3": 0.526,
+    "overDigM3": 1.301,
+    "unplannedCutM3": 0.632,
+    "sloughedM3": 8.32,
+    "maxAboveCm": 48.7,
+    "maxBelowCm": 42.4
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.2 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "339.6s survey: holding still to scan",
+    "341.1s survey (1.6 s dwell): 9902 pts, coverage 48%, lidar 5.7 cm vs truth 5.5 cm above grade, 326 cells out of tol",
+    "341.1s pass 2",
+    "680.8s survey: holding still to scan",
+    "682.3s survey (1.6 s dwell): 10408 pts, coverage 47%, lidar 2.8 cm vs truth 2.6 cm above grade, 281 cells out of tol",
+    "682.3s pass 3",
+    "1022.6s survey: holding still to scan",
+    "1024.1s survey (1.6 s dwell): 10312 pts, coverage 47%, lidar 0.4 cm vs truth 0.2 cm above grade, 250 cells out of tol",
+    "1024.1s pass 4",
+    "1364.4s survey: holding still to scan",
+    "1365.9s survey (1.6 s dwell): 10244 pts, coverage 47%, lidar -1.1 cm vs truth -1.3 cm above grade, 228 cells out of tol",
+    "1365.9s stopped: no further improvement; 17% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 1.719,
+    "swellExpectedM3": 0.344
+  },
+  "neural": null,
+  "traces": 64
+}

@@ -1,0 +1,166 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 1002.7,
+  "wallSeconds": 575.857,
+  "phase": "done",
+  "verified": false,
+  "cycles": 48,
+  "avgCycleS": 20.74,
+  "avgFill": 0.71,
+  "productivityM3h": 129.7,
+  "bankRemoved": 36.075,
+  "passes": 3,
+  "surveys": [
+    {
+      "t": 327.3,
+      "points": 5996,
+      "coverage": 0.708,
+      "inTolFrac": 0.122,
+      "lidarMeanAboveCm": 12.86,
+      "truthMeanAboveCm": 12.86
+    },
+    {
+      "t": 657.7,
+      "points": 5627,
+      "coverage": 0.714,
+      "inTolFrac": 0.099,
+      "lidarMeanAboveCm": 2.01,
+      "truthMeanAboveCm": 2.09
+    },
+    {
+      "t": 1002.7,
+      "points": 5486,
+      "coverage": 0.68,
+      "inTolFrac": 0.051,
+      "lidarMeanAboveCm": 1.63,
+      "truthMeanAboveCm": 1.63
+    }
+  ],
+  "final": {
+    "onGradePct": 3.8,
+    "meanAbsErrorCm": 39.55,
+    "remainingCutM3": 1.056,
+    "overDigM3": 1.463,
+    "unplannedCutM3": 8.365,
+    "sloughedM3": 2.599,
+    "maxAboveCm": 71,
+    "maxBelowCm": 132.2
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "325.7s survey: holding still to scan",
+    "327.3s survey (1.6 s dwell): 5996 pts, coverage 71%, lidar 12.9 cm vs truth 12.9 cm above grade, 247 cells out of tol",
+    "327.3s pass 2",
+    "656.1s survey: holding still to scan",
+    "657.7s survey (1.6 s dwell): 5627 pts, coverage 71%, lidar 2.0 cm vs truth 2.1 cm above grade, 218 cells out of tol",
+    "657.7s pass 3",
+    "1001.1s survey: holding still to scan",
+    "1002.7s survey (1.6 s dwell): 5486 pts, coverage 68%, lidar 1.6 cm vs truth 1.6 cm above grade, 235 cells out of tol",
+    "1002.7s stopped: no further improvement; 5% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 52.782,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": -7.469,
+    "bankCutM3": 36.075,
+    "swellExpectedM3": 4.329
+  },
+  "neural": {
+    "model": [
+      "soil-v2.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 717.9,
+    "steps": 3643,
+    "clippedCells": 219647,
+    "flooredCells": 0,
+    "spilledM3": 9.021,
+    "netRemovedM3": 39.919,
+    "floorProjection": false,
+    "gate": null,
+    "gateSteps": 3643,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 174864,
+        "p01": -2.7935547828674316,
+        "p50": -0.4033031761646271,
+        "p99": 1.6031056642532349,
+        "min": -4,
+        "max": 5.023642063140869,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen0",
+        "n": 18282,
+        "p01": -0.3372683525085449,
+        "p50": 0.31628596782684326,
+        "p99": 1,
+        "min": -1,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ0",
+        "n": 174864,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen1",
+        "n": 18191,
+        "p01": -0.6007101535797119,
+        "p50": 0.32114163041114807,
+        "p99": 1,
+        "min": -1,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ1",
+        "n": 174864,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "mu",
+        "n": 174864,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": null
+      }
+    ],
+    "oorSteps": 0,
+    "meanEnsembleStd": 0
+  }
+}
