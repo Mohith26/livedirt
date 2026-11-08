@@ -84,7 +84,13 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     files = sorted(set(f for d in args.data for f in glob.glob(str(Path(d) / "*.npz"))))
     t0 = time.time()
-    S = [load_sample(f) for f in files]
+    S, seen = [], set()
+    for f in files:
+        s_ = load_sample(f)
+        key = hash((s_["X"][0].tobytes(), s_["X"][1].tobytes()))  # identical terrain + swept envelope = same bite replayed
+        if key in seen:
+            continue
+        seen.add(key); S.append(s_)
     if args.no_prior:
         for s in S:
             s["X"][3] = 0.0; s["prior"] = np.zeros_like(s["prior"])
