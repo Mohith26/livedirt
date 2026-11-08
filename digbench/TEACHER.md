@@ -44,7 +44,13 @@ Same blade test vs Coetzee's measured average draft force (96.6 / 205.8 / 386.1 
 | [PUBLISHED] Coetzee nonpolar MPM (plane strain) | - | -25% / -11% / -9% |
 | [PUBLISHED] Coetzee DEM | - | +9% / +11% / -5% |
 
-The measurement lies between the two side-wall bounds at every depth. The full-friction case over-predicts more with
+**Lab bucket (Coetzee 2004 Fig 6.25, 800 mm drag, dx 6 mm, `results/v4/coetzee-mc-dx6-g0.json`):** with the MC solver
+and no side-wall friction, the draft force is 264 N vs 250 N measured at 800 mm (+6%); over the whole curve, MAE 11 N,
+mean |relative error| 9.7%. The v1 run with the legacy cone and full glass friction was +114%. [PUBLISHED] Coetzee's
+nonpolar MPM: -12% at 800 mm; DEM: ~20 N low to 600 mm. The full-friction bound for the bucket was not re-run with MC
+(GPU time went to the closed-loop runs); the sink-rate input remains a drawing estimate (+-20%).
+
+The blade measurement lies between the two side-wall bounds at every depth. The full-friction case over-predicts more with
 depth (the wall-friction force grows ~h^3 in the model; the measured excess over plane strain shrinks with depth), so
 the lab wall contact is weaker than full Coulomb friction on both panels. The field application has no glass walls, so
 the plane-strain verification (section 2) is the check that matters for digging; the lab test only bounds it.
