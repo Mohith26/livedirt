@@ -1,0 +1,74 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 614.9,
+  "wallSeconds": 283.655,
+  "phase": "done",
+  "verified": false,
+  "cycles": 32,
+  "avgCycleS": 19.07,
+  "avgFill": 0.105,
+  "productivityM3h": 6.6,
+  "bankRemoved": 1.118,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 307.8,
+      "points": 6495,
+      "coverage": 0.691,
+      "inTolFrac": 0.334,
+      "lidarMeanAboveCm": -4.54,
+      "truthMeanAboveCm": -4.71
+    },
+    {
+      "t": 614.9,
+      "points": 6802,
+      "coverage": 0.684,
+      "inTolFrac": 0.317,
+      "lidarMeanAboveCm": -6.28,
+      "truthMeanAboveCm": -6.57
+    }
+  ],
+  "final": {
+    "onGradePct": 34.5,
+    "meanAbsErrorCm": 5.34,
+    "remainingCutM3": 0.009,
+    "overDigM3": 0.331,
+    "unplannedCutM3": 0.077,
+    "sloughedM3": 2.062,
+    "maxAboveCm": 5.8,
+    "maxBelowCm": 18
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "306.3s survey: holding still to scan",
+    "307.8s survey (1.6 s dwell): 6495 pts, coverage 69%, lidar -4.5 cm vs truth -4.7 cm above grade, 37 cells out of tol",
+    "307.8s pass 2",
+    "613.4s survey: holding still to scan",
+    "614.9s survey (1.6 s dwell): 6802 pts, coverage 68%, lidar -6.3 cm vs truth -6.6 cm above grade, 9 cells out of tol",
+    "614.9s stopped: no further improvement; 32% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 1.118,
+    "swellExpectedM3": 0.134
+  },
+  "neural": null
+}
