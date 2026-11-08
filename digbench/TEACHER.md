@@ -55,3 +55,21 @@ the plane-strain verification (section 2) is the check that matters for digging;
   checks above.
 * Soil parameters per app preset are derived from the preset's own numbers (`soil_presets.py`: phi = repose angle,
   cohesion from Culmann at the preset's bank angle for a 1 m face, preset density), not from lab tests.
+
+## 5. Cheaper beds (item 2): what can be cut without changing the answer
+
+Five replayed bites (sandy-gravel preset, MC, volume-corrected, dx 4 cm), final-surface change compared with the
+margin-1.5 m bed on disturbed cells (`results/v4/bed-experiment.txt`):
+
+| bed | mean RMSE vs full bed (m) | particles vs full |
+|---|---|---|
+| same bed, other particle seed (noise floor) | 0.023 (0.016-0.031) | 1.0 |
+| margin 1.0 m | 0.040 (0.029-0.063) | 0.66 |
+| margin 0.75 m + sticky floor 0.8 m below the surface | 0.064 (0.041-0.087) | ~0.48 |
+| margin 0.5 m + sticky floor 0.5 m | 0.071 (0.031-0.122) | ~0.40 |
+| margin 1.0 m at dx 5 cm | 0.082 (0.043-0.121); carried up to +62% | ~0.33 |
+
+Decision: margin 1.0 m at dx 4 cm for all MPM-in-the-loop and per-scoop data (error ~1.7x the noise floor). Every
+cheaper bed doubles the error. Other speed levers: `Sim3D.drive_fast` (pose schedule on the GPU, one kernel launch per
+step; identical results within 5e-5) and kernel-cache reuse across beds; softer soil and coarser grids were rejected
+earlier (`results/speedsweep/`).

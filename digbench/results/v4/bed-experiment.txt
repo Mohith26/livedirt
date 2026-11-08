@@ -1,0 +1,7 @@
+bite  0 full: carried 0.331 wall 173s 4.2M | full-ps1: rmse 0.024 car 0.331 175s 4.2M | m1.0: rmse 0.029 car 0.344 135s 2.8M | m1.0-dx5: rmse 0.043 car 0.315 59s 1.4M | m0.75-c0.8: rmse 0.041 car 0.334 117s 2.2M | m0.5-c0.5: rmse 0.031 car 0.329 51s 1.7M
+bite  3 full: carried 0.155 wall 653s 7.6M
+bite  6 full: carried 0.949 wall 596s 11.7M | full-ps1: rmse 0.021 car 0.949 630s 11.7M | m1.0: rmse 0.039 car 0.960 449s 7.8M | m1.0-dx5: rmse 0.121 car 0.924 221s 4.0M | m0.75-c0.8: rmse 0.087 car 0.971 315s 5.7M | m0.5-c0.5: rmse 0.122 car 0.953 337s 4.7M
+bite  9 full: carried 0.204 wall 225s 6.5M
+bite 12 full: carried 0.220 wall 153s 5.7M | full-ps1: rmse 0.016 car 0.220 200s 5.7M | m1.0: rmse 0.034 car 0.219 137s 3.7M | m1.0-dx5: rmse 0.044 car 0.274 51s 1.9M | m0.75-c0.8: rmse 0.054 car 0.223 85s 2.6M | m0.5-c0.5: rmse 0.058 car 0.223 102s 2.0M
+bite 18 full: carried 0.961 wall 523s 12.2M | full-ps1: rmse 0.031 car 0.961 492s 12.2M | m1.0: rmse 0.063 car 0.967 427s 8.1M | m1.0-dx5: rmse 0.093 car 0.943 158s 4.1M | m0.75-c0.8: rmse 0.082 car 0.979 180s 5.8M | m0.5-c0.5: rmse 0.088 car 0.976 283s 4.8M
+bite 24 full: carried 0.224 wall 300s 5.7M | full-ps1: rmse 0.025 car 0.224 340s 5.7M | m1.0: rmse 0.037 car 0.239 205s 3.6M | m1.0-dx5: rmse 0.108 car 0.362 89s 1.9M | m0.75-c0.8: rmse 0.056 car 0.238 123s 2.5M | m0.5-c0.5: rmse 0.054 car 0.222 157s 1.9M
