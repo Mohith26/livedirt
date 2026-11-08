@@ -10,7 +10,7 @@
 #   fv-floor     fv + floor in training                                                          (floor ablation)
 #   fv-s1, fv-s2 ensemble members for fv
 set -e
-DATA=${1:-"$HOME/v3vc/replay $HOME/v3/vc_chain_train $HOME/v3vc/dagger1"}
+DATA=${1:-"$HOME/v3vc/replay $HOME/v3/vc_chain_train $HOME/v3vc/dagger1 $HOME/v3/vc_dagger1"}
 export PATH=/opt/pytorch/bin:$PATH
 OUT=$HOME/v3vc/models/it2; mkdir -p "$OUT"
 T="python -u -m digbench.train_v3 --heldout $HOME/v3vc/heldout --out $OUT"
