@@ -96,8 +96,9 @@ def main():
             s["X"][3] = 0.0; s["prior"] = np.zeros_like(s["prior"])
     ho = [h for h in args.heldout_runs.split(",") if h]
     run = lambda s: s["name"].rsplit("_", 1)[0]
-    test = [s for s in S if any(run(s).startswith(h) for h in ho)]
-    train = [s for s in S if s not in test]
+    is_test = [any(run(s).startswith(h) for h in ho) for s in S]
+    test = [s for s, t in zip(S, is_test) if t]
+    train = [s for s, t in zip(S, is_test) if not t]
     print(f"samples {len(S)} train {len(train)} test {len(test)} (load {time.time() - t0:.0f}s)", flush=True)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     net = UNet(S[0]["X"].shape[0], args.ch).to(dev)
@@ -144,7 +145,7 @@ def main():
     try:
         X, *_ = batchify([S[0]])
         torch.onnx.export(net.cpu(), X, out / f"scoop-{args.tag}.onnx", input_names=["x"], output_names=["residual", "scalars"],
-                          dynamic_axes={"x": {2: "nx", 3: "ny"}, "residual": {1: "nx", 2: "ny"}}, opset_version=17)
+                          dynamic_axes={"x": {2: "nx", 3: "ny"}, "residual": {1: "nx", 2: "ny"}}, opset_version=17, dynamo=False)
     except Exception as e:  # ONNX export is optional for evaluation
         print("onnx export failed:", e)
 
