@@ -3,6 +3,7 @@
  * stepped at a fixed dt. Writes bench/results/autonomy-<soil>.json. Usage: npx tsx bench/autonomy.ts [soil] [slope]
  */
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { Heightfield } from '../src/sim/heightfield';
 import { HeightRaycaster } from '../src/sim/heightRay';
@@ -91,10 +92,24 @@ const runExternal = async () => {
   auto.pendingBite = null;
   const body = JSON.stringify({ ...mpmReq, trace: tr, seed: (mpmReq.seed ?? 0) * 1000 + mpmLog.length });
   let r: any = null;
+  // node:http with no timeout: an MPM bite can take minutes on a shared GPU (fetch/undici aborts after 300 s)
+  const post = (url: string, data: string) => new Promise<{ status: number; json: any }>((resolve, reject) => {
+    const u = new URL(url);
+    const rq = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, (res) => {
+      let buf = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => { buf += c; });
+      res.on('end', () => { try { resolve({ status: res.statusCode ?? 0, json: JSON.parse(buf) }); } catch (e) { reject(e); } });
+    });
+    rq.setTimeout(0);
+    rq.on('error', reject);
+    rq.write(data); rq.end();
+  });
   for (let attempt = 0; attempt < 3 && !r; attempt++) {
-    const res = await fetch(mpmUrl + '/bite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    const j = await res.json();
-    if (res.ok) r = j; else console.error('[mpm] error', j.error);
+    try {
+      const res = await post(mpmUrl + '/bite', body);
+      if (res.status === 200) r = res.json; else console.error('[mpm] error', res.json?.error);
+    } catch (e) { console.error('[mpm] request failed', e); }
   }
   if (!r) throw new Error('MPM backend failed 3 times');
   auto.applyExternal(tr, r);
