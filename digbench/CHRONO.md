@@ -58,3 +58,10 @@ SCM: not applicable (no granular flow). CRM: QUEUED on the GPU queue (`chrono-co
 15 cm channel). Task 3 CRM: QUEUED (`chrono-bucket-crm-sp4cm.json`, 4 cm spacing, full-width bed). Fetch with
 `scp 'digaws:chrono_work/res/*.json' digbench/results/` once `~/queue.log` shows both END lines. Neither CRM path has executed on a GPU yet
 (construction was checked CPU-only), so CRM may still need API fixes.
+
+## CRM results (CPU, pychrono 10.0.0 without CUDA FSI) - incomplete, not scored
+
+Both CRM jobs hit their wall-clock caps long before the simulated event finished: column collapse reached 0.10 s of
+simulated time in 420 s per case (RTF 0.0002; runout -37% / -75%, height +235% / +416% at that frozen instant), and the
+bucket reached 1.22 s of 5.5 s in 900 s (RTF 0.0014; drag mean 128 kN at the stopping point). These are snapshots of
+unfinished runs, not results; CRM needs the CUDA FSI build to be usable here. Files: `results/chrono-*crm*.json`.

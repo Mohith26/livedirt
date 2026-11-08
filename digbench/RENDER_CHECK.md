@@ -27,3 +27,19 @@ Splats actually modified by the ported deform (of 688,514): 10,709 (scale x0.5),
 4. Splat has no object/ground segmentation and no terrain heightmap, so H0 is a plane and `onObject` is unmodelled.
 5. The app's colour re-tint palette and generated soil layer are not reproduced offline, so what a user sees in the dug region is not rendered here.
 6. Held-out views see the trench small (about 13 m camera height); few views, no oblique views into the trench walls or floor.
+
+## Results (run 2026-11-08 on the L40S; `results/render-check.json`)
+
+cuDNN failed to load in the render venv (`CUDNN_STATUS_SUBLIBRARY_LOADING_FAILED`); the run disables cuDNN
+(`torch.backends.cudnn.enabled = False`), which only affects LPIPS speed.
+
+* Renderer sanity: our gsplat renders of the 23 held-out frames match Brush's own evaluation renders at 58.9 dB PSNR
+  (same splats, same cameras), and score 23.50 dB / SSIM 0.722 / LPIPS 0.330 against the photos (Brush reported 23.53 /
+  0.723 / 0.330).
+* Locality of the deformation (scale 1.0, 23 views): outside a 64-px dilation of the dig mask the deformed render equals
+  the original to max |pixel diff| 0.006 (PSNR identical to 1e-6); outside a 24-px dilation, max diff 0.032 and 0.007% of
+  pixels change by more than 1/255. Same picture at scale x0.5 and x2 (max diff 0.008 / 0.015 beyond 64 px). 2,692
+  splats moved, 623 of them outside the trench footprint (the deform port's falloff), none above the bind height.
+* Inside the dug region the render departs from the pre-dig photo (PSNR 25.3 -> 12.9 dB, LPIPS 0.21 -> 0.41 at scale 1.0).
+  This measures change, not correctness: no post-dig photo or survey of this site exists, so whether the dug region
+  LOOKS right is NOT validated.
