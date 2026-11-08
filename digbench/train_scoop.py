@@ -115,7 +115,10 @@ def main():
             w = 1.0 + 9.0 * ((D.abs() > 0.01) | (P.abs() > 0.01)).float()
             l_map = (w * (pred - D) ** 2)[:, :nx, :ny].mean()
             vol_pred = pred[:, :nx, :ny].sum((1, 2)) * C2
-            l_vol = ((vol_pred + ys[:, 0]) ** 2).mean()  # removed from the ground = carried (volume-corrected MPM)
+            # net ground volume change must match the teacher's (NOT just -carried: soil riding on the bucket's outside
+            # and spill leave the ground too; tying it to carried made the model under-remove ~0.08 m^3 per bite)
+            vol_true = D[:, :nx, :ny].sum((1, 2)) * C2
+            l_vol = ((vol_pred - vol_true) ** 2).mean()
             l_s = ((ys - Y) ** 2 * torch.tensor([10.0, 1.0, 0.05], device=dev)).mean()
             loss = l_map + args.vol_w * l_vol + l_s
             opt.zero_grad(); loss.backward(); opt.step(); sched.step(); tl += float(loss)
@@ -132,7 +135,7 @@ def main():
             m = disturbed(d, pred) | disturbed(d, pr)
             rows.append({"name": s["name"], "rmse_zero": rmse(np.zeros_like(d), d, m), "rmse_prior": rmse(pr, d, m), "rmse_model": rmse(pred, d, m),
                          "carried_true": float(s["scalars"][0]), "carried_model": float(ys[0, 0]), "carried_prior": float(s["prior_vol"]),
-                         "vol_balance_model": float(pred.sum() * C2 + ys[0, 0]), "cells": int(m.sum())})
+                         "vol_balance_model": float(pred.sum() * C2 + ys[0, 0]), "net_vol_model": float(pred.sum() * C2), "net_vol_true": float(d.sum() * C2), "cells": int(m.sum())})
     agg = lambda k: float(np.mean([r[k] for r in rows])) if rows else None
     summ = {"n_test": len(rows), "n_train": len(train), "rmse_zero": agg("rmse_zero"), "rmse_prior": agg("rmse_prior"), "rmse_model": agg("rmse_model"),
             "carried_mae_model": float(np.mean([abs(r["carried_model"] - r["carried_true"]) for r in rows])) if rows else None,
