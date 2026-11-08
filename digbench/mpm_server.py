@@ -98,7 +98,7 @@ def run_request(req):
         f = Path(ARGS.save_dir) / f"{req.get('run', 'run')}_{len(LOG):04d}.npz"
         np.savez_compressed(f, terrain=terr.astype(np.float32), poses=np.array(poses, np.float32), H_before=Hb_.astype(np.float32),
                             H_after=Ha.astype(np.float32), delta=d.astype(np.float32), margin=M, cell=G.CELL,
-                            soil=json.dumps({**soil, "mu": mu}), meta=json.dumps({k: v for k, v in r.items() if k != "delta"} | {"r0": tr["r0"], "shift": tr["shift"], "bite": tr["bite"], "pass": tr["pass"]}))
+                            soil=json.dumps({**soil, "mu": mu}), meta=json.dumps({k: v for k, v in r.items() if k != "delta"} | {"r0": tr["r0"], "shift": tr["shift"], "bite": tr["bite"], "pass": tr["pass"], "swing": tr.get("swing"), "t0": tr.get("t0")}))
     return r
 
 
