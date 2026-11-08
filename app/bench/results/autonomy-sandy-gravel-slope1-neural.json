@@ -1,0 +1,71 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571327,
+      -1.924688189203993
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 161.7,
+  "wallSeconds": 79.182,
+  "phase": "done",
+  "verified": false,
+  "cycles": 16,
+  "avgCycleS": 9.96,
+  "avgFill": null,
+  "productivityM3h": null,
+  "bankRemoved": null,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 161.7,
+      "points": 460,
+      "coverage": 0.006,
+      "inTolFrac": 0,
+      "lidarMeanAboveCm": -129.98,
+      "truthMeanAboveCm": 0.38
+    }
+  ],
+  "final": {
+    "onGradePct": 0.5,
+    "meanAbsErrorCm": null,
+    "remainingCutM3": 0.001,
+    "overDigM3": null,
+    "unplannedCutM3": 3.883644530550225e+29,
+    "sloughedM3": 0.039,
+    "maxAboveCm": null,
+    "maxBelowCm": null
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "62.9s waypoint unreachable (1.6703118746920328e+30 m), skipping",
+    "69.5s waypoint unreachable (1.1652668852487979e+30 m), skipping",
+    "69.5s waypoint unreachable (1.1652668852487979e+30 m), skipping",
+    "100.5s waypoint unreachable (6.333906077859783e+30 m), skipping",
+    "100.5s waypoint unreachable (6.333906077859783e+30 m), skipping",
+    "103.1s waypoint unreachable (6.333906077859783e+30 m), skipping",
+    "108.3s waypoint unreachable (5.132189619620145e+30 m), skipping",
+    "108.3s waypoint unreachable (5.132189619620145e+30 m), skipping",
+    "122.1s waypoint unreachable (1.4863437316234017e+29 m), skipping",
+    "122.1s waypoint unreachable (1.4863437316234017e+29 m), skipping",
+    "124.4s waypoint unreachable (1.4863437316234017e+29 m), skipping",
+    "127.8s waypoint unreachable (6.877771551349297e+30 m), skipping",
+    "127.8s waypoint unreachable (6.877771551349297e+30 m), skipping",
+    "160.2s survey: holding still to scan",
+    "161.7s survey (1.6 s dwell): 460 pts, coverage 1%, lidar -130.0 cm vs truth 0.4 cm above grade, 0 cells out of tol",
+    "161.7s stopped: survey coverage 1% is too low to verify grade; check sensor placement"
+  ],
+  "neural": {
+    "model": "soil-v1.onnx",
+    "mu": 0.6,
+    "peakDragKN": null
+  }
+}

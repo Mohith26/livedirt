@@ -1,0 +1,33 @@
+{
+ "task": "frontier_task3",
+ "episode": "/content/std/standard_task3.npz",
+ "sim_seconds": 5.4,
+ "rows": {
+  "mpm_dx4cm": {
+   "final_rmse_disturbed_m": 0.0,
+   "rollout_rmse_m": 0.0,
+   "wall_s": 24.75000177000038,
+   "realtime_factor": 0.22221827602551622
+  },
+  "livedirt_cut_relax_python": {
+   "final_rmse_disturbed_m": 0.4256758066205086,
+   "rollout_rmse_m": 0.3177794538922679,
+   "wall_s": 54.497502461001204,
+   "realtime_factor": 0.09908710961322087
+  },
+  "surrogate_cuda": {
+   "final_rmse_disturbed_m": 0.10798599570989609,
+   "rollout_rmse_m": 0.05605063587427139,
+   "wall_s": 0.11465925700031221,
+   "realtime_factor": 47.09606656517316,
+   "drag_force_rel_err": 0.09832748770713806
+  },
+  "surrogate_cpu": {
+   "final_rmse_disturbed_m": 0.10799025744199753,
+   "rollout_rmse_m": 0.05605257675051689,
+   "wall_s": 0.4184290829998645,
+   "realtime_factor": 12.905412695708222,
+   "drag_force_rel_err": 0.09833116829395294
+  }
+ }
+}

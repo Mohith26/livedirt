@@ -104,6 +104,7 @@ export class NeuralSoilWindow {
   private T0: Float32Array = new Float32Array(NX * NY);
   carried = 0; // bank m^3 removed from the window terrain (positive into the bucket)
   lastForce: [number, number, number] = [0, 0, 0];
+  clipped = 0; // count of clipped/non-finite cell updates (out-of-distribution indicator)
   constructor(private hf: Heightfield, private model: NeuralModel, public mu: number,
               private cx: number, private cz: number, private swing: number, private r0: number) {}
 
@@ -134,11 +135,17 @@ export class NeuralSoilWindow {
   async step(pivotX: number, pivotZ: number, pitch: number) {
     const T1 = rasterizeBucket(pivotX, pivotZ + this.shift, pitch);
     const feats = buildFeatures(this.H, this.T0, T1, this.mu);
-    const { dh, force } = await this.model.step(feats);
+    const { dh, force: raw } = await this.model.step(feats);
+    const force = raw.map((f) => (Number.isFinite(f) ? f : 0)) as [number, number, number];
+    // guards: the model is only trusted inside its training range; non-finite or extreme steps are clipped and counted
     let dv = 0;
     for (let k = 0; k < this.H.length; k++) {
-      this.H[k] += dh[k];
-      dv += dh[k];
+      let d = dh[k];
+      if (!Number.isFinite(d)) { d = 0; this.clipped++; }
+      else if (d > 0.3 || d < -0.3) { d = Math.max(-0.3, Math.min(0.3, d)); this.clipped++; }
+      const h = Math.max(SURF - 1.2, Math.min(SURF + 1.5, this.H[k] + d));
+      dv += h - this.H[k];
+      this.H[k] = h;
     }
     this.carried -= dv * CELL * CELL;
     this.T0 = T1;

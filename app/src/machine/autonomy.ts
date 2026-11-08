@@ -1,5 +1,6 @@
 import { solveIkFlexible, forwardPlanar, planarToWorld, type JointState, type LinkageGeometry } from './kinematics';
 import type { Heightfield, DesignTrench } from '../sim/heightfield';
+import { NeuralSoilWindow, type NeuralModel } from '../sim/neuralSoil';
 
 /**
  * Trench-to-grade dig cycle for the twin.
@@ -83,6 +84,21 @@ export class DigAutonomy {
   /** true when the final survey verified the grade with adequate coverage */
   verified: boolean | null = null;
   log: string[] = [];
+  /**
+   * Optional learned soil (DigBench surrogate trained on 3D MPM). When set, penetrate/drag/curl run the model on a
+   * 3.4 m x 2 m window around the bucket instead of the kinematic cut, and the predicted drag force drives a relief
+   * valve: above fMax (DX225LC-7 ISO arm digging force, 112.8 kN) the boom and arm slow down.
+   */
+  neural: { model: NeuralModel; mu: number; fMax: number } | null = null;
+  private win: NeuralSoilWindow | null = null;
+  private winR0 = 0;
+  private winT = 0;
+  private winBusy: Promise<unknown> | null = null;
+  soilForce: [number, number, number] = [0, 0, 0];
+  reliefScale = 1;
+  peakDragN = 0;
+  neuralClipped = 0;
+  neuralSteps = 0;
 
   constructor(hf: Heightfield, g: LinkageGeometry, cx: number, cz: number, groundY: number, initial: JointState) {
     this.hf = hf; this.g = g; this.cx = cx; this.cz = cz; this.groundY = groundY;
@@ -283,13 +299,17 @@ export class DigAutonomy {
     let done = true;
     const move = (key: keyof JointState) => {
       const cur = this.joints[key], tgt = t[key];
-      const maxd = this.rates[key] * dt;
+      const maxd = this.rates[key] * dt * (key === 'boom' || key === 'arm' ? this.reliefScale : 1);
       const d = tgt - cur;
       if (Math.abs(d) > maxd) { this.joints[key] = cur + Math.sign(d) * maxd; done = false; }
       else this.joints[key] = tgt;
     };
     move('swing'); move('boom'); move('arm'); move('bucket');
-    if (wp.cut) this.cutAtTip();
+    if (this.neural && (wp.phase === 'penetrate' || wp.phase === 'drag' || wp.phase === 'curl')) this.neuralTick(dt, wp.phase);
+    else {
+      if (this.win) this.commitWindow();
+      if (wp.cut) this.cutAtTip();
+    }
     if (done && wp.dwell && wp.dwell > 0) { wp.dwell -= dt; done = false; }
     if (done) {
       this.queue.shift();
@@ -331,6 +351,63 @@ export class DigAutonomy {
     this.stats.bankRemoved += bank;
     void loose;
   }
+
+  /**
+   * advance the learned-soil window (0.1 s model steps); its force feeds the relief valve.
+   * Pose mapping: the surrogate's cutting edge (tool-frame lip at (-0.9, -0.9) from its pivot) is placed exactly at
+   * LiveDirt's bucket tip; its pitch is 0 while penetrating/dragging and follows curl progress during the curl
+   * (0 -> -75 deg, the training range). LiveDirt's own bucket angle is not used directly because its curl rotates the
+   * tip the other way from the training rig.
+   */
+  private curlAk0: number | null = null;
+  private neuralTick(dt: number, phase: AutoPhase) {
+    const nn = this.neural!;
+    const fk = forwardPlanar(this.g, this.joints);
+    const rt = fk.tip[0], yt = this.groundY + fk.tip[1];
+    let pitch = 0;
+    if (phase === 'curl') {
+      if (this.curlAk0 === null) this.curlAk0 = fk.bucketAbs;
+      const span = 20 * DEG - this.curlAk0;
+      const prog = span > 1e-3 ? Math.max(0, Math.min(1, (fk.bucketAbs - this.curlAk0) / span)) : 1;
+      pitch = -75 * DEG * prog;
+    } else this.curlAk0 = null;
+    const ca = Math.cos(pitch), sa = Math.sin(pitch);
+    const lipX = ca * -0.9 - sa * -0.9, lipZ = sa * -0.9 + ca * -0.9;
+    if (!this.win) {
+      this.winR0 = rt - lipX - 2.7; // pivot starts at x = 2.7 m in the window, as in training
+      this.win = new NeuralSoilWindow(this.hf, nn.model, nn.mu, this.cx, this.cz, this.joints.swing, this.winR0);
+      this.win.anchor(rt - lipX - this.winR0, yt - lipZ, pitch);
+      this.winT = 0;
+    }
+    this.winT += dt;
+    if (this.winT >= 0.1 && !this.winBusy) {
+      this.winT -= 0.1;
+      const w = this.win;
+      this.winBusy = w.step(rt - lipX - this.winR0, yt - lipZ, pitch).then(({ force }) => {
+        this.soilForce = force;
+        this.neuralSteps++;
+        this.peakDragN = Math.max(this.peakDragN, force[0]);
+        // relief valve: proportional back-off above the limit, recover below it
+        this.reliefScale = force[0] > nn.fMax ? Math.max(0.05, this.reliefScale * 0.7) : Math.min(1, this.reliefScale + 0.1);
+        this.winBusy = null;
+      });
+    }
+  }
+
+  /** write the window back to the heightfield; the volume the model removed becomes the bucket load */
+  private commitWindow() {
+    const w = this.win!;
+    w.commit();
+    this.neuralClipped += w.clipped;
+    const got = Math.max(0, Math.min(this.bucketCapacity - this.load, w.carried));
+    this.load += got;
+    this.stats.bankRemoved += got;
+    this.win = null;
+    this.reliefScale = 1;
+  }
+
+  /** await any in-flight model step (headless benches) */
+  async settleNeural() { if (this.winBusy) await this.winBusy; }
 
   get bucketLoad() { return this.load; }
   get bitesTotal() { return this.bites.length; }

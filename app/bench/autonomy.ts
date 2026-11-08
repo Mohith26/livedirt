@@ -11,8 +11,13 @@ import { DigAutonomy } from '../src/machine/autonomy';
 import { DX225_GEOMETRY, solveIk, forwardPlanar, planarToWorld } from '../src/machine/kinematics';
 import { scan, OS1_64_LIKE } from '../src/sensors/lidarModel';
 
-const soilId = process.argv[2] ?? 'wet-clay';
-const slope = parseFloat(process.argv[3] ?? '1');
+const argv = process.argv.slice(2);
+const ni = argv.indexOf('--neural');
+const neuralModel = ni >= 0 ? argv[ni + 1] : null;
+const neuralMu = ni >= 0 ? parseFloat(argv[ni + 2] ?? '0.5') : 0;
+if (ni >= 0) argv.splice(ni, 3);
+const soilId = argv[0] ?? 'wet-clay';
+const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
 const meta = JSON.parse(fs.readFileSync(path.join(scene, 'terrain.json'), 'utf8'));
 const machine = JSON.parse(fs.readFileSync(path.join(scene, 'machine.json'), 'utf8'));
@@ -41,6 +46,11 @@ const mounts = (sw: number) => {
 };
 let seed = 1, latest: Float32Array | null = null;
 auto.requestScan = () => latest;
+if (neuralModel) {
+  const ort = await import('onnxruntime-node');
+  const { loadNeuralModel } = await import('../src/sim/neuralSoil');
+  auto.neural = { model: await loadNeuralModel(ort, neuralModel), mu: neuralMu, fMax: 112800 };
+}
 auto.plan(design);
 auto.start();
 const dt = 0.05;
@@ -48,6 +58,7 @@ let t = 0, scanAcc = 0, rayAcc = 0;
 const t0 = Date.now();
 while (auto.phase !== 'done' && auto.phase !== 'unreachable' && t < 3600) {
   auto.step(dt, false);
+  if (neuralModel) await auto.settleNeural();
   hf.relax(3);
   t += dt; scanAcc += dt; rayAcc += dt;
   if (rayAcc > 0.5) { refreshRay(); rayAcc = 0; }
@@ -69,8 +80,9 @@ const res = {
   surveys: auto.stats.surveys.map((s) => ({ t: +s.t.toFixed(1), points: s.points, coverage: +s.coverage.toFixed(3), inTolFrac: +s.inTolFrac.toFixed(3), lidarMeanAboveCm: +(s.lidarMeanAbove * 100).toFixed(2), truthMeanAboveCm: +(s.truthMeanAbove * 100).toFixed(2) })),
   final: { onGradePct: +g.onGradePct.toFixed(1), meanAbsErrorCm: +(g.meanAbsError * 100).toFixed(2), remainingCutM3: +g.remainingCut.toFixed(3), overDigM3: +g.overDig.toFixed(3), unplannedCutM3: +g.unplannedCut.toFixed(3), sloughedM3: +hf.ledger.sloughed.toFixed(3), maxAboveCm: +(g.maxAbove * 100).toFixed(1), maxBelowCm: +(g.maxBelow * 100).toFixed(1) },
   log: auto.log,
+  neural: neuralModel ? { model: path.basename(neuralModel), mu: neuralMu, peakDragKN: +(auto.peakDragN / 1e3).toFixed(1), steps: auto.neuralSteps, clippedCells: auto.neuralClipped } : null,
 };
 void forwardPlanar; void planarToWorld;
 fs.mkdirSync('bench/results', { recursive: true });
-fs.writeFileSync(`bench/results/autonomy-${soilId}-slope${slope}.json`, JSON.stringify(res, null, 2));
+fs.writeFileSync(`bench/results/autonomy-${soilId}-slope${slope}${neuralModel ? '-neural' : ''}.json`, JSON.stringify(res, null, 2));
 console.log(JSON.stringify({ ...res, log: res.log.slice(-4) }, null, 1));

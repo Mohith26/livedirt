@@ -109,7 +109,7 @@ for p in sorted(R.glob("calib-*.json")):
                        f"{s.get('drag_pred_N', float('nan'))/1e3:.1f} | {s.get('drag_err', float('nan')):+.1%} | {s.get('drag_err_default_mu0.5', float('nan')):+.1%} |")
 
 # ---------------- Task 6: surrogate ----------------
-for p in sorted(R.glob("surrogate-*.json")):
+for p in sorted(x for x in R.glob("surrogate-*.json") if not x.name.endswith("-fixture.json")):
     d = json.loads(p.read_text()); s = d["summary"]
     out += ["", "## Task 6: learned terrain + force surrogate (held-out MPM episodes)", "",
             f"{s['params']:,} parameters, {s['train_episodes']} training / {s['val_episodes']} held-out episodes, {s['ms_per_step']:.2f} ms per 0.1 s step on {s['device']}.", "",
@@ -117,6 +117,18 @@ for p in sorted(R.glob("surrogate-*.json")):
     for m in ("surrogate", "livedirt", "persistence"):
         out.append(f"| {m} | {s['final_rmse_disturbed_m'][m]:.3f} | {s['rollout_rmse_all_m'][m]:.3f} |")
     out.append(f"\nDrag-force relative error during the drag phase (surrogate): {s['force_x_rel_err_drag']:.0%}.")
+
+fr = R / "frontier-task3.json"
+if fr.exists():
+    d = json.loads(fr.read_text())
+    out += ["", "## Accuracy vs speed on the task-3 dig cycle", "",
+            f"Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.1 s over {d['sim_seconds']:.1f} s. "
+            "Realtime factor = simulated seconds per wall second (MPM and surrogate on a Colab L4; LiveDirt row is the Python port of "
+            "the TypeScript relax, so its speed is not representative of the browser).", "",
+            "| method | final terrain RMSE, disturbed cells (m) | rollout RMSE (m) | realtime factor | drag force error |", "|---|---|---|---|---|"]
+    for k, r in d["rows"].items():
+        fe = f"{r['drag_force_rel_err']:.1%}" if "drag_force_rel_err" in r else "-"
+        out.append(f"| {k} | {r['final_rmse_disturbed_m']:.3f} | {r['rollout_rmse_m']:.3f} | {r['realtime_factor']:.2f}x | {fe} |")
 
 (R.parent / "RESULTS.md").write_text("\n".join(out) + "\n")
 print("wrote", R.parent / "RESULTS.md", len(out), "lines")

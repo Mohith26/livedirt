@@ -56,6 +56,34 @@ Reference: Li, Zhang, Goldman 2013 (Science 339:1408), Table S2 Fourier fit for 
 | `smoke-dx2mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.225; alpha_x(90,0) 0.099 (fit 0.091) | Tesla T4 |
 | `smoke-dx3mm` (grid check) | - | - | - | - | alpha_z(0,90) 0.212; alpha_x(90,0) 0.098 (fit 0.091) | Tesla T4 |
 
+## Task 3: full-scale bucket dig cycle (3D MPM, closed loop)
+
+1.0 m wide, 0.81 m^3 bucket; penetrate to 0.6 m, drag 1.2 m, curl 75 deg, lift. Sand mu = 0.38, 1600 kg/m^3. No public measured data at this scale; scored by grid convergence, conservation, and against the heightfield baselines.
+
+| tag | drag mean / peak (kN) | vertical peak (kN) | carried (bank m^3) | trench depth MPM / kinematic / LiveDirt-relax (m) | terrain RMSE kinematic / LiveDirt-relax vs MPM (m) | trajectory done | wall (s) |
+|---|---|---|---|---|---|---|---|
+| `v2-dx2cm` | 40.3 / 60.5 | 187 | 0.79 | 0.22 / 0.60 / 0.55 | 0.420 / 0.310 | 100% (min speed x1.00) | 360 |
+| `v2-dx3cm` | 37.4 / 57.0 | 178 | 0.78 | 0.21 / 0.60 / 0.55 | 0.446 / 0.345 | 100% (min speed x1.00) | 75 |
+| `v2-dx4cm-d1.0-fmaxspec` | 2.2 / 4.9 | 152 | 0.22 | 0.94 / 1.00 / 0.71 | 0.701 / 0.561 | 12% (min speed x0.00) | 22 |
+| `v2-dx4cm-d1.0` | 107.0 / 133.9 | 853 | 0.52 | -0.08 / 1.00 / 0.71 | 0.982 / 0.790 | 100% (min speed x1.00) | 27 |
+| `v2-dx4cm-fmaxspec` | 3.1 / 6.1 | 133 | 0.19 | 0.88 / 0.60 / 0.55 | 0.564 / 0.524 | 17% (min speed x0.00) | 22 |
+| `v2-dx4cm` | 40.0 / 64.1 | 168 | 0.73 | 0.14 / 0.60 / 0.55 | 0.540 / 0.449 | 100% (min speed x1.00) | 25 |
+
+## Task 4: multiscale hybrid vs full-site MPM
+
+8 m x 6 m site, same dig. Reference = MPM over the whole site. Hybrid = MPM only in a box around the swept footprint (+ margin) with frictional zone walls, written back to the site heightfield and relaxed with LiveDirt's relax.
+
+| tag | method | terrain RMSE region / changed cells (m) | carried err | drag mean err | speedup vs reference | particles |
+|---|---|---|---|---|---|---|
+| `v2-dx4cm-wall0` | full-site MPM reference | 0 / 0 | - | - | 1x (136 s) | 3600000 |
+| `v2-dx4cm-wall0` | livedirt_kinematic_relax | 0.150 / 0.229 | - | - | 12.1x | - |
+| `v2-dx4cm-wall0` | hybrid_margin_0.5m | 0.056 / 0.087 | +14% | +6% | 3.1x | 610500 |
+| `v2-dx4cm` | full-site MPM reference | 0 / 0 | - | - | 1x (136 s) | 3600000 |
+| `v2-dx4cm` | livedirt_kinematic_relax | 0.150 / 0.229 | - | - | 12.1x | - |
+| `v2-dx4cm` | hybrid_margin_0.25m | 0.099 / 0.151 | +30% | +49% | 3.7x | 432000 |
+| `v2-dx4cm` | hybrid_margin_0.5m | 0.061 / 0.094 | +13% | +17% | 3.1x | 610500 |
+| `v2-dx4cm` | hybrid_margin_1m | 0.023 / 0.035 | +0% | +4% | 2.2x | 1128000 |
+
 ## Task 5: calibration (observe a slump, infer friction, predict digging force)
 
 Real data: friction angle fitted to the Sarlin et al. fits = 26.1 deg (loss 0.207); measured repose 23.5 +/- 1.2 deg.
@@ -68,3 +96,26 @@ Real data: friction angle fitted to the Sarlin et al. fits = 26.1 deg (loss 0.20
 | 0.45 | 1 | 0.441 | 55.5 | 53.1 | -4.3% | +26.2% |
 | 0.60 | 0 | 0.596 | 106.1 | 104.1 | -1.9% | -34.0% |
 | 0.60 | 1 | 0.609 | 106.1 | 109.9 | +3.6% | -34.0% |
+
+## Task 6: learned terrain + force surrogate (held-out MPM episodes)
+
+1,086,228 parameters, 85 training / 15 held-out episodes, 2.33 ms per 0.1 s step on cuda.
+
+| model | final terrain RMSE, disturbed cells (m) | rollout RMSE, all cells (m) |
+|---|---|---|
+| surrogate | 0.132 | 0.067 |
+| livedirt | 0.377 | 0.281 |
+| persistence | 0.246 | 0.334 |
+
+Drag-force relative error during the drag phase (surrogate): 11%.
+
+## Accuracy vs speed on the task-3 dig cycle
+
+Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.1 s over 5.4 s. Realtime factor = simulated seconds per wall second (MPM and surrogate on a Colab L4; LiveDirt row is the Python port of the TypeScript relax, so its speed is not representative of the browser).
+
+| method | final terrain RMSE, disturbed cells (m) | rollout RMSE (m) | realtime factor | drag force error |
+|---|---|---|---|---|
+| mpm_dx4cm | 0.000 | 0.000 | 0.22x | - |
+| livedirt_cut_relax_python | 0.426 | 0.318 | 0.10x | - |
+| surrogate_cuda | 0.108 | 0.056 | 47.10x | 9.8% |
+| surrogate_cpu | 0.108 | 0.056 | 12.91x | 9.8% |
