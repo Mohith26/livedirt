@@ -1,0 +1,169 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 694.6,
+  "wallSeconds": 2263.386,
+  "phase": "done",
+  "verified": false,
+  "cycles": 32,
+  "avgCycleS": 21.56,
+  "avgFill": 0.388,
+  "productivityM3h": 68.2,
+  "bankRemoved": 13.131,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 333.9,
+      "points": 6766,
+      "coverage": 0.801,
+      "inTolFrac": 0.149,
+      "lidarMeanAboveCm": 28.62,
+      "truthMeanAboveCm": 28.56
+    },
+    {
+      "t": 694.6,
+      "points": 6548,
+      "coverage": 0.765,
+      "inTolFrac": 0.136,
+      "lidarMeanAboveCm": 29.27,
+      "truthMeanAboveCm": 29.33
+    }
+  ],
+  "final": {
+    "onGradePct": 7.2,
+    "meanAbsErrorCm": 38.5,
+    "remainingCutM3": 1.893,
+    "overDigM3": 0.56,
+    "unplannedCutM3": 2.673,
+    "sloughedM3": 0.382,
+    "maxAboveCm": 94,
+    "maxBelowCm": 111.3
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "332.3s survey: holding still to scan",
+    "333.9s survey (1.6 s dwell): 6766 pts, coverage 80%, lidar 28.6 cm vs truth 28.6 cm above grade, 351 cells out of tol",
+    "333.9s pass 2",
+    "693.1s survey: holding still to scan",
+    "694.6s survey (1.6 s dwell): 6548 pts, coverage 76%, lidar 29.3 cm vs truth 29.3 cm above grade, 353 cells out of tol",
+    "694.6s stopped: no further improvement; 14% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 53.504,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": -6.748,
+    "bankCutM3": 13.131,
+    "swellExpectedM3": 1.576
+  },
+  "neural": {
+    "model": [
+      "soil-it2-sym.onnx"
+    ],
+    "mu": 0.7,
+    "peakDragKN": 361.7,
+    "steps": 2902,
+    "clippedCells": 37802,
+    "flooredCells": 0,
+    "spilledM3": 1.873,
+    "netRemovedM3": 13.126,
+    "modelDvM3": -13.126,
+    "floorAddedM3": 0,
+    "floorProjection": false,
+    "gate": null,
+    "gateSteps": 2902,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 5.490592498245617,
+      "arm": 1.259069904370058,
+      "boom": 7.074654121539305,
+      "frontLiftoff": 5.427095971964813,
+      "forwardTip": 0.4899788039505328,
+      "sliding": 2.603512914154241
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 139296,
+        "p01": -1.7208003997802734,
+        "p50": -0.1644848883152008,
+        "p99": 1.3565932512283325,
+        "min": -2.59018874168396,
+        "max": 2.4619860649108887,
+        "fracOutsideTrain": 0.000043073742246726395
+      },
+      {
+        "channel": "pen0",
+        "n": 29994,
+        "p01": -0.14767104387283325,
+        "p50": 0.10886138677597046,
+        "p99": 1,
+        "min": -0.6722581386566162,
+        "max": 1,
+        "fracOutsideTrain": 0.008501700340068013
+      },
+      {
+        "channel": "occ0",
+        "n": 139296,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "pen1",
+        "n": 29876,
+        "p01": -0.39775389432907104,
+        "p50": 0.1206437349319458,
+        "p99": 1,
+        "min": -0.9738008975982666,
+        "max": 1,
+        "fracOutsideTrain": 0.006560449859418931
+      },
+      {
+        "channel": "occ1",
+        "n": 139296,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "mu",
+        "n": 139296,
+        "p01": 0.800000011920929,
+        "p50": 0.800000011920929,
+        "p99": 0.800000011920929,
+        "min": 0.800000011920929,
+        "max": 0.800000011920929,
+        "fracOutsideTrain": 1
+      }
+    ],
+    "oorSteps": 0,
+    "capSteps": 0,
+    "consistencyGate": false,
+    "meanEnsembleStd": 0
+  }
+}

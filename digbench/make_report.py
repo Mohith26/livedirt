@@ -206,7 +206,7 @@ if fr.exists():
         out.append(f"| {k} | {r['final_rmse_disturbed_m']:.3f} | {r['rollout_rmse_m']:.3f} | {r['realtime_factor']:.2f}x | {fe} |")
 
 # ---------------- Task 6 v3: shared frozen held-out set ----------------
-hv = sorted(R.glob("v3eval/heldout-*.json")) + sorted(R.glob("v3models/heldout-*.json"))
+hv = sorted(R.glob("v3eval/heldout-v*.json")) + sorted(R.glob("v3models/heldout-*.json"))
 if hv:
     out += ["", "## Task 6 (v3): learned soil on ONE frozen, deployment-matched held-out set", "",
             "21 episodes generated once and never trained on: the standard task-3 dig, 10 chained bites on rough ground, and 10 replayed "
@@ -214,19 +214,24 @@ if hv:
             "Every model is rolled out from frame 0 with the deploy floor projection. Baselines on the same bucket rasters: cut+relax "
             "(LiveDirt-style) and persistence. Aleatoric floor: re-running one replay with a different particle seed changes the truth by "
             "~0.10 m RMSE (see aleatoric results).", "",
-            "| model | final RMSE disturbed (m) all / std / chained / replay | rollout RMSE (m) | abs volume error (m^3) | drag-force rel. error | clipped / floored |",
-            "|---|---|---|---|---|---|"]
+            "Iteration 1 (`it1-*`) is scored on the uncorrected held-out set, iteration 2 (`it2-*`) on the volume-corrected one "
+            "(same episodes); `floor off` = the deploy floor projection disabled (the iteration-2 deploy configuration).", "",
+            "| model | final RMSE disturbed (m) all / std / chained / replay | floor off: final / rollout (m) | rollout RMSE (m) | abs volume error (m^3) | floor-off volume bias (m^3) | drag-force rel. error | clipped / floored |",
+            "|---|---|---|---|---|---|---|---|"]
     base_done = False
     for p in hv:
         d = json.loads(p.read_text()); S = d["summary"]
         f = lambda k: (f"{S[k]['final_rmse_disturbed_m']['model']:.3f}" if S.get(k) and S[k]['final_rmse_disturbed_m']['model'] is not None else "-")
-        out.append(f"| `{d['tag']}` | {f('all')} / {f('standard')} / {f('chained')} / {f('replay')} | {S['all']['rollout_rmse_all_m']['model']:.3f} | "
-                   f"{S['all']['abs_volume_err_m3']['model']:.2f} | {(S['all']['force_x_rel_err_drag'] or float('nan')):.0%} | {S['all']['clipped']} / {S['all']['floored']} |")
+        NF = d.get("summary_nofloor", {}).get("all")
+        nf = f"{NF['final_rmse_disturbed_m']['model']:.3f} / {NF['rollout_rmse_all_m']['model']:.3f}" if NF else "-"
+        nb = f"{NF['mean_volume_bias_m3']['model']:+.2f}" if NF and "mean_volume_bias_m3" in NF else "-"
+        out.append(f"| `{d['tag']}` | {f('all')} / {f('standard')} / {f('chained')} / {f('replay')} | {nf} | {S['all']['rollout_rmse_all_m']['model']:.3f} | "
+                   f"{S['all']['abs_volume_err_m3']['model']:.2f} | {nb} | {(S['all']['force_x_rel_err_drag'] or float('nan')):.0%} | {S['all']['clipped']} / {S['all']['floored']} |")
         if not base_done:
             g = lambda k, m: (f"{S[k]['final_rmse_disturbed_m'][m]:.3f}" if S.get(k) else "-")
             for m in ("cut_relax", "persistence"):
-                out.append(f"| {m} (baseline) | {g('all', m)} / {g('standard', m)} / {g('chained', m)} / {g('replay', m)} | {S['all']['rollout_rmse_all_m'][m]:.3f} | "
-                           f"{S['all']['abs_volume_err_m3'].get(m, float('nan')) if m in S['all']['abs_volume_err_m3'] else '-'} | - | - |")
+                out.append(f"| {m} (baseline, uncorrected set) | {g('all', m)} / {g('standard', m)} / {g('chained', m)} / {g('replay', m)} | - | {S['all']['rollout_rmse_all_m'][m]:.3f} | "
+                           f"{S['all']['abs_volume_err_m3'].get(m, float('nan')) if m in S['all']['abs_volume_err_m3'] else '-'} | - | - | - |")
             base_done = True
 
 lg = R / "loop-gate.md"

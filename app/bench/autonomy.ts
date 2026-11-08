@@ -87,6 +87,7 @@ while (auto.phase !== 'done' && auto.phase !== 'unreachable' && t < 3600) {
   if (neuralModel) await auto.settleNeural();
   hf.relax(3);
   t += dt; scanAcc += dt; rayAcc += dt;
+  if (Math.round(t / dt) % 1200 === 0) console.error(`[progress] sim ${t.toFixed(0)} s wall ${((Date.now() - t0) / 1000).toFixed(0)} s phase ${auto.phase} cycles ${auto.stats.cycles} pass ${auto.stats.passes}`);
   if (rayAcc > 0.5) { refreshRay(); rayAcc = 0; }
   if (scanAcc >= 0.1) {
     scanAcc = 0;

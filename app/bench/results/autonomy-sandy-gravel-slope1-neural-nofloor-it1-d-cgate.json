@@ -1,0 +1,169 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 789.7,
+  "wallSeconds": 455.027,
+  "phase": "done",
+  "verified": false,
+  "cycles": 32,
+  "avgCycleS": 24.53,
+  "avgFill": 0.981,
+  "productivityM3h": 151.7,
+  "bankRemoved": 33.201,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 389.7,
+      "points": 6073,
+      "coverage": 0.747,
+      "inTolFrac": 0.124,
+      "lidarMeanAboveCm": -12.5,
+      "truthMeanAboveCm": -12.55
+    },
+    {
+      "t": 789.7,
+      "points": 6027,
+      "coverage": 0.713,
+      "inTolFrac": 0.068,
+      "lidarMeanAboveCm": -25.43,
+      "truthMeanAboveCm": -25.28
+    }
+  ],
+  "final": {
+    "onGradePct": 3.8,
+    "meanAbsErrorCm": 44.95,
+    "remainingCutM3": 0.471,
+    "overDigM3": 2.392,
+    "unplannedCutM3": 6.938,
+    "sloughedM3": 1.92,
+    "maxAboveCm": 43.7,
+    "maxBelowCm": 116.1
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "388.2s survey: holding still to scan",
+    "389.7s survey (1.6 s dwell): 6073 pts, coverage 75%, lidar -12.5 cm vs truth -12.5 cm above grade, 173 cells out of tol",
+    "389.7s pass 2",
+    "788.2s survey: holding still to scan",
+    "789.7s survey (1.6 s dwell): 6027 pts, coverage 71%, lidar -25.4 cm vs truth -25.3 cm above grade, 169 cells out of tol",
+    "789.7s stopped: no further improvement; 7% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 48.664,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": -11.587,
+    "bankCutM3": 33.201,
+    "swellExpectedM3": 3.984
+  },
+  "neural": {
+    "model": [
+      "soil-it1-d.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 88.2,
+    "steps": 1271,
+    "clippedCells": 4966,
+    "flooredCells": 0,
+    "spilledM3": 3.923,
+    "netRemovedM3": 37.125,
+    "modelDvM3": -37.125,
+    "floorAddedM3": 0,
+    "floorProjection": false,
+    "gate": null,
+    "gateSteps": 1271,
+    "fallbackSteps": 25,
+    "networkShare": 0.981,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 0.7347588868241185,
+      "arm": 0.8492208817666663,
+      "boom": 3.6840864403331297,
+      "frontLiftoff": 3.1540471625529114,
+      "forwardTip": 0.22309019466944952,
+      "sliding": 0.6351947485091023
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 62208,
+        "p01": -2.2182552814483643,
+        "p50": -0.3582669794559479,
+        "p99": 1.8953639268875122,
+        "min": -3.2560482025146484,
+        "max": 3,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen0",
+        "n": 15058,
+        "p01": -0.04565560817718506,
+        "p50": 0.19696104526519775,
+        "p99": 1,
+        "min": -0.29558321833610535,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ0",
+        "n": 62208,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "pen1",
+        "n": 15034,
+        "p01": -0.20141398906707764,
+        "p50": 0.1970476508140564,
+        "p99": 1,
+        "min": -0.7971969246864319,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "occ1",
+        "n": 62208,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": null
+      },
+      {
+        "channel": "mu",
+        "n": 62208,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": null
+      }
+    ],
+    "oorSteps": 0,
+    "capSteps": 25,
+    "consistencyGate": true,
+    "meanEnsembleStd": 0
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 1010.2,
+  "wallSeconds": 3143.316,
+  "phase": "done",
+  "verified": false,
+  "cycles": 48,
+  "avgCycleS": 20.9,
+  "avgFill": 0.292,
+  "productivityM3h": 52.9,
+  "bankRemoved": 14.822,
+  "passes": 3,
+  "surveys": [
+    {
+      "t": 322.7,
+      "points": 5783,
+      "coverage": 0.733,
+      "inTolFrac": 0.122,
+      "lidarMeanAboveCm": 31.3,
+      "truthMeanAboveCm": 31.35
+    },
+    {
+      "t": 661,
+      "points": 5762,
+      "coverage": 0.706,
+      "inTolFrac": 0.093,
+      "lidarMeanAboveCm": 27.7,
+      "truthMeanAboveCm": 27.68
+    },
+    {
+      "t": 1010.2,
+      "points": 5135,
+      "coverage": 0.678,
+      "inTolFrac": 0.058,
+      "lidarMeanAboveCm": 28.44,
+      "truthMeanAboveCm": 28.4
+    }
+  ],
+  "final": {
+    "onGradePct": 3.6,
+    "meanAbsErrorCm": 40.86,
+    "remainingCutM3": 1.921,
+    "overDigM3": 0.682,
+    "unplannedCutM3": 3.377,
+    "sloughedM3": 0.501,
+    "maxAboveCm": 91.8,
+    "maxBelowCm": 124.9
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "321.2s survey: holding still to scan",
+    "322.7s survey (1.6 s dwell): 5783 pts, coverage 73%, lidar 31.3 cm vs truth 31.3 cm above grade, 330 cells out of tol",
+    "322.7s pass 2",
+    "659.5s survey: holding still to scan",
+    "661.0s survey (1.6 s dwell): 5762 pts, coverage 71%, lidar 27.7 cm vs truth 27.7 cm above grade, 322 cells out of tol",
+    "661.0s pass 3",
+    "1008.6s survey: holding still to scan",
+    "1010.2s survey (1.6 s dwell): 5135 pts, coverage 68%, lidar 28.4 cm vs truth 28.4 cm above grade, 318 cells out of tol",
+    "1010.2s stopped: no further improvement; 6% of measured cells within tolerance"
+  ],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 54.906,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": -5.346,
+    "bankCutM3": 14.822,
+    "swellExpectedM3": 1.779
+  },
+  "neural": {
+    "model": [
+      "soil-it2-sym.onnx"
+    ],
+    "mu": 0.6,
+    "peakDragKN": 304.8,
+    "steps": 4014,
+    "clippedCells": 55505,
+    "flooredCells": 0,
+    "spilledM3": 1.612,
+    "netRemovedM3": 12.619,
+    "modelDvM3": -12.619,
+    "floorAddedM3": 0,
+    "floorProjection": false,
+    "gate": null,
+    "gateSteps": 4014,
+    "fallbackSteps": 0,
+    "networkShare": 1,
+    "attitude": "physical",
+    "relief": "dx225 per-actuator",
+    "peakDemand": {
+      "bucket": 4.372161844684336,
+      "arm": 1.2231534193854439,
+      "boom": 5.602465820435744,
+      "frontLiftoff": 4.296945995020875,
+      "forwardTip": 0.33322740899879766,
+      "sliding": 2.1942262719783225
+    },
+    "maxPoseGapS": 0.1,
+    "inputRanges": [
+      {
+        "channel": "H",
+        "n": 192672,
+        "p01": -1.6082555055618286,
+        "p50": -0.1281544268131256,
+        "p99": 1.2753034830093384,
+        "min": -2.543973207473755,
+        "max": 2.3721060752868652,
+        "fracOutsideTrain": 0.00004671150971599402
+      },
+      {
+        "channel": "pen0",
+        "n": 40917,
+        "p01": -0.15107905864715576,
+        "p50": 0.09849059581756592,
+        "p99": 1,
+        "min": -0.6914539337158203,
+        "max": 1,
+        "fracOutsideTrain": 0.008871618153823594
+      },
+      {
+        "channel": "occ0",
+        "n": 192672,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "pen1",
+        "n": 40869,
+        "p01": -0.42222756147384644,
+        "p50": 0.11550599336624146,
+        "p99": 1,
+        "min": -0.9957841634750366,
+        "max": 1,
+        "fracOutsideTrain": 0.0068511585798527
+      },
+      {
+        "channel": "occ1",
+        "n": 192672,
+        "p01": 0,
+        "p50": 0,
+        "p99": 1,
+        "min": 0,
+        "max": 1,
+        "fracOutsideTrain": 0
+      },
+      {
+        "channel": "mu",
+        "n": 192672,
+        "p01": 0.4000000059604645,
+        "p50": 0.4000000059604645,
+        "p99": 0.4000000059604645,
+        "min": 0.4000000059604645,
+        "max": 0.4000000059604645,
+        "fracOutsideTrain": 0
+      }
+    ],
+    "oorSteps": 0,
+    "capSteps": 0,
+    "consistencyGate": false,
+    "meanEnsembleStd": 0
+  }
+}

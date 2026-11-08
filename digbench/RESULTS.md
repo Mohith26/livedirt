@@ -110,6 +110,13 @@ Dragline bucket profile dragged 800 mm through corn between glass panels 200 mm 
 
 | run | draft at 800 mm sim / exp (N) | error at 800 mm | mean rel. error (25-800 mm) | MAE (N) | wall (s) |
 |---|---|---|---|---|---|
+| `abl-dx6-glass0` | 136 / 98 | +39% | +27% | 21 | 936 |
+| `abl-dx6-glass22` | 283 / 98 | +189% | +154% | 119 | 913 |
+| `abl-dx6-tool0.2` | 200 / 98 | +105% | +84% | 65 | 918 |
+| `abl-dx6-tool0.3` | 254 / 98 | +160% | +126% | 98 | 916 |
+| `abl-dx6-tool0.4` | 262 / 98 | +168% | +126% | 99 | 911 |
+| `abl-dx6-vc` | 212 / 98 | +117% | +95% | 74 | 920 |
+| `abl-dx6` | 230 / 98 | +136% | +109% | 85 | 919 |
 | `v1` | 536 / 250 | +114% | +117% | 146 | 963 |
 | published nonpolar MPM (Coetzee 2007) [PUBLISHED] | 209 / 250 (digitized) | -12% (text) / ~-16% (curve) | - | - | - |
 | published DEM [PUBLISHED] | 192 / 250 (digitized) | ~-23% | ~20 N low to 600 mm | - | - |
@@ -224,12 +231,54 @@ Truth: 3D MPM at dx 4 cm (the surrogate's training resolution), terrain every 0.
 
 21 episodes generated once and never trained on: the standard task-3 dig, 10 chained bites on rough ground, and 10 replayed autonomy bites from a held-out trench (yaw +12 deg). Full-width open-ground MPM beds (window + 1.5 m margin), anchored as the app. Every model is rolled out from frame 0 with the deploy floor projection. Baselines on the same bucket rasters: cut+relax (LiveDirt-style) and persistence. Aleatoric floor: re-running one replay with a different particle seed changes the truth by ~0.10 m RMSE (see aleatoric results).
 
-| model | final RMSE disturbed (m) all / std / chained / replay | rollout RMSE (m) | abs volume error (m^3) | drag-force rel. error | clipped / floored |
-|---|---|---|---|---|---|
-| `v1` | 0.337 / 0.288 / 0.217 / 0.462 | 0.290 | 1.52 | 144% | 365731 / 1123992 |
-| cut_relax (baseline) | 0.313 / 0.209 / 0.155 / 0.482 | 0.226 | 1.6164058150813854 | - | - |
-| persistence (baseline) | 0.282 / 0.208 / 0.178 / 0.394 | 0.243 | - | - | - |
-| `v2` | 0.469 / 0.433 / 0.417 / 0.524 | 0.383 | 2.46 | 138% | 471661 / 933030 |
+Iteration 1 (`it1-*`) is scored on the uncorrected held-out set, iteration 2 (`it2-*`) on the volume-corrected one (same episodes); `floor off` = the deploy floor projection disabled (the iteration-2 deploy configuration).
+
+| model | final RMSE disturbed (m) all / std / chained / replay | floor off: final / rollout (m) | rollout RMSE (m) | abs volume error (m^3) | floor-off volume bias (m^3) | drag-force rel. error | clipped / floored |
+|---|---|---|---|---|---|---|---|
+| `v1` | 0.337 / 0.288 / 0.217 / 0.462 | - | 0.290 | 1.52 | - | 144% | 365731 / 1123992 |
+| cut_relax (baseline, uncorrected set) | 0.313 / 0.209 / 0.155 / 0.482 | - | 0.226 | 1.6164058150813854 | - | - | - |
+| persistence (baseline, uncorrected set) | 0.282 / 0.208 / 0.178 / 0.394 | - | 0.243 | - | - | - | - |
+| `v2` | 0.469 / 0.433 / 0.417 / 0.524 | - | 0.383 | 2.46 | - | 138% | 471661 / 933030 |
+| `it1-d-s1` | 0.176 / 0.152 / 0.118 / 0.235 | - | 0.152 | 0.49 | - | 35% | 106611 / 1534182 |
+| `it1-d-s2` | 0.176 / 0.146 / 0.118 / 0.237 | - | 0.152 | 0.48 | - | 45% | 117166 / 1519234 |
+| `it1-d` | 0.179 / 0.154 / 0.122 / 0.238 | - | 0.153 | 0.51 | - | 42% | 104638 / 1515721 |
+| `it1-flux` | 0.206 / 0.195 / 0.137 / 0.275 | - | 0.167 | 0.77 | - | 97% | 83368 / 928722 |
+| `it1-full` | 0.198 / 0.190 / 0.139 / 0.259 | - | 0.160 | 0.76 | - | 89% | 85443 / 1022548 |
+| `it1-sym` | 0.184 / 0.159 / 0.124 / 0.246 | - | 0.157 | 0.56 | - | 73% | 50906 / 1102547 |
+| `it2-d` | 0.184 / 0.177 / 0.125 / 0.243 | 0.203 / 0.130 | 0.147 | 0.62 | +1.04 | 52% | 58495 / 1291263 |
+| `it2-full` | 0.206 / 0.230 / 0.137 / 0.274 | 0.092 / 0.068 | 0.160 | 0.90 | +0.04 | 100% | 52942 / 835609 |
+| `it2-fv-floor` | 0.189 / 0.175 / 0.131 / 0.248 | 0.201 / 0.137 | 0.149 | 0.68 | +1.09 | 56% | 58779 / 1281768 |
+| `it2-fv` | 0.241 / 0.231 / 0.167 / 0.316 | 0.076 / 0.066 | 0.182 | 1.25 | +0.05 | 102% | 57602 / 539818 |
+| `it2-sym` | 0.228 / 0.262 / 0.150 / 0.302 | 0.109 / 0.093 | 0.180 | 1.15 | -0.31 | 72% | 45005 / 644720 |
+
+## Closed-loop gate (the deployment target)
+
+app/bench/autonomy.ts on sandy-gravel, 1:1 trench, the captured site; the heightfield (cut+relax) baseline is the deployed default. Lidar-surveyed grade, 3 cm tolerance.
+
+| run | model | on grade % | MAE cm | over-dig m^3 | unplanned cut m^3 | volume delta m^3 | clipped | floored | peak drag kN | network share | verified |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `baseline` | heightfield (cut+relax) | 34.5 | 5.34 | 0.331 | 0.077 | +nan | 0 | 0 | - | - | False |
+| `neural-it0-v1` | soil-v1.onnx | 0.5 | 108.35 | 0.025 | 0.067 | +7.58 | 385022 | 1001850 | 39.9 | 100% | False |
+| `neural-it0-v2` | soil-v2.onnx | 0.0 | 319.83 | 0.001 | 0.005 | +26.64 | 1916447 | 6048480 | 28.7 | 100% | False |
+| `neural-it1-d-cgate` | soil-it1-d.onnx | 4.9 | 38.71 | 0.188 | 0.556 | -1.45 | 58600 | 1488679 | 166.2 | 98% | False |
+| `neural-it1-d` | soil-it1-d.onnx | 3.9 | 59.15 | 0.156 | 0.386 | +0.54 | 108466 | 2368417 | 180 | 100% | False |
+| `neural-it1-ens-gated-cgate` | soil-it1-d.onnx,soil-it1-d-s1.onnx,soil-it1-d-s2.onnx | 4.9 | 40.43 | 0.215 | 0.568 | -1.48 | 81432 | 1964717 | 150.5 | 99% | False |
+| `neural-it1-ens-gated` | soil-it1-d.onnx,soil-it1-d-s1.onnx,soil-it1-d-s2.onnx | 3.9 | 56.02 | 0.208 | 0.443 | +0.11 | 109571 | 2417288 | 165.9 | 100% | False |
+| `neural-it1-ens` | soil-it1-d.onnx,soil-it1-d-s1.onnx,soil-it1-d-s2.onnx | 3.9 | 56.02 | 0.208 | 0.443 | +0.11 | 109571 | 2417288 | 165.9 | 100% | False |
+| `neural-it1-flux-acct` | soil-it1-flux.onnx | 2.0 | 78.19 | 0.008 | 0.039 | +6.11 | 90125 | 1480175 | 125.1 | 100% | False |
+| `neural-it1-flux` | soil-it1-flux.onnx | 2.0 | 78.19 | 0.008 | 0.039 | +6.11 | 90125 | 1480175 | 125.1 | 100% | False |
+| `neural-it1-full-norelief` | soil-it1-full.onnx | 3.0 | 65.08 | 0.015 | 0.118 | +4.22 | 123816 | 1403538 | 399.8 | 100% | False |
+| `neural-it1-full` | soil-it1-full.onnx | 2.4 | 66.64 | 0.010 | 0.076 | +4.59 | 105467 | 1435950 | 185.2 | 100% | False |
+| `neural-it1-sym` | soil-it1-sym.onnx | 4.4 | 50.45 | 0.156 | 0.465 | -0.33 | 56726 | 1622979 | 156.8 | 100% | False |
+| `neural-nofloor-it1-d-cgate` | soil-it1-d.onnx | 3.8 | 44.95 | 2.392 | 6.938 | -11.59 | 4966 | 0 | 88.2 | 98% | False |
+| `neural-nofloor-it1-d-nofloor` | soil-it1-d.onnx | 4.7 | 41.72 | 2.220 | 6.802 | -11.77 | 35203 | 0 | 194.2 | 100% | False |
+| `neural-nofloor-it1-flux-nofloor` | soil-it1-flux.onnx | 3.0 | 48.70 | 1.782 | 10.877 | -14.54 | 67493 | 0 | 194.5 | 100% | False |
+| `neural-it2-fv-floor-on` | soil-it2-fv.onnx | 0.0 | 117.38 | 0.000 | 0.000 | +12.53 | 118326 | 1226675 | 69.2 | 100% | False |
+| `neural-nofloor-it2-full-mu0.7` | soil-it2-full.onnx | 3.6 | 44.57 | 1.804 | 8.027 | -9.42 | 59898 | 0 | 193.7 | 100% | False |
+| `neural-nofloor-it2-full` | soil-it2-full.onnx | 2.5 | 44.70 | 1.750 | 8.511 | -10.28 | 71136 | 0 | 180.1 | 100% | False |
+| `neural-nofloor-it2-fv` | soil-it2-fv.onnx | 2.2 | 44.54 | 1.609 | 8.209 | -10.47 | 80262 | 0 | 821.6 | 100% | False |
+| `neural-nofloor-it2-sym-mu0.7` | soil-it2-sym.onnx | 7.2 | 38.50 | 0.560 | 2.673 | -6.75 | 37802 | 0 | 361.7 | 100% | False |
+| `neural-nofloor-it2-sym` | soil-it2-sym.onnx | 3.6 | 40.86 | 0.682 | 3.377 | -5.35 | 55505 | 0 | 304.8 | 100% | False |
 
 ## Determinism
 
