@@ -27,6 +27,8 @@ const yawOff = parseFloat(opt('--yaw-offset')?.[0] ?? '0');
 const startR = parseFloat(opt('--start')?.[0] ?? '4.2');
 const lenT = parseFloat(opt('--length')?.[0] ?? '3.6');
 const depthT = parseFloat(opt('--depth')?.[0] ?? '1.0');
+const legacyPitch = flag('--legacy-pitch');
+const legacyRelief = flag('--legacy-relief');
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
@@ -66,8 +68,9 @@ if (neuralModel) {
   const urls = neuralModel.split(',');
   const mdl = urls.length > 1 ? await loadEnsemble(ort, urls) : await loadNeuralModel(ort, urls[0]);
   const gate = gateOpt ? { maxStd: parseFloat(gateOpt[0]), maxOOR: parseFloat(gateOpt[1]), ranges } : undefined;
-  auto.neural = { model: mdl, mu: neuralMu, fMax: 112800, floor: !noFloor, gate, stats: fstats };
+  auto.neural = { model: mdl, mu: neuralMu, fMax: 112800, floor: !noFloor, gate, stats: fstats, legacyRelief };
 }
+if (legacyPitch) auto.attitude = 'legacy';
 const traces: unknown[] = [];
 if (traceFile) auto.traceRec = (r) => traces.push(r);
 const volNow = () => { let v = 0; for (let k = 0; k < n; k++) if (M[k]) v += hf.B[k] + hf.L[k]; return v * hf.area; };
@@ -108,6 +111,7 @@ const res = {
     clippedCells: auto.neuralClipped, flooredCells: auto.neuralFloored, spilledM3: +auto.neuralSpilled.toFixed(3), netRemovedM3: +auto.neuralNetRemoved.toFixed(3), floorProjection: !noFloor,
     gate: gateOpt ? { maxStd: +gateOpt[0], maxOOR: +gateOpt[1] } : null, gateSteps: auto.gateSteps, fallbackSteps: auto.fallbackSteps,
     networkShare: auto.gateSteps + auto.fallbackSteps ? +(auto.gateSteps / (auto.gateSteps + auto.fallbackSteps)).toFixed(3) : null,
+    attitude: auto.attitude, relief: legacyRelief ? 'legacy fMax on Fx' : 'dx225 per-actuator', peakDemand: auto.peakDemand,
     maxPoseGapS: auto.maxPoseGapS, inputRanges: fstats.summary(ranges), oorSteps: fstats.oorSteps, meanEnsembleStd: fstats.steps ? +(fstats.stdSum / Math.max(1, auto.gateSteps + auto.fallbackSteps)).toFixed(5) : null } : null,
   traces: traceFile ? traces.length : undefined,
 };

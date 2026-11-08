@@ -1,9 +1,10 @@
 import { solveIkFlexible, forwardPlanar, planarToWorld, type JointState, type LinkageGeometry } from './kinematics';
 import type { Heightfield, DesignTrench } from '../sim/heightfield';
+import { actuatorDemand, type ActuatorDemand } from './actuators';
 import { NeuralSoilWindow, type NeuralModel, type NeuralGate, type FeatureStats } from '../sim/neuralSoil';
 
 /** one recorded dig for MPM replay: terrain (window frame, window + margin on every side, 5 cm), poses [t, pivot x, pivot z, pitch, relief] */
-export interface DigTrace { margin: number; cell: number; nx: number; ny: number; terrain: number[]; poses: number[][]; bite: number; pass: number; t0: number; soil: string; neural: boolean }
+export interface DigTrace { margin: number; cell: number; nx: number; ny: number; terrain: number[]; poses: number[][]; bite: number; pass: number; t0: number; soil: string; neural: boolean; r0: number; groundY: number; shift: number; attitude: string }
 
 /**
  * Trench-to-grade dig cycle for the twin.
@@ -92,7 +93,7 @@ export class DigAutonomy {
    * 3.4 m x 2 m window around the bucket instead of the kinematic cut, and the predicted drag force drives a relief
    * valve: above fMax (DX225LC-7 ISO arm digging force, 112.8 kN) the boom and arm slow down.
    */
-  neural: { model: NeuralModel; mu: number; fMax: number; floor?: boolean; gate?: NeuralGate; stats?: FeatureStats } | null = null;
+  neural: { model: NeuralModel; mu: number; fMax: number; floor?: boolean; gate?: NeuralGate; stats?: FeatureStats; legacyRelief?: boolean } | null = null;
   private win: NeuralSoilWindow | null = null;
   private winR0 = 0;
   private winT = 0;
@@ -288,6 +289,7 @@ export class DigAutonomy {
           return this.joints;
         }
       }
+      this.curBite = this.bites[this.biteIdx];
       this.buildBiteWaypoints(this.bites[this.biteIdx++]);
       this.cycleStart = this.stats.elapsed;
     }
@@ -367,19 +369,45 @@ export class DigAutonomy {
    * way from the training rig. Shared by the model window and the MPM trace exporter so both see the same poses.
    */
   private curlAk0: number | null = null;
+  private curBite: Bite | null = null;
+  /** 'physical' (default): teeth-first penetration at +40 deg, attack angle easing 40 -> 10 deg over the drag, curl
+   * 10 -> -75 deg (digbench/attitude.py). 'legacy': pitch 0 (flat floor) until the curl, curl 0 -> -75 deg. */
+  attitude: 'physical' | 'legacy' = 'physical';
   private surrogatePose(phase: AutoPhase) {
     const fk = forwardPlanar(this.g, this.joints);
     const rt = fk.tip[0], yt = this.groundY + fk.tip[1];
-    let pitch = 0;
+    const phys = this.attitude === 'physical';
+    const P0 = phys ? 40 * DEG : 0, P1 = phys ? 10 * DEG : 0, P2 = -75 * DEG;
+    let pitch = P0;
     if (phase === 'curl') {
       if (this.curlAk0 === null) this.curlAk0 = fk.bucketAbs;
       const span = 20 * DEG - this.curlAk0;
       const prog = span > 1e-3 ? Math.max(0, Math.min(1, (fk.bucketAbs - this.curlAk0) / span)) : 1;
-      pitch = -75 * DEG * prog;
-    } else this.curlAk0 = null;
+      pitch = P1 + (P2 - P1) * prog;
+    } else {
+      this.curlAk0 = null;
+      if (phase === 'drag' && this.curBite) {
+        const [tx, , tz] = planarToWorld(this.cx, this.groundY, this.cz, this.joints.swing, fk.tip[0], fk.tip[1]);
+        const a = this.curBite.a, b = this.curBite.b, ex = b[0] - a[0], ez = b[1] - a[1];
+        const u = Math.max(0, Math.min(1, ((tx - a[0]) * ex + (tz - a[1]) * ez) / (ex * ex + ez * ez || 1)));
+        pitch = P0 + (P1 - P0) * u;
+      }
+    }
     const ca = Math.cos(pitch), sa = Math.sin(pitch);
     const lipX = ca * -0.9 - sa * -0.9, lipZ = sa * -0.9 + ca * -0.9;
     return { px: rt - lipX, pz: yt - lipZ, pitch }; // pivot: radial (m from swing axis), world height, pitch
+  }
+
+  /** per-actuator demand of a soil wrench (rig pivot frame) on the current linkage pose */
+  lastDemand: ActuatorDemand | null = null;
+  peakDemand: Record<string, number> = {};
+  private actuatorLoad(force: [number, number, number], pivotR: number, pivotY: number): ActuatorDemand {
+    const fk = forwardPlanar(this.g, this.joints);
+    const gy = 0; // boom-plane y is already height above the track ground
+    const d = actuatorDemand(force[0], force[1], force[2], [pivotR, pivotY - this.groundY], [fk.wrist[0], fk.wrist[1] + gy], [fk.elbow[0], fk.elbow[1] + gy], [fk.foot[0], fk.foot[1] + gy], [fk.tip[0], fk.tip[1]]);
+    this.lastDemand = d;
+    for (const k of ['bucket', 'arm', 'boom', 'frontLiftoff', 'forwardTip', 'sliding'] as const) this.peakDemand[k] = Math.max(this.peakDemand[k] ?? 0, d[k]);
+    return d;
   }
 
   /** model-step queue: poses at exact 0.1 s boundaries (interpolated inside a frame when a frame spans one) */
@@ -437,8 +465,10 @@ export class DigAutonomy {
       this.soilForce = r.force;
       this.neuralSteps++;
       this.peakDragN = Math.max(this.peakDragN, r.force[0]);
-      // relief valve: proportional back-off above the limit, recover below it
-      this.reliefScale = r.force[0] > nn.fMax ? Math.max(0.05, this.reliefScale * 0.7) : Math.min(1, this.reliefScale + 0.1);
+      // relief: per-actuator limits (cylinders at relief pressure, front lift-off, tip, sliding); proportional
+      // back-off above any limit, recover below. fMax (single drag cap) is kept only for the legacy ablation.
+      const over = nn.legacyRelief ? r.force[0] > nn.fMax : this.actuatorLoad(r.force, q.px, q.pz).maxFrac > 1;
+      this.reliefScale = over ? Math.max(0.05, this.reliefScale * 0.7) : Math.min(1, this.reliefScale + 0.1);
     }
   }
 
@@ -501,7 +531,7 @@ export class DigAutonomy {
       const nx = Math.round((3.4 + 2 * M) / C), ny = Math.round((2.0 + 2 * M) / C);
       const terr = new Array<number>(nx * ny);
       for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) terr[i * ny + j] = +(at(-M + (i + 0.5) * C, -1.0 - M + (j + 0.5) * C) + shift).toFixed(4);
-      this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural };
+      this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural, r0: +r0.toFixed(4), groundY: +this.groundY.toFixed(4), shift: +shift.toFixed(4), attitude: this.attitude };
       this.traceShift = shift; this.traceR0 = r0; this.traceT = 0;
       this.trace.poses.push([0, +(P.px - r0).toFixed(4), +(P.pz + shift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
     }
