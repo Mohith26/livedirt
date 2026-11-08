@@ -1,6 +1,9 @@
 import { solveIkFlexible, forwardPlanar, planarToWorld, type JointState, type LinkageGeometry } from './kinematics';
 import type { Heightfield, DesignTrench } from '../sim/heightfield';
-import { NeuralSoilWindow, type NeuralModel } from '../sim/neuralSoil';
+import { NeuralSoilWindow, type NeuralModel, type NeuralGate, type FeatureStats } from '../sim/neuralSoil';
+
+/** one recorded dig for MPM replay: terrain (window frame, window + margin on every side, 5 cm), poses [t, pivot x, pivot z, pitch, relief] */
+export interface DigTrace { margin: number; cell: number; nx: number; ny: number; terrain: number[]; poses: number[][]; bite: number; pass: number; t0: number; soil: string; neural: boolean }
 
 /**
  * Trench-to-grade dig cycle for the twin.
@@ -89,16 +92,17 @@ export class DigAutonomy {
    * 3.4 m x 2 m window around the bucket instead of the kinematic cut, and the predicted drag force drives a relief
    * valve: above fMax (DX225LC-7 ISO arm digging force, 112.8 kN) the boom and arm slow down.
    */
-  neural: { model: NeuralModel; mu: number; fMax: number } | null = null;
+  neural: { model: NeuralModel; mu: number; fMax: number; floor?: boolean; gate?: NeuralGate; stats?: FeatureStats } | null = null;
   private win: NeuralSoilWindow | null = null;
   private winR0 = 0;
   private winT = 0;
-  private winBusy: Promise<unknown> | null = null;
   soilForce: [number, number, number] = [0, 0, 0];
   reliefScale = 1;
   peakDragN = 0;
   neuralClipped = 0;
   neuralSteps = 0;
+  neuralFloored = 0;
+  neuralSpilled = 0;
 
   constructor(hf: Heightfield, g: LinkageGeometry, cx: number, cz: number, groundY: number, initial: JointState) {
     this.hf = hf; this.g = g; this.cx = cx; this.cz = cz; this.groundY = groundY;
@@ -305,11 +309,15 @@ export class DigAutonomy {
       else this.joints[key] = tgt;
     };
     move('swing'); move('boom'); move('arm'); move('bucket');
-    if (this.neural && (wp.phase === 'penetrate' || wp.phase === 'drag' || wp.phase === 'curl')) this.neuralTick(dt, wp.phase);
+    const digging = wp.phase === 'penetrate' || wp.phase === 'drag' || wp.phase === 'curl';
+    if (this.neural && digging) this.neuralTick(dt, wp.phase);
     else {
-      if (this.win) this.commitWindow();
+      if (this.win || this.prevPose) this.endNeuralBite();
+      if (this.traceRec && digging) this.traceTick(dt, this.surrogatePose(wp.phase));
+      else if (this.trace) this.endTrace();
       if (wp.cut) this.cutAtTip();
     }
+    if (this.neural && !digging && this.trace) this.endTrace();
     if (done && wp.dwell && wp.dwell > 0) { wp.dwell -= dt; done = false; }
     if (done) {
       this.queue.shift();
@@ -353,15 +361,13 @@ export class DigAutonomy {
   }
 
   /**
-   * advance the learned-soil window (0.1 s model steps); its force feeds the relief valve.
-   * Pose mapping: the surrogate's cutting edge (tool-frame lip at (-0.9, -0.9) from its pivot) is placed exactly at
-   * LiveDirt's bucket tip; its pitch is 0 while penetrating/dragging and follows curl progress during the curl
-   * (0 -> -75 deg, the training range). LiveDirt's own bucket angle is not used directly because its curl rotates the
-   * tip the other way from the training rig.
+   * Surrogate pose for the current joints: the training rig's cutting edge (tool-frame lip at (-0.9, -0.9) from its
+   * pivot) is placed exactly at LiveDirt's bucket tip; pitch is 0 while penetrating/dragging and follows curl progress
+   * during the curl (0 -> -75 deg). LiveDirt's own bucket angle is not used because its curl rotates the tip the other
+   * way from the training rig. Shared by the model window and the MPM trace exporter so both see the same poses.
    */
   private curlAk0: number | null = null;
-  private neuralTick(dt: number, phase: AutoPhase) {
-    const nn = this.neural!;
+  private surrogatePose(phase: AutoPhase) {
     const fk = forwardPlanar(this.g, this.joints);
     const rt = fk.tip[0], yt = this.groundY + fk.tip[1];
     let pitch = 0;
@@ -373,41 +379,140 @@ export class DigAutonomy {
     } else this.curlAk0 = null;
     const ca = Math.cos(pitch), sa = Math.sin(pitch);
     const lipX = ca * -0.9 - sa * -0.9, lipZ = sa * -0.9 + ca * -0.9;
-    if (!this.win) {
-      this.winR0 = rt - lipX - 2.7; // pivot starts at x = 2.7 m in the window, as in training
-      this.win = new NeuralSoilWindow(this.hf, nn.model, nn.mu, this.cx, this.cz, this.joints.swing, this.winR0);
-      this.win.anchor(rt - lipX - this.winR0, yt - lipZ, pitch);
-      this.winT = 0;
-    }
+    return { px: rt - lipX, pz: yt - lipZ, pitch }; // pivot: radial (m from swing axis), world height, pitch
+  }
+
+  /** model-step queue: poses at exact 0.1 s boundaries (interpolated inside a frame when a frame spans one) */
+  private nq: { px: number; pz: number; pitch: number }[] = [];
+  private prevPose: { px: number; pz: number; pitch: number } | null = null;
+  private pumping: Promise<void> | null = null;
+  maxPoseGapS = 0; // largest pose interval fed to one model step (should be 0.1)
+  gateSteps = 0; // model steps where the gate passed (network handled)
+  fallbackSteps = 0; // 0.1 s steps handled by cut+relax because the gate failed
+  private fallback = false; // current 0.1 s interval is in fallback (cut+relax) mode
+
+  private neuralTick(dt: number, phase: AutoPhase) {
+    const P = this.surrogatePose(phase);
+    if (this.traceRec) this.traceTick(dt, P);
+    if (!this.win && !this.fallback) this.anchorWindow(P);
+    if (this.fallback) this.cutAtTip();
+    const prev = this.prevPose ?? P;
     this.winT += dt;
-    if (this.winT >= 0.1 && !this.winBusy) {
+    while (this.winT >= 0.1 - 1e-9) {
       this.winT -= 0.1;
-      const w = this.win;
-      this.winBusy = w.step(rt - lipX - this.winR0, yt - lipZ, pitch).then(({ force }) => {
-        this.soilForce = force;
-        this.neuralSteps++;
-        this.peakDragN = Math.max(this.peakDragN, force[0]);
-        // relief valve: proportional back-off above the limit, recover below it
-        this.reliefScale = force[0] > nn.fMax ? Math.max(0.05, this.reliefScale * 0.7) : Math.min(1, this.reliefScale + 0.1);
-        this.winBusy = null;
-      });
+      const u = dt > 0 ? Math.max(0, Math.min(1, 1 - this.winT / dt)) : 1;
+      this.nq.push({ px: prev.px + (P.px - prev.px) * u, pz: prev.pz + (P.pz - prev.pz) * u, pitch: prev.pitch + (P.pitch - prev.pitch) * u });
+      this.maxPoseGapS = Math.max(this.maxPoseGapS, 0.1);
+    }
+    this.prevPose = P;
+    if (!this.pumping && this.nq.length) this.pumping = this.pumpNeural().finally(() => { this.pumping = null; });
+  }
+
+  private anchorWindow(P: { px: number; pz: number; pitch: number }) {
+    const nn = this.neural!;
+    this.winR0 = P.px - 2.7; // pivot starts at x = 2.7 m in the window, as in training
+    this.win = new NeuralSoilWindow(this.hf, nn.model, nn.mu, this.cx, this.cz, this.joints.swing, this.winR0);
+    this.win.floorProject = nn.floor !== false;
+    if (nn.stats) this.win.stats = nn.stats;
+    this.win.anchor(P.px - this.winR0, P.pz, P.pitch);
+  }
+
+  /** run every queued model step in order; the force from each step drives the relief valve before the next */
+  async pumpNeural() {
+    const nn = this.neural!;
+    while (this.nq.length) {
+      const q = this.nq.shift()!;
+      if (!this.win) this.anchorWindow(q);
+      const w = this.win!;
+      const r = await w.step(q.px - this.winR0, q.pz, q.pitch, nn.gate);
+      if (r.gated) {
+        // gate failed: write back what the model did so far and let cut+relax handle this 0.1 s interval
+        this.fallbackSteps++;
+        this.commitWindow();
+        this.fallback = true;
+        continue;
+      }
+      this.fallback = false;
+      this.gateSteps++;
+      this.soilForce = r.force;
+      this.neuralSteps++;
+      this.peakDragN = Math.max(this.peakDragN, r.force[0]);
+      // relief valve: proportional back-off above the limit, recover below it
+      this.reliefScale = r.force[0] > nn.fMax ? Math.max(0.05, this.reliefScale * 0.7) : Math.min(1, this.reliefScale + 0.1);
     }
   }
 
   /** write the window back to the heightfield; the volume the model removed becomes the bucket load */
   private commitWindow() {
-    const w = this.win!;
+    const w = this.win;
+    if (!w) return;
     w.commit();
     this.neuralClipped += w.clipped;
-    const got = Math.max(0, Math.min(this.bucketCapacity - this.load, w.carried));
+    this.neuralFloored += w.floored;
+    // mass accounting: what the model removed goes into the bucket (and the heightfield ledger, so dump() can place it);
+    // anything beyond the bucket's room spills back onto the terrain at the cutting edge instead of vanishing
+    const removed = Math.max(0, w.carried);
+    const got = Math.min(Math.max(0, this.bucketCapacity - this.load), removed);
     this.load += got;
+    this.hf.ledger.carried += got;
+    this.hf.ledger.bankCut += got;
     this.stats.bankRemoved += got;
+    this.neuralNetRemoved += w.carried;
+    const excess = removed - got;
+    if (excess > 1e-6) {
+      const fk = forwardPlanar(this.g, this.joints);
+      const [tx, , tz] = planarToWorld(this.cx, this.groundY, this.cz, this.joints.swing, fk.tip[0], fk.tip[1]);
+      this.neuralSpilled += this.hf.spill(tx, tz, excess, 0.5);
+    }
     this.win = null;
+  }
+  neuralNetRemoved = 0; // sum of window volume removed by the model (negative = net material created)
+
+  /** end of a dig (left penetrate/drag/curl): flush queued steps, commit, reset per-bite state */
+  private endNeuralBite() {
+    if (this.win) this.commitWindow();
+    this.fallback = false;
+    this.prevPose = null;
+    this.winT = 0;
     this.reliefScale = 1;
   }
 
-  /** await any in-flight model step (headless benches) */
-  async settleNeural() { if (this.winBusy) await this.winBusy; }
+  /** await any queued model steps (headless benches call this every frame for exact 0.1 s synchronous stepping) */
+  async settleNeural() { while (this.pumping) await this.pumping; }
+
+  // ---------------- MPM replay trace export (DigBench data generation, DAgger) ----------------
+  /** when set, every dig (penetrate..curl) is recorded with its anchored terrain and 0.1 s surrogate poses */
+  traceRec: ((rec: DigTrace) => void) | null = null;
+  traceMargin = 1.5;
+  private trace: DigTrace | null = null;
+  private traceT = 0;
+  private traceShift = 0;
+  private traceR0 = 0;
+  private traceTick(dt: number, P: { px: number; pz: number; pitch: number }) {
+    if (!this.trace) {
+      const M = this.traceMargin, C = 0.05;
+      const r0 = P.px - 2.7, sw = this.joints.swing;
+      const ux = Math.cos(sw), uz = Math.sin(sw), vx = -uz, vz = ux;
+      const at = (xw: number, lat: number) => this.hf.heightAt(this.cx + ux * (r0 + xw) + vx * lat, this.cz + uz * (r0 + xw) + vz * lat);
+      // anchor exactly as NeuralSoilWindow.anchor: shift = 1.2 - mean(window heights)
+      let sum = 0;
+      for (let i = 0; i < 68; i++) for (let j = 0; j < 40; j++) sum += at((i + 0.5) * C, -1.0 + (j + 0.5) * C);
+      const shift = 1.2 - sum / (68 * 40);
+      const nx = Math.round((3.4 + 2 * M) / C), ny = Math.round((2.0 + 2 * M) / C);
+      const terr = new Array<number>(nx * ny);
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) terr[i * ny + j] = +(at(-M + (i + 0.5) * C, -1.0 - M + (j + 0.5) * C) + shift).toFixed(4);
+      this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural };
+      this.traceShift = shift; this.traceR0 = r0; this.traceT = 0;
+      this.trace.poses.push([0, +(P.px - r0).toFixed(4), +(P.pz + shift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
+    }
+    this.traceT += dt;
+    if (this.traceT >= 0.1 - 1e-9) {
+      this.traceT -= 0.1;
+      const tr = this.trace;
+      tr.poses.push([+(tr.poses.length * 0.1).toFixed(2), +(P.px - this.traceR0).toFixed(4), +(P.pz + this.traceShift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
+    }
+  }
+  private endTrace() { if (this.trace && this.traceRec) this.traceRec(this.trace); this.trace = null; }
 
   get bucketLoad() { return this.load; }
   get bitesTotal() { return this.bites.length; }

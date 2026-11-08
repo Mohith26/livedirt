@@ -231,6 +231,27 @@ export class Heightfield {
    * Deposit loose volume (m^3, loose measure) as a mound centred at (x, z). Volume that cannot be placed
    * (outside the permitted zone) stays carried. Returns the placed volume.
    */
+  /** place loose material on the terrain without touching the carried ledger (spill from an over-full bucket); returns placed volume */
+  spill(x: number, z: number, volume: number, radius: number): number {
+    if (volume <= 0) return 0;
+    const [ci, cj] = this.cellOf(x, z);
+    const r = Math.ceil(radius / this.cell);
+    const cells: { k: number; i: number; j: number; w: number }[] = [];
+    let wsum = 0;
+    for (let j = cj - r; j <= cj + r; j++)
+      for (let i = ci - r; i <= ci + r; i++) {
+        if (!this.inGrid(i, j)) continue;
+        const [px, pz] = this.center(i, j);
+        const w = Math.max(0, 1 - Math.hypot(px - x, pz - z) / radius);
+        if (w <= 0) continue;
+        cells.push({ k: j * this.N + i, i, j, w });
+        wsum += w;
+      }
+    if (wsum <= 0) return 0;
+    for (const c of cells) { this.L[c.k] += (volume * (c.w / wsum)) / this.area; this.touch(c.i, c.j); }
+    return volume;
+  }
+
   dump(x: number, z: number, volume: number, radius: number): number {
     volume = Math.min(volume, this.ledger.carried);
     if (volume <= 0) return 0;

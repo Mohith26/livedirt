@@ -78,19 +78,74 @@ export function buildFeatures(H: Float32Array, T0: Float32Array, T1: Float32Arra
 }
 
 export interface NeuralModel {
-  /** run one 0.1 s step: features (6 x NX x NY) -> dh (NX x NY, m), force [Fx, Fz, Ty] */
-  step(features: Float32Array): Promise<{ dh: Float32Array; force: [number, number, number] }>;
+  /** run one 0.1 s step: features (6 x NX x NY) -> dh (NX x NY, m), force [Fx, Fz, Ty]; ensembles also return the
+   * per-cell standard deviation of dh across members */
+  step(features: Float32Array): Promise<{ dh: Float32Array; force: [number, number, number]; dhStd?: Float32Array }>;
+  members?: number;
 }
 
 /** onnxruntime (web or node) wrapper; the exported graph takes x: [1, 6, NX, NY] */
 export async function loadNeuralModel(ort: any, url: string, opts: Record<string, unknown> = {}): Promise<NeuralModel> {
   const session = await ort.InferenceSession.create(url, opts);
   return {
+    members: 1,
     async step(features: Float32Array) {
       const res = await session.run({ x: new ort.Tensor('float32', features, [1, 6, NX, NY]) });
       return { dh: res.dh.data as Float32Array, force: Array.from(res.force.data as Float32Array).slice(0, 3) as [number, number, number] };
     },
   };
+}
+
+/** ensemble of independently trained members: mean dh / force and per-cell dh spread (uncertainty for gating) */
+export async function loadEnsemble(ort: any, urls: string[], opts: Record<string, unknown> = {}): Promise<NeuralModel> {
+  const ms = await Promise.all(urls.map((u) => loadNeuralModel(ort, u, opts)));
+  return {
+    members: ms.length,
+    async step(features: Float32Array) {
+      const outs: { dh: Float32Array; force: [number, number, number] }[] = [];
+      for (const m of ms) outs.push(await m.step(features)); // sequential: onnxruntime sessions are not re-entrant
+      const n = NX * NY, k = outs.length;
+      const dh = new Float32Array(n), sd = new Float32Array(n);
+      for (const o of outs) for (let c = 0; c < n; c++) dh[c] += o.dh[c] / k;
+      for (const o of outs) for (let c = 0; c < n; c++) { const d = o.dh[c] - dh[c]; sd[c] += (d * d) / k; }
+      for (let c = 0; c < n; c++) sd[c] = Math.sqrt(sd[c]);
+      const force = [0, 1, 2].map((i) => outs.reduce((a, o) => a + o.force[i], 0) / k) as [number, number, number];
+      return { dh, force, dhStd: sd };
+    },
+  };
+}
+
+/**
+ * Uncertainty gate. A step is handed to cut+relax instead of the network when (a) more than maxOOR of the bucket-near
+ * cells have an input channel outside the training range [lo, hi] (per channel; from the trainer's percentiles), or
+ * (b) the ensemble's mean dh spread over bucket-near cells exceeds maxStd (m per 0.1 s).
+ */
+export interface NeuralGate { ranges?: [number, number][]; maxOOR: number; maxStd: number }
+
+/** loop-side samples of each input channel (for comparing deployment inputs to training percentiles) */
+export class FeatureStats {
+  samples: number[][] = [[], [], [], [], [], []];
+  oorSteps = 0; steps = 0; stdSum = 0; stdMax = 0;
+  private seed = 7;
+  add(f: Float32Array) {
+    const n = NX * NY;
+    this.steps++;
+    for (let s = 0; s < 48; s++) {
+      this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+      const k = this.seed % n;
+      for (let c = 0; c < 6; c++) if (c === 0 || c === 5 || f[(c >= 3 ? 4 : 2) * n + k] > 0.5 || c === 2 || c === 4) this.samples[c].push(f[c * n + k]);
+    }
+  }
+  summary(ranges?: [number, number][]) {
+    const q = (a: number[], p: number) => { if (!a.length) return NaN; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(p * b.length))]; };
+    const names = ['H', 'pen0', 'occ0', 'pen1', 'occ1', 'mu'];
+    return names.map((nm, c) => {
+      const a = this.samples[c];
+      const r = ranges?.[c];
+      return { channel: nm, n: a.length, p01: q(a, 0.01), p50: q(a, 0.5), p99: q(a, 0.99), min: q(a, 0), max: q(a, 1),
+        fracOutsideTrain: r ? a.filter((v) => v < r[0] || v > r[1]).length / Math.max(1, a.length) : null };
+    });
+  }
 }
 
 /**
@@ -105,6 +160,11 @@ export class NeuralSoilWindow {
   carried = 0; // bank m^3 removed from the window terrain (positive into the bucket)
   lastForce: [number, number, number] = [0, 0, 0];
   clipped = 0; // count of clipped/non-finite cell updates (out-of-distribution indicator)
+  floored = 0; // count of cell updates raised to the swept floor
+  stats: FeatureStats | null = null;
+  /** physical projection: no cell may end below min(its anchored height, the lowest bucket point that passed over it) */
+  floorProject = true;
+  private floor = new Float32Array(NX * NY);
   constructor(private hf: Heightfield, private model: NeuralModel, public mu: number,
               private cx: number, private cz: number, private swing: number, private r0: number) {}
 
@@ -128,14 +188,44 @@ export class NeuralSoilWindow {
     this.shift = SURF - sum / (NX * NY);
     for (let k = 0; k < this.H.length; k++) this.H[k] = this.H0[k] + this.shift;
     rasterizeBucket(pivotX, pivotZ + this.shift, pitch, this.T0);
+    this.floor.set(this.H);
+    for (let k = 0; k < this.floor.length; k++) if (Number.isFinite(this.T0[k]) && this.T0[k] < this.floor[k]) this.floor[k] = this.T0[k];
     this.carried = 0;
   }
 
-  /** advance 0.1 s; pivot/pitch are the bucket pose at the END of the step (window coords, metres, radians) */
-  async step(pivotX: number, pivotZ: number, pitch: number) {
+  /** advance 0.1 s; pivot/pitch are the bucket pose at the END of the step (window coords, metres, radians).
+   * With a gate, returns gated=true WITHOUT changing the window when the step should go to cut+relax. */
+  async step(pivotX: number, pivotZ: number, pitch: number, gate?: NeuralGate) {
     const T1 = rasterizeBucket(pivotX, pivotZ + this.shift, pitch);
     const feats = buildFeatures(this.H, this.T0, T1, this.mu);
-    const { dh, force: raw } = await this.model.step(feats);
+    this.stats?.add(feats);
+    const n = NX * NY;
+    let near: Uint8Array | null = null;
+    if (gate) {
+      near = new Uint8Array(n);
+      for (let k = 0; k < n; k++) if (feats[2 * n + k] > 0.5 || feats[4 * n + k] > 0.5) {
+        const i = Math.floor(k / NY), j = k % NY;
+        for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) { const a = i + di, b = j + dj; if (a >= 0 && a < NX && b >= 0 && b < NY) near[a * NY + b] = 1; }
+      }
+      if (gate.ranges) {
+        let cnt = 0, bad = 0;
+        for (let k = 0; k < n; k++) {
+          if (!near[k]) continue;
+          cnt++;
+          for (const c of [0, 1, 3]) { const v = feats[c * n + k], r = gate.ranges[c]; if (v < r[0] || v > r[1]) { bad++; break; } }
+        }
+        if (cnt && bad / cnt > gate.maxOOR) { if (this.stats) this.stats.oorSteps++; return { force: this.lastForce, carried: this.carried, gated: true, reason: 'oor' }; }
+      }
+    }
+    const { dh, force: raw, dhStd } = await this.model.step(feats);
+    if (gate && dhStd && near) {
+      let sum = 0, cnt = 0;
+      for (let k = 0; k < n; k++) if (near[k]) { sum += dhStd[k]; cnt++; }
+      const m = cnt ? sum / cnt : 0;
+      if (this.stats) { this.stats.stdSum += m; this.stats.stdMax = Math.max(this.stats.stdMax, m); }
+      if (m > gate.maxStd) return { force: this.lastForce, carried: this.carried, gated: true, reason: 'std' };
+    }
+    for (let k = 0; k < T1.length; k++) if (Number.isFinite(T1[k]) && T1[k] < this.floor[k]) this.floor[k] = T1[k];
     const force = raw.map((f) => (Number.isFinite(f) ? f : 0)) as [number, number, number];
     // guards: the model is only trusted inside its training range; non-finite or extreme steps are clipped and counted
     let dv = 0;
@@ -143,14 +233,15 @@ export class NeuralSoilWindow {
       let d = dh[k];
       if (!Number.isFinite(d)) { d = 0; this.clipped++; }
       else if (d > 0.3 || d < -0.3) { d = Math.max(-0.3, Math.min(0.3, d)); this.clipped++; }
-      const h = Math.max(SURF - 1.2, Math.min(SURF + 1.5, this.H[k] + d));
+      let h = Math.max(SURF - 2.0, Math.min(SURF + 1.5, this.H[k] + d));
+      if (this.floorProject && h < this.floor[k]) { h = Math.max(h, Math.min(this.floor[k], this.H[k])); this.floored++; }
       dv += h - this.H[k];
       this.H[k] = h;
     }
     this.carried -= dv * CELL * CELL;
     this.T0 = T1;
     this.lastForce = force;
-    return { force, carried: this.carried };
+    return { force, carried: this.carried, gated: false, reason: '' };
   }
 
   /** write the window terrain back into the heightfield (loose layer absorbs changes; bank only if cut below it) */

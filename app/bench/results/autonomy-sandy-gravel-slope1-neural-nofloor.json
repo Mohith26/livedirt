@@ -1,0 +1,85 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571327,
+      -1.924688189203993
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1
+  },
+  "simSeconds": 988.9,
+  "wallSeconds": 533.578,
+  "phase": "done",
+  "verified": false,
+  "cycles": 48,
+  "avgCycleS": 20.46,
+  "avgFill": 0.74,
+  "productivityM3h": 137,
+  "bankRemoved": 37.575,
+  "passes": 3,
+  "surveys": [
+    {
+      "t": 318.2,
+      "points": 5660,
+      "coverage": 0.692,
+      "inTolFrac": 0.129,
+      "lidarMeanAboveCm": 15.91,
+      "truthMeanAboveCm": 15.84
+    },
+    {
+      "t": 649.7,
+      "points": 5642,
+      "coverage": 0.721,
+      "inTolFrac": 0.1,
+      "lidarMeanAboveCm": 0.85,
+      "truthMeanAboveCm": 0.87
+    },
+    {
+      "t": 988.9,
+      "points": 5904,
+      "coverage": 0.691,
+      "inTolFrac": 0.066,
+      "lidarMeanAboveCm": 3.69,
+      "truthMeanAboveCm": 3.71
+    }
+  ],
+  "final": {
+    "onGradePct": 3.6,
+    "meanAbsErrorCm": 39.46,
+    "remainingCutM3": 1.082,
+    "overDigM3": 1.432,
+    "unplannedCutM3": 8.651,
+    "sloughedM3": 2.574,
+    "maxAboveCm": 71,
+    "maxBelowCm": 130.8
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 3.6 m, spoil 3.4 m off centreline",
+    "0.0s start",
+    "316.7s survey: holding still to scan",
+    "318.2s survey (1.6 s dwell): 5660 pts, coverage 69%, lidar 15.9 cm vs truth 15.8 cm above grade, 260 cells out of tol",
+    "318.2s pass 2",
+    "648.1s survey: holding still to scan",
+    "649.7s survey (1.6 s dwell): 5642 pts, coverage 72%, lidar 0.8 cm vs truth 0.9 cm above grade, 217 cells out of tol",
+    "649.7s pass 3",
+    "987.4s survey: holding still to scan",
+    "988.9s survey (1.6 s dwell): 5904 pts, coverage 69%, lidar 3.7 cm vs truth 3.7 cm above grade, 236 cells out of tol",
+    "988.9s stopped: no further improvement; 7% of measured cells within tolerance"
+  ],
+  "neural": {
+    "model": "soil-v2.onnx",
+    "mu": 0.6,
+    "peakDragKN": 420.9,
+    "steps": 3503,
+    "clippedCells": 247815,
+    "flooredCells": 0,
+    "spilledM3": 4.528,
+    "floorProjection": false
+  }
+}
