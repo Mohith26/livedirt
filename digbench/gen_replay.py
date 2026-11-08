@@ -296,6 +296,9 @@ def main():
     ap.add_argument("--yield-model", choices=["dp", "mc"], default="dp")
     ap.add_argument("--phi", type=float, default=None, help="MC friction angle (deg); default atan(mu)")
     ap.add_argument("--cohesion", type=float, default=0.0)
+    ap.add_argument("--rho", type=float, default=1600.0)
+    ap.add_argument("--preset", default=None, help="app soil preset -> MC params (overrides yield/phi/cohesion/rho; mu = tan phi)")
+    ap.add_argument("--lean", action="store_true", help="replays: no per-frame readout; save surface before/after + carried only")
     ap.add_argument("--traces", nargs="*", default=[])
     ap.add_argument("--standard", action="store_true")
     ap.add_argument("--chained", type=int, default=0, help="bites per bed (synthetic rough-ground chains)")
@@ -315,7 +318,12 @@ def main():
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     VOLCORR[0] = args.volume_correction
-    YIELD.update(model=args.yield_model, phi=args.phi, c=args.cohesion)
+    YIELD.update(model=args.yield_model, phi=args.phi, c=args.cohesion, rho=args.rho)
+    if args.preset:
+        from .soil_presets import mc_params
+        sp_ = mc_params(args.preset)
+        YIELD.update(model="mc", phi=sp_["phi"], c=sp_["c"], rho=sp_["rho"])
+        args.mu_range = [math.tan(math.radians(sp_["phi"]))] * 2
     M = args.margin
     nxb, nyb = int(round((3.4 + 2 * M) / CELL)), int(round((2.0 + 2 * M) / CELL))
     jobs = []
@@ -381,6 +389,13 @@ def main():
                          seed=k + 1000 * args.particle_seed, min_floor_win=lip_min, poses=poses, col_depth=args.col_depth)
             meta = {"source": "replay", "name": name, "bite": tr["bite"], "pass": tr["pass"],
                     "soil": tr["soil"], "neural": tr["neural"], "attitude": tr.get("attitude", "")}
+            if args.lean:
+                r = ep.run_bite_lean(poses, limits=not args.no_limits)
+                np.savez_compressed(f, H_before=r.pop("H_before").astype(np.float32), H_after=r.pop("H_after").astype(np.float32),
+                                    margin=M, cell=CELL, mu=mu, meta=json.dumps({**meta, **r, "yield": YIELD}))
+                print(f"{name}: mu={mu:.2f} carried={r['carried']:.3f} completion={r['completion']:.2f} drag={r['drag_mean_N']/1e3:.1f}kN "
+                      f"peak_demand={r['peak_demand']:.2f} wall={r['wall']:.0f}s particles={ep.n0}", flush=True)
+                continue
             r = ep.run_bite(poses, f, meta, limits=not args.no_limits)
             print(f"{name}: mu={mu:.2f} frames={r['frames']} carried={r['carried']:.2f} completion={r['completion']:.2f} "
                   f"min_s={r['min_s']:.2f} peak_demand={r['peak_demand']:.2f} wall={r['wall']:.0f}s particles={ep.n0}", flush=True)
