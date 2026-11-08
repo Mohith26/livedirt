@@ -9,6 +9,7 @@
 PORT=${1:-8766}; SEED0=${2:-100}; N=${3:-10}; ROOT=${4:-$HOME/v4/scoops}
 export PATH=$HOME/node/bin:$PATH
 cd "$HOME/livedirt/app" || exit 1
+mkdir -p "$ROOT/grids"
 for ((k = 0; k < N; k++)); do
   seed=$((SEED0 + k))
   read soil slope depth bw len start yaw < <(python3 - "$seed" <<'EOF'
@@ -21,8 +22,8 @@ EOF
 )
   run="c${seed}-${soil}"
   echo "=== run $run slope $slope depth $depth bw $bw len $len start $start yaw $yaw $(date -u +%T)"
-  npx tsx bench/autonomy.ts "$soil" "$slope" --controller adaptive --soil-backend mpm --mpm-url "http://127.0.0.1:$PORT" \
+  npx tsx bench/autonomy.ts "$soil" "$slope" --controller adaptive --soil-backend ${BACKEND_KIND:-mpm} --mpm-url "http://127.0.0.1:$PORT" \
     --mpm-req "{\"soil\":{\"preset\":\"$soil\"},\"margin\":1.0,\"seed\":$seed,\"run\":\"$run\"}" \
-    --depth "$depth" --bottom "$bw" --length "$len" --start "$start" --yaw-offset "$yaw" --tag "camp-$run" 2>&1 | grep -E "^\[mpm\]|wrote|Error" | tail -40
+    --depth "$depth" --bottom "$bw" --length "$len" --start "$start" --yaw-offset "$yaw" --tag "camp-$run" --dump-grid "$ROOT/grids/$run-${BACKEND:-mpm}.json" 2>&1 | grep -E "^\[mpm\]|wrote|Error" | tail -40
 done
 echo "=== campaign done $(date -u +%T)"
