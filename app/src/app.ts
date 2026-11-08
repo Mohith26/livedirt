@@ -23,7 +23,10 @@ type Mode = 'explore' | 'dig' | 'design' | 'scenario' | 'auto';
 const DEG = Math.PI / 180;
 export const REPO_URL = 'https://github.com/Mohith26/livedirt';
 
+const PHYS_DT = 0.05;
+
 export class App {
+  private physAcc = 0;
   readonly engine: Engine;
   readonly data: SceneData;
   readonly terrain: TerrainSystem;
@@ -718,14 +721,20 @@ export class App {
     }
     // autonomy
     const a = this.autonomy;
-    if (a.phase !== 'idle' && a.phase !== 'done' && a.phase !== 'unreachable') {
-      const j = a.step(dt, this.personDetectedInZone);
-      this.twin.setJoints(j);
-      const tip = this.twin.tipWorld();
-      this.env.dustCenter.copy(tip);
+    // fixed-timestep physics (same 0.05 s step as app/bench/autonomy.ts) so runs do not depend on frame rate;
+    // at most 10 catch-up steps per frame
+    this.physAcc = Math.min(this.physAcc + dt, 10 * PHYS_DT);
+    while (this.physAcc >= PHYS_DT - 1e-9) {
+      this.physAcc -= PHYS_DT;
+      if (a.phase !== 'idle' && a.phase !== 'done' && a.phase !== 'unreachable') {
+        const j = a.step(PHYS_DT, this.personDetectedInZone);
+        this.twin.setJoints(j);
+        this.env.dustCenter.copy(this.twin.tipWorld());
+      }
+      if (hf.isSettling()) hf.relax(3);
     }
     this.twin.tick(t);
-    this.terrain.update(dt);
+    this.terrain.update(dt, false);
     // sensors follow the machine's sensor mounts (valid whether or not the twin is shown)
     this.twin.root.updateMatrixWorld(true);
     const lp = new THREE.Vector3();

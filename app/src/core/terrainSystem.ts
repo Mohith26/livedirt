@@ -153,9 +153,10 @@ export class TerrainSystem {
     this.tiles.forEach((t) => t.updateVersion());
   }
 
-  update(dt: number) {
+  /** relax=false when the caller runs relaxation inside its own fixed-timestep physics loop */
+  update(dt: number, relax = true) {
     const hf = this.hf;
-    if (hf.isSettling()) hf.relax(3);
+    if (relax && hf.isSettling()) hf.relax(3);
     const r = hf.consumeDirty();
     if (r) {
       this.upload(r);
