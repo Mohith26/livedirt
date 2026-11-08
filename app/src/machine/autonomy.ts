@@ -83,6 +83,7 @@ export class DigAutonomy {
   private laneIdx = 0;
   private laneT = 0; // progress along the current lane, 0 (far end) -> 1 (near end)
   private biteBank0 = 0;
+  private biteT0 = 0;
   /** tiltrotator roll of the bucket about the drag direction (rad, + raises the +lateral side); 0 for the legacy controller */
   tilt = 0;
   maxTilt = 40 * DEG;
@@ -314,6 +315,7 @@ export class DigAutonomy {
       }
       t = Math.min(1, t);
       this.laneT = t;
+      this.biteT0 = t0;
       // not worth a cycle: less than 5% of a bucket of bank material left above the cut line on this stretch
       if (acc < 0.05 * this.bucketCapacity / (this.hf.soil?.swell ?? 1)) continue;
       this.biteSwept = acc;
@@ -351,6 +353,8 @@ export class DigAutonomy {
       this.fillEff = 0.6 * this.fillEff + 0.4 * eff;
     }
     const c = this.lastBiteCompletion;
+    // a stalled bite did not reach its planned end: the next bite resumes where the bucket actually stopped
+    if (c < 0.95) this.laneT = this.biteT0 + Math.max(0, c) * (this.laneT - this.biteT0);
     if (c < 0.9) this.adaptiveCut = Math.max(0.15, this.adaptiveCut * 0.7);
     else this.adaptiveCut = Math.min(0.6, this.adaptiveCut * 1.1);
     this.adaptiveLog.push({ lane: this.laneIdx, t0: 0, t1: this.laneT, swept: +this.biteSwept.toFixed(4), measured: +measured.toFixed(4), eff: +this.fillEff.toFixed(3), cut: +this.adaptiveCut.toFixed(3), completion: +c.toFixed(3) });
@@ -436,7 +440,8 @@ export class DigAutonomy {
         // acceptance: >= 85% of measured cells within tolerance (1.5x tol allows for sensor noise), or a pass that
         // no longer improves the measured mean error by >= 1 cm (diminishing returns); cap at 6 passes
         const prev = this.stats.surveys.length > 1 ? this.stats.surveys[this.stats.surveys.length - 2] : null;
-        const improving = !prev || Math.abs(prev.lidarMeanAbove) - Math.abs(r.lidarMeanAbove) > 0.01;
+        const improving = !prev || Math.abs(prev.lidarMeanAbove) - Math.abs(r.lidarMeanAbove) > 0.01
+          || (this.controller === 'adaptive' && r.cellsAboveTol < 0.9 * prev.cellsAboveTol);
         const accepted = r.inTolFrac >= 0.85;
         if (!accepted && improving && this.stats.passes < 6) {
           this.stats.passes++;
