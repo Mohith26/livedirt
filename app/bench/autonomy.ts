@@ -31,6 +31,9 @@ const legacyPitch = flag('--legacy-pitch');
 const legacyRelief = flag('--legacy-relief');
 const noRelief = flag('--no-relief');
 const consistency = flag('--consistency-gate'); // a priori physical consistency gate (capacity / creation) // ablation: model forces never slow the machine
+const backend = opt('--soil-backend')?.[0] ?? 'heightfield'; // heightfield | mpm
+const mpmUrl = opt('--mpm-url')?.[0] ?? 'http://127.0.0.1:8765';
+const mpmReq = JSON.parse(opt('--mpm-req')?.[0] ?? '{}'); // extra request fields: soil {model, phi, c}, margin, col_depth, seed
 const soilId = argv[0] ?? 'wet-clay';
 const slope = parseFloat(argv[1] ?? '1');
 const scene = path.resolve('public/scene');
@@ -75,6 +78,24 @@ if (neuralModel) {
 if (legacyPitch) auto.attitude = 'legacy';
 const traces: unknown[] = [];
 if (traceFile) auto.traceRec = (r) => traces.push(r);
+const mpmLog: unknown[] = [];
+if (backend === 'mpm') auto.externalSoil = true;
+const runExternal = async () => {
+  const tr = auto.pendingBite!;
+  auto.pendingBite = null;
+  const body = JSON.stringify({ ...mpmReq, trace: tr, seed: (mpmReq.seed ?? 0) * 1000 + mpmLog.length });
+  let r: any = null;
+  for (let attempt = 0; attempt < 3 && !r; attempt++) {
+    const res = await fetch(mpmUrl + '/bite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    const j = await res.json();
+    if (res.ok) r = j; else console.error('[mpm] error', j.error);
+  }
+  if (!r) throw new Error('MPM backend failed 3 times');
+  auto.applyExternal(tr, r);
+  const { delta, ...meta } = r; void delta;
+  mpmLog.push({ bite: tr.bite, pass: tr.pass, ...meta });
+  console.error(`[mpm] bite ${mpmLog.length} pass ${tr.pass}: carried ${r.carried.toFixed(3)} completion ${r.completion.toFixed(2)} demand ${r.peak_demand.toFixed(2)} wall ${r.wall.toFixed(0)}s`);
+};
 const volNow = () => { let v = 0; for (let k = 0; k < n; k++) if (M[k]) v += hf.B[k] + hf.L[k]; return v * hf.area; };
 const vol0 = volNow();
 auto.plan(design);
@@ -85,7 +106,8 @@ const t0 = Date.now();
 while (auto.phase !== 'done' && auto.phase !== 'unreachable' && t < 3600) {
   auto.step(dt, false);
   if (neuralModel) await auto.settleNeural();
-  hf.relax(3);
+  if (auto.pendingBite) await runExternal();
+  if (backend !== 'mpm') hf.relax(3);
   t += dt; scanAcc += dt; rayAcc += dt;
   if (Math.round(t / dt) % 1200 === 0) console.error(`[progress] sim ${t.toFixed(0)} s wall ${((Date.now() - t0) / 1000).toFixed(0)} s phase ${auto.phase} cycles ${auto.stats.cycles} pass ${auto.stats.passes}`);
   if (rayAcc > 0.5) { refreshRay(); rayAcc = 0; }
@@ -98,15 +120,18 @@ while (auto.phase !== 'done' && auto.phase !== 'unreachable' && t < 3600) {
     latest = out;
   }
 }
-hf.settle(400);
+if (backend !== 'mpm') hf.settle(400);
 const vol1 = volNow();
 const g = hf.gradeStats(0.03);
+const gB = hf.gradeStats(0.03, 'bottom'), gS = hf.gradeStats(0.03, 'slopes');
+const gs = (x: typeof g) => ({ cells: x.cells, onGradePct: +x.onGradePct.toFixed(1), meanAbsErrorCm: +(x.meanAbsError * 100).toFixed(2), remainingCutM3: +x.remainingCut.toFixed(3), overDigM3: +x.overDig.toFixed(3), maxAboveCm: +(x.maxAbove * 100).toFixed(1), maxBelowCm: +(x.maxBelow * 100).toFixed(1) });
 const res = {
   soil: soilId, design, simSeconds: +t.toFixed(1), wallSeconds: (Date.now() - t0) / 1000, phase: auto.phase, verified: auto.verified,
   cycles: auto.stats.cycles, avgCycleS: +auto.stats.avgCycleS.toFixed(2), avgFill: +auto.stats.avgFill.toFixed(3), productivityM3h: +auto.stats.productivity.toFixed(1),
   bankRemoved: +auto.stats.bankRemoved.toFixed(3), passes: auto.stats.passes,
   surveys: auto.stats.surveys.map((s) => ({ t: +s.t.toFixed(1), points: s.points, coverage: +s.coverage.toFixed(3), inTolFrac: +s.inTolFrac.toFixed(3), lidarMeanAboveCm: +(s.lidarMeanAbove * 100).toFixed(2), truthMeanAboveCm: +(s.truthMeanAbove * 100).toFixed(2) })),
   final: { onGradePct: +g.onGradePct.toFixed(1), meanAbsErrorCm: +(g.meanAbsError * 100).toFixed(2), remainingCutM3: +g.remainingCut.toFixed(3), overDigM3: +g.overDig.toFixed(3), unplannedCutM3: +g.unplannedCut.toFixed(3), sloughedM3: +hf.ledger.sloughed.toFixed(3), maxAboveCm: +(g.maxAbove * 100).toFixed(1), maxBelowCm: +(g.maxBelow * 100).toFixed(1) },
+  bottom: gs(gB), slopes: gs(gS), backend, mpm: backend === 'mpm' ? { url: mpmUrl, req: mpmReq, bites: mpmLog } : undefined,
   log: auto.log,
   volume: { terrainStartM3: +vol0.toFixed(3), terrainEndM3: +vol1.toFixed(3), inBucketM3: +auto.bucketLoad.toFixed(3), carriedLedgerM3: +hf.ledger.carried.toFixed(3),
     deltaM3: +(vol1 + hf.ledger.carried - vol0).toFixed(3), bankCutM3: +hf.ledger.bankCut.toFixed(3), swellExpectedM3: +(hf.ledger.bankCut * (hf.soil.swell - 1)).toFixed(3) },

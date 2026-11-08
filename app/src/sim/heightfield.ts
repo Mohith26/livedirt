@@ -357,9 +357,13 @@ export class Heightfield {
   }
 
   // ---------- design grade ----------
+  /** 1 where the design cell is on the trench floor (bottom width), 0 on side/end slopes */
+  designFloor: Uint8Array = new Uint8Array(0);
   setDesign(spec: DesignTrench | null) {
     this.designSpec = spec;
     this.design.fill(NaN);
+    if (this.designFloor.length !== this.design.length) this.designFloor = new Uint8Array(this.design.length);
+    this.designFloor.fill(0);
     if (spec) {
       const N = this.N;
       const [x0, z0] = spec.p0, [x1, z1] = spec.p1;
@@ -383,18 +387,21 @@ export class Heightfield {
           if (r <= 1e-9) D = floor;
           else if (s <= 1e-6) continue; // vertical walls: outside the floor footprint there is no design cut
           else D = floor + r / s;
-          if (D < this.H0[k] - 0.005) this.design[k] = D;
+          if (D < this.H0[k] - 0.005) { this.design[k] = D; this.designFloor[k] = r <= 1e-9 ? 1 : 0; }
         }
     }
   }
 
-  gradeStats(tol = 0.03): GradeStats {
+  /** region: 'all' design cells (legacy), 'bottom' = trench floor only, 'slopes' = side/end slopes only */
+  gradeStats(tol = 0.03, region: 'all' | 'bottom' | 'slopes' = 'all'): GradeStats {
     const st: GradeStats = { cells: 0, onGradePct: 0, remainingCut: 0, overDig: 0, unplannedCut: 0, maxAbove: 0, maxBelow: 0, meanAbsError: 0 };
     let on = 0, abs = 0;
     for (let k = 0; k < this.design.length; k++) {
       const D = this.design[k];
       const H = this.B[k] + this.L[k];
+      if (!Number.isNaN(D) && region !== 'all' && (this.designFloor[k] === 1) !== (region === 'bottom')) continue;
       if (Number.isNaN(D)) {
+        if (region !== 'all') continue;
         const cut = this.H0[k] - H;
         if (cut > 0.01 && this.zone[k]) st.unplannedCut += cut * this.area;
         continue;
@@ -411,6 +418,20 @@ export class Heightfield {
     st.onGradePct = st.cells ? (100 * on) / st.cells : 0;
     st.meanAbsError = st.cells ? abs / st.cells : 0;
     return st;
+  }
+
+  /** add d metres of surface height at cell k (negative: remove loose first, then bank; positive: loose) */
+  applyDelta(i: number, j: number, d: number) {
+    if (!this.inGrid(i, j)) return;
+    const k = j * this.N + i;
+    if (this.mask[k] || d === 0) return;
+    if (d > 0) this.L[k] += d;
+    else {
+      const fromL = Math.min(this.L[k], -d);
+      this.L[k] -= fromL;
+      this.B[k] -= -d - fromL;
+    }
+    this.touch(i, j);
   }
 
   // ---------- aggregates ----------

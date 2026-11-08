@@ -36,6 +36,8 @@ from . import actuators as A
 
 CELL = 0.05
 VOLCORR = [False]  # set from --volume-correction
+# soil model for new beds: {"model": "dp"|"mc", "phi": deg or None (atan(mu)), "c": cohesion Pa}; set from CLI / server
+YIELD = {"model": "dp", "phi": None, "c": 0.0}
 NX, NY = 68, 40  # model window: 3.4 m (x, radial) x 2.0 m (lateral, -1..1 m)
 SURF = 1.2
 
@@ -105,7 +107,8 @@ class Episode:
                 bottom = np.where(near, 0.0, bottom)
         npart = int(1.12 * float((Hb - (bottom if bottom is not None else 0)).sum()) * CELL * CELL / (dx / 2) ** 3) + 20000
         self.sim = Sim3D(self.size, dx, mu_f=mu, arch=arch, symmetry_y=False, tool_speed_max=1.5, seed=seed, volume_correction=VOLCORR[0],
-                         mem_frac=0.85 / num_workers, max_particles=npart)
+                         mem_frac=0.85 / num_workers, max_particles=npart, yield_model=YIELD["model"], phi_deg=YIELD["phi"],
+                         cohesion=YIELD["c"])
         self.n0 = self.sim.fill_heightfield(Hb, CELL, rng_seed=seed, bottom=bottom)
         if bottom is not None:
             self.sim.set_floor(bottom, CELL)
@@ -143,6 +146,61 @@ class Episode:
         T = np.full((NX, NY), np.nan)
         T[np.isfinite(tmp)] = tmp[np.isfinite(tmp)]
         return T
+
+    def bed_surface(self, p, pv=None, pa=0.0, sh=0.05):
+        """Connected soil surface over the whole bed (bed grid, window-frame z), excluding soil on/in the bucket."""
+        if pv is not None:
+            r = p - np.array([pv[0], pv[1], pv[2]])
+            ca, sa = math.cos(pa), math.sin(pa)
+            lx = ca * r[:, 0] + sa * r[:, 2]; lz = -sa * r[:, 0] + ca * r[:, 2]
+            on_b = (lx > -0.95) & (lx < 2 * sh + 0.05) & (lz > -0.9 - 2 * sh) & (lz < 2 * sh + 0.1) & (np.abs(r[:, 1]) < 0.5 + 2 * sh + 0.05)
+            p = p[~on_b]
+        return connected_surface(p, (self.nxb, self.nyb), CELL, self.sim.sp, zmax=self.size[2]) + self.zfloor
+
+    def run_bite_lean(self, poses, limits=True, settle=0.25):
+        """One bite with no per-frame readout: settled surface before, surface after, carried bank volume, force stats,
+        completion. For the MPM-in-the-loop test and per-scoop data."""
+        P = np.array(poses, dtype=np.float64)
+        T_end = float(P[-1, 0])
+
+        def path(t):
+            t = min(t, T_end)
+            px, pz, pa = (np.interp(t, P[:, 0], P[:, c]) for c in (1, 2, 3))
+            return self.bed_pose(px, pz, pa)
+
+        p0, a0 = path(0.0)
+        self.sim.set_pose(p0, a0)
+        t0 = time.perf_counter()
+        self.sim.settle(settle)
+        H_before = self.bed_surface(self.sim.particles(), np.asarray(p0), a0)
+        dem_log, stall, nend, fx_log, fz_log = [], [0], [0], [], []
+
+        def limiter(fx, fz, ty, pb, ab):
+            piv = (self.r0 + pb[0] - self.M, pb[2] + self.zfloor - self.ground_win)
+            lip = np.array([pb[0], pb[2]]) + lip_offset(ab)
+            d = A.demand(fx, fz, ty, piv, bucket_xy=(self.r0 + lip[0] - self.M, lip[1] + self.zfloor - self.ground_win))
+            dem_log.append(d["max_frac"])
+            return limits and d["max_frac"] > 1.0
+
+        last = {"tcmd": 0.0, "s": 1.0, "pv": p0, "pa": a0}
+
+        def rec(s, row):
+            last.update(tcmd=row[1], s=row[9], pv=np.array(row[2:5]), pa=row[5])
+            fx_log.append(row[6]); fz_log.append(row[7])
+            if row[1] >= T_end - 1e-6:
+                nend[0] += 1
+            stall[0] = stall[0] + 1 if row[9] <= 0.051 else 0
+            return nend[0] > 3 or stall[0] >= 30
+
+        res = self.sim.drive_fast(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec, speed_floor=0.05)
+        p = self.sim.particles()
+        H_after = self.bed_surface(p, last["pv"], last["pa"])
+        carried = _carried_full(p, self.sim.sp, last["pv"], last["pa"])
+        return {"H_before": H_before, "H_after": H_after, "carried": float(carried), "completion": float(last["tcmd"] / T_end),
+                "min_s": float(min([r[9] for r in res["series"]], default=1.0)), "peak_demand": float(max(dem_log, default=0.0)),
+                "drag_mean_N": float(-np.mean(fx_log)) if fx_log else 0.0, "drag_peak_N": float(-np.min(fx_log)) if fx_log else 0.0,
+                "vert_peak_N": float(np.max(np.abs(fz_log))) if fz_log else 0.0, "wall": time.perf_counter() - t0,
+                "steps": res["steps"], "particles": int(self.n0)}
 
     def run_bite(self, poses, f, meta, limits=True):
         P = np.array(poses, dtype=np.float64)
@@ -235,6 +293,9 @@ def main():
     ap.add_argument("--arch", default="cuda")
     ap.add_argument("--dx", type=float, default=0.04)
     ap.add_argument("--margin", type=float, default=1.5)
+    ap.add_argument("--yield-model", choices=["dp", "mc"], default="dp")
+    ap.add_argument("--phi", type=float, default=None, help="MC friction angle (deg); default atan(mu)")
+    ap.add_argument("--cohesion", type=float, default=0.0)
     ap.add_argument("--traces", nargs="*", default=[])
     ap.add_argument("--standard", action="store_true")
     ap.add_argument("--chained", type=int, default=0, help="bites per bed (synthetic rough-ground chains)")
@@ -254,6 +315,7 @@ def main():
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     VOLCORR[0] = args.volume_correction
+    YIELD.update(model=args.yield_model, phi=args.phi, c=args.cohesion)
     M = args.margin
     nxb, nyb = int(round((3.4 + 2 * M) / CELL)), int(round((2.0 + 2 * M) / CELL))
     jobs = []

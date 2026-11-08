@@ -4,7 +4,7 @@ import { actuatorDemand, type ActuatorDemand } from './actuators';
 import { NeuralSoilWindow, type NeuralModel, type NeuralGate, type FeatureStats } from '../sim/neuralSoil';
 
 /** one recorded dig for MPM replay: terrain (window frame, window + margin on every side, 5 cm), poses [t, pivot x, pivot z, pitch, relief] */
-export interface DigTrace { margin: number; cell: number; nx: number; ny: number; terrain: number[]; poses: number[][]; bite: number; pass: number; t0: number; soil: string; neural: boolean; r0: number; groundY: number; shift: number; attitude: string }
+export interface DigTrace { margin: number; cell: number; nx: number; ny: number; terrain: number[]; poses: number[][]; bite: number; pass: number; t0: number; soil: string; neural: boolean; r0: number; groundY: number; shift: number; attitude: string; swing?: number }
 
 /**
  * Trench-to-grade dig cycle for the twin.
@@ -312,7 +312,11 @@ export class DigAutonomy {
     };
     move('swing'); move('boom'); move('arm'); move('bucket');
     const digging = wp.phase === 'penetrate' || wp.phase === 'drag' || wp.phase === 'curl';
-    if (this.neural && digging) this.neuralTick(dt, wp.phase);
+    if (this.externalSoil) {
+      // soil lives outside (e.g. MPM): record the bite's poses, hand the whole bite over when the dig phases end
+      if (digging) this.traceTick(dt, this.surrogatePose(wp.phase));
+      else if (this.trace) { this.pendingBite = this.trace; if (this.traceRec) this.traceRec(this.trace); this.trace = null; }
+    } else if (this.neural && digging) this.neuralTick(dt, wp.phase);
     else {
       if (this.win || this.prevPose) this.endNeuralBite();
       if (this.traceRec && digging) this.traceTick(dt, this.surrogatePose(wp.phase));
@@ -524,6 +528,52 @@ export class DigAutonomy {
   // ---------------- MPM replay trace export (DigBench data generation, DAgger) ----------------
   /** when set, every dig (penetrate..curl) is recorded with its anchored terrain and 0.1 s surrogate poses */
   traceRec: ((rec: DigTrace) => void) | null = null;
+  /** external soil backend: no heightfield cutting; each finished bite is left in pendingBite for the caller */
+  externalSoil = false;
+  pendingBite: DigTrace | null = null;
+  /**
+   * Apply an external backend's bite result: `delta` (surface change, m) on the trace's bed grid (cell, margin, nx x ny,
+   * window frame of the trace) is written to the heightfield; `carried` (bank m^3) becomes the bucket load.
+   */
+  applyExternal(tr: DigTrace, r: { delta: number[]; nx: number; ny: number; cell: number; margin: number; carried: number }) {
+    const hf = this.hf, sw = tr.swing ?? this.joints.swing;
+    const ux = Math.cos(sw), uz = Math.sin(sw), vx = -uz, vz = ux;
+    const C = r.cell, M = r.margin;
+    const sample = (a: number, b: number) => {
+      const fi = (a + M) / C - 0.5, fj = (b + 1.0 + M) / C - 0.5;
+      const i0 = Math.floor(fi), j0 = Math.floor(fj), ti = fi - i0, tj = fj - j0;
+      let acc = 0, wsum = 0;
+      for (const [di, dj, w] of [[0, 0, (1 - ti) * (1 - tj)], [1, 0, ti * (1 - tj)], [0, 1, (1 - ti) * tj], [1, 1, ti * tj]] as const) {
+        const ii = i0 + di, jj = j0 + dj;
+        if (ii < 0 || jj < 0 || ii >= r.nx || jj >= r.ny) continue;
+        acc += w * r.delta[ii * r.ny + jj]; wsum += w;
+      }
+      return wsum > 0 ? acc / wsum : 0;
+    };
+    // every heightfield cell whose centre lies inside the bed
+    const x0 = -M, x1 = 3.4 + M, y0 = -1.0 - M, y1 = 1.0 + M;
+    const corners = [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].map(([a, b]) => [this.cx + ux * (tr.r0 + a) + vx * b, this.cz + uz * (tr.r0 + a) + vz * b]);
+    const xs = corners.map((c) => c[0]), zs = corners.map((c) => c[1]);
+    const [ia, ja] = hf.cellOf(Math.min(...xs), Math.min(...zs)), [ib, jb] = hf.cellOf(Math.max(...xs), Math.max(...zs));
+    let removed = 0;
+    for (let j = ja; j <= jb; j++)
+      for (let i = ia; i <= ib; i++) {
+        const [px, pz] = hf.center(i, j);
+        const dx = px - this.cx, dz = pz - this.cz;
+        const a = dx * ux + dz * uz - tr.r0, b = dx * vx + dz * vz;
+        if (a < x0 || a > x1 || b < y0 || b > y1) continue;
+        const d = sample(a, b);
+        if (d !== 0) { hf.applyDelta(i, j, d); removed -= d * hf.area; }
+      }
+    const bank = Math.max(0, r.carried);
+    const loose = bank * (hf.soil?.swell ?? 1);
+    this.load += loose;
+    hf.ledger.carried += loose;
+    hf.ledger.bankCut += bank;
+    this.stats.bankRemoved += bank;
+    this.externalLog.push({ bite: tr.bite, pass: tr.pass, carried: +bank.toFixed(4), netRemoved: +removed.toFixed(4) });
+  }
+  externalLog: { bite: number; pass: number; carried: number; netRemoved: number }[] = [];
   traceMargin = 1.5;
   private trace: DigTrace | null = null;
   private traceT = 0;
@@ -542,7 +592,7 @@ export class DigAutonomy {
       const nx = Math.round((3.4 + 2 * M) / C), ny = Math.round((2.0 + 2 * M) / C);
       const terr = new Array<number>(nx * ny);
       for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) terr[i * ny + j] = +(at(-M + (i + 0.5) * C, -1.0 - M + (j + 0.5) * C) + shift).toFixed(4);
-      this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural, r0: +r0.toFixed(4), groundY: +this.groundY.toFixed(4), shift: +shift.toFixed(4), attitude: this.attitude };
+      this.trace = { margin: M, cell: C, nx, ny, terrain: terr, poses: [], bite: this.biteIdx, pass: this.stats.passes, t0: this.stats.elapsed, soil: this.hf.soil?.id ?? '', neural: !!this.neural, r0: +r0.toFixed(4), groundY: +this.groundY.toFixed(4), shift: +shift.toFixed(4), attitude: this.attitude, swing: +sw.toFixed(6) };
       this.traceShift = shift; this.traceR0 = r0; this.traceT = 0;
       this.trace.poses.push([0, +(P.px - r0).toFixed(4), +(P.pz + shift).toFixed(4), +P.pitch.toFixed(4), +this.reliefScale.toFixed(3)]);
     }
