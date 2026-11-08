@@ -30,6 +30,39 @@ ARGS = None
 LOG = []
 
 
+_NET = {}
+
+
+def run_learned(req, terr, soil, M):
+    """Per-scoop learned model (or its cut+relax prior alone) behind the same interface as MPM."""
+    import torch
+    from .scoop_model import make_inputs, relax
+    from .train_scoop import UNet, pad8
+    t0 = time.perf_counter()
+    X, prior, prior_vol = make_inputs(terr, req["trace"]["poses"], soil, M)
+    phi = float(soil.get("phi", 30.0))
+    if ARGS.backend == "prior":
+        d, carried = prior, prior_vol
+        extra = {"completion": 1.0, "peak_demand": 0.0}
+    else:
+        if "net" not in _NET:
+            net = UNet(X.shape[0], ARGS.ch); net.load_state_dict(torch.load(ARGS.model, map_location="cpu")); net.eval()
+            _NET["net"] = net
+        Xp, (nx, ny) = pad8(X[None])
+        with torch.no_grad():
+            r, ys = _NET["net"](torch.tensor(Xp))
+        H1 = terr + prior + r[0, :nx, :ny].numpy()
+        H1 = relax(H1, phi)  # projection: no slope steeper than the friction angle survives
+        d = H1 - terr
+        carried = float(max(0.0, ys[0, 0]))
+        extra = {"completion": float(ys[0, 1]), "peak_demand": float(ys[0, 2])}
+    d = d.astype(np.float64)
+    d[np.abs(d) < ARGS.min_delta] = 0.0
+    return {"delta": np.round(d, 4).ravel().tolist(), "nx": int(d.shape[0]), "ny": int(d.shape[1]), "cell": G.CELL, "margin": M,
+            "carried": float(carried), "removed_m3": float(-d[d < 0].sum() * G.CELL ** 2), "added_m3": float(d[d > 0].sum() * G.CELL ** 2),
+            "wall": time.perf_counter() - t0, "particles": 0, "drag_mean_N": 0.0, **extra}
+
+
 def run_request(req):
     tr = req["trace"]
     soil = req.get("soil", {})
@@ -46,6 +79,8 @@ def run_request(req):
     elif cut < 0:
         raise ValueError(f"requested margin {M} exceeds the trace margin {tr['margin']}")
     poses = tr["poses"]
+    if ARGS.backend != "mpm":
+        return run_learned(req, terr, {**soil, "mu": mu}, M)
     lip_min = min(p[2] + lip_offset(p[3])[1] for p in poses)
     ep = G.Episode(terr, M, mu, float(req.get("dx", ARGS.dx)), ARGS.arch, 1, r0=tr["r0"], ground_win=tr["groundY"] + tr["shift"],
                    seed=int(req.get("seed", 0)), min_floor_win=lip_min, poses=poses, col_depth=req.get("col_depth", ARGS.col_depth))
@@ -113,6 +148,9 @@ def main():
     ap.add_argument("--min-delta", type=float, default=0.01)
     ap.add_argument("--volume-correction", action="store_true")
     ap.add_argument("--save-dir", default=None, help="write every bite as a training sample (npz)")
+    ap.add_argument("--backend", choices=["mpm", "scoop", "prior"], default="mpm")
+    ap.add_argument("--model", default=None, help="scoop-<tag>.pt for --backend scoop")
+    ap.add_argument("--ch", type=int, default=32)
     ARGS = ap.parse_args()
     srv = HTTPServer(("127.0.0.1", ARGS.port), H)
     print(f"mpm_server on 127.0.0.1:{ARGS.port}", flush=True)
