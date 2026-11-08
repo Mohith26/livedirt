@@ -56,3 +56,10 @@ results as text when browser downloads are blocked.
 - Task 2 compares against the paper's Fourier fit, which itself under-reports the one directly published measurement by about 25%.
 - Task 3 has no public measured data at full scale; it is scored by convergence and conservation, with the contact model validated in task 2.
 - The surrogate is trained on one bucket geometry and dry sand with friction 0.3 to 0.7.
+- Surrogate v1 was trained only on single digs from a flat bed. Run inside the autonomy loop (multi-pass trench on the
+  captured site, `app/bench/autonomy.ts --neural`) it left its training range: 115k clipped cell updates, over-dig and a
+  610 kN peak drag prediction. The browser port itself matches PyTorch (parity bench); the gap is the data. v2 trains on
+  chained bites over rough, already-dug terrain with the bucket emptied between bites.
+- The force-limit model applies one limit along the bucket's velocity. Vertical penetration therefore stalls at the
+  arm-force limit, although a real machine also pushes down with the boom and its weight; per-actuator limits through
+  the linkage Jacobian are the next step.
