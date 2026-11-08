@@ -187,7 +187,7 @@ class Episode:
             return done["n"] > 3 or done["stall"] >= 30
 
         t0 = time.perf_counter()
-        res = self.sim.drive(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec, speed_floor=0.05)
+        res = self.sim.drive_fast(path, T_end * 1.6 + 0.5, limiter=limiter, sample_every=0.1, on_sample=rec, speed_floor=0.05)
         H = np.array(Hs)
         # anchor exactly as the app: window frame shift so the first frame's window mean is 1.2
         zs = SURF - float(H[0].mean())
