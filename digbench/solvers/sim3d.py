@@ -347,6 +347,18 @@ class Sim3D:
         self.t += n_steps * dt
         return {"series": np.array(rows), "wall_s": time.perf_counter() - t0, "steps": n_steps, "dt": dt}
 
+    def remove_where(self, fn):
+        """Kill live particles where fn(positions (N,3) in domain coords) is True (e.g. dump the bucket)."""
+        n = int(self.n_p[None])
+        xs = self.x.to_numpy()[:n] - self.origin.astype(np.float32)
+        al = self.alive.to_numpy()
+        live = al[:n] == 1
+        kill = np.zeros(n, bool)
+        kill[live] = fn(xs[live])
+        al[:n][kill] = 0
+        self.alive.from_numpy(al)
+        return int(kill.sum())
+
     # ---------------- readout ----------------
     def particles(self):
         n = int(self.n_p[None])

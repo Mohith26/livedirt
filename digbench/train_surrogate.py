@@ -163,8 +163,13 @@ def main():
     # ---- evaluation: autoregressive rollouts on held-out episodes ----
     model.eval()
     rows = []
+    # LiveDirt baseline rollouts are pure-Python CPU work: run them in parallel up front
+    from concurrent.futures import ProcessPoolExecutor
+    import os
+    with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) - 1)) as pool:
+        lv_all = list(pool.map(livedirt_rollout, val))
     with torch.no_grad():
-        for ep in val:
+        for vi, ep in enumerate(val):
             n = len(ep["H"])
             H = tens(ep["H"][0][None])
             mu = tens(np.array([ep["mu"]], np.float32))
@@ -178,7 +183,7 @@ def main():
                 torch.cuda.synchronize()
             ms = (time.perf_counter() - t0) / (n - 1) * 1e3
             pred = np.array(pred); forces = np.array(forces)
-            lv = livedirt_rollout(ep)
+            lv = lv_all[vi]
             truth = ep["H"]
             dist = np.abs(truth[-1] - truth[0]) > 0.02
             rm = lambda A: float(np.sqrt(((A[-1] - truth[-1]) ** 2)[dist].mean())) if dist.any() else float("nan")
