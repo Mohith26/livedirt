@@ -5,3 +5,8 @@ app/bench/results/log-*.txt
 *.log
 .DS_Store
 .wrangler/
+unreal/LiveDirtUE/Intermediate/
+unreal/LiveDirtUE/Saved/
+unreal/LiveDirtUE/DerivedDataCache/
+unreal/LiveDirtUE/Binaries/
+unreal/LiveDirtUE/Content/LiveDirt/

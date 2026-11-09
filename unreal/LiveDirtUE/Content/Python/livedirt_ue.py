@@ -202,6 +202,24 @@ def _mesh_actor(label, g, material, hole=None):
     return a
 
 
+def _basic_edit():
+    """Geometry Script's mesh-edit library. Its Python name differs between engine versions
+    (GeometryScript_MeshBasicEditFunctions / GeometryScriptLibrary_MeshBasicEditFunctions), so find it by search."""
+    if "basic_edit" in _state:
+        return _state["basic_edit"]
+    for name in ("GeometryScript_MeshBasicEditFunctions", "GeometryScriptLibrary_MeshBasicEditFunctions"):
+        if hasattr(unreal, name):
+            _state["basic_edit"] = getattr(unreal, name)
+            return _state["basic_edit"]
+    for name in dir(unreal):
+        if "MeshBasicEditFunctions" in name and hasattr(getattr(unreal, name), "append_buffers_to_mesh"):
+            _state["basic_edit"] = getattr(unreal, name)
+            return _state["basic_edit"]
+    cands = [n for n in dir(unreal) if "GeometryScript" in n][:40]
+    raise RuntimeError("Geometry Script is not loaded. Enable Edit -> Plugins -> 'Geometry Script' and restart the editor. "
+                       f"GeometryScript names visible to Python: {cands}")
+
+
 def _fill_mesh(actor, g, material, hole=None):
     verts, norms, tris, cols = grid_buffers(g, hole=hole)
     comp = actor.get_component_by_class(unreal.DynamicMeshComponent)
@@ -212,7 +230,7 @@ def _fill_mesh(actor, g, material, hole=None):
     buf.set_editor_property("normals", [unreal.Vector(*n) for n in norms])
     buf.set_editor_property("vertex_colors", [unreal.LinearColor(c[0], c[1], c[2], 1.0) for c in cols])
     buf.set_editor_property("triangles", [unreal.IntVector(*t) for t in tris])
-    unreal.GeometryScript_MeshBasicEditFunctions.append_buffers_to_mesh(mesh, buf)
+    _basic_edit().append_buffers_to_mesh(mesh, buf)
     comp.set_material(0, material)
 
 
