@@ -62,3 +62,24 @@ earthmoving-equation stall depth, recalibrated from the clay bite (F_s ~36 kN/m)
 as designed. A disconnected-path control showed the takeover alone raised completed-bite error 0.108 -> 0.18-0.19 m;
 three variants ended at 0.19-0.31 m overall vs 0.118. Reverted; judge unchanged (0.0981), not accepted.
 Both frontier models reached the same blocker: the network has no spare channels for a side path.
+
+## Round 2 (2026-11-09): free `list_bites` probe; E3 on a function-preserving widened model (one spare GroupNorm group
+per block, max |output diff| 9.5e-7 m vs w0); Anthropic max_tokens 64k (16k let Fable's thinking consume whole turns)
+
+E1 read: Q3 now right for both (Opus 83, 51, 158, 228, 151; Fable 83, 158, 228, 151, 68: 3 of 5 in the key's stall-AUC /
+ablation lists, found by comparing stalled vs completed bites of the same soil; Fable also named 243, the key's top
+ablation channel, as the anti-stall channel). Q1 still wrong for both (ch 1 / ch 3). Q2: Opus encoder, 18 (half);
+Fable decoder (wrong). Q4: half for both (channels 0-4 observed directly, rest inferred). Totals: Opus ~2 of 4 ($1.54),
+Fable ~1.75 of 4 ($3.49). Pass needs 3.
+
+E3 fix on the wide model, judged on validation:
+- Opus ($5.12): built a 9-layer branch entirely in spare channels (d^2 force term with soil-shifted break points, width
+  sum, stall threshold, one-way spread, prior cancel). Practice: completed 13.1 / stalled 16.4 cm vs 8.3 / 11.9 base at
+  the calibrated threshold; best variant 11.4 / 15.7. Found that envelope depth does not separate stalls (a completed clay
+  bite reached 0.53 m, a stalled one stopped at 0.34-0.44 m). Reverted; judge unchanged, not accepted.
+- Fable ($14.62 rerun; first attempt $4.05 broken by the 16k cap): found the stall is fill-driven (planned volume ~4 m^3
+  vs 0.95 m^3 capacity; deepest part cut first, bucket stops in the shallow tail). Built a global stall flag through the
+  GroupNorm mean that separated stalled from completed practice bites perfectly (completed-bite error bit-identical), but
+  the locator (where on the path to stop) failed: stalled error 0.133 -> 0.745 m. Reverted; not accepted.
+Takeaways: the widening removed the channel-takeover cost (completed bites untouched in Fable's build); the remaining
+problem is locating the stop point inside a local CNN. Both now point at global quantities (fill volume, path length).

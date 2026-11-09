@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E3w_fix_stalls_wide.md",
+ "mode": "fix",
+ "llm": "anthropic:claude-fable-5-1",
+ "budget": 10,
+ "wall_s": 921.0798425674438,
+ "stop_reason": "answered",
+ "cost": 4.0463105
+}
