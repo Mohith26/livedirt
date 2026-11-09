@@ -31,10 +31,17 @@ def main():
     out = Path(a.out).expanduser(); out.mkdir(parents=True, exist_ok=True)
     net = load_model(a.base); P.MODEL["net"] = net
     task = Path(a.task).read_text(); ctx = CONTEXT.read_text()
-    llm = wsp.ScriptedLLM.from_transcript(a.llm.split(":", 1)[1]) if a.llm.startswith("scripted:") else a.llm
+    pricing = None
+    if a.llm.startswith("scripted:"):
+        llm = wsp.ScriptedLLM.from_transcript(a.llm.split(":", 1)[1])
+    elif a.llm.startswith("bedrock:"):
+        from digbench.wsp import bedrock
+        llm, pricing = bedrock.get(a.llm)
+    else:
+        llm = a.llm
     fn = {"read": wsp.read, "fix": wsp.fix, "write": wsp.write, "improve": wsp.improve}[a.mode]
     kw = dict(llm=llm, context=ctx, probes=[P.error_report, P.worst_bites, P.error_map, P.feature_maps], forward_budget=a.budget,
-              thinking=a.thinking, cost_budget=a.max_cost)
+              thinking=a.thinking, cost_budget=a.max_cost if pricing else None, pricing=pricing)
     t0 = time.time()
     res = fn(net, task, **kw)
     res.save(str(out))
