@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E3_fix_stalls.md",
+ "mode": "fix",
+ "llm": "bedrock:deepseek",
+ "budget": 10,
+ "wall_s": 198.6584174633026,
+ "stop_reason": "submitted",
+ "cost": 1.605326
+}

@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E1_read.md",
+ "mode": "read",
+ "llm": "bedrock:kimi",
+ "budget": 10,
+ "wall_s": 429.44217467308044,
+ "stop_reason": "submitted",
+ "cost": 5.128572
+}

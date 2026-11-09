@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E1_read.md",
+ "mode": "read",
+ "llm": "bedrock:deepseek",
+ "budget": 10,
+ "wall_s": 226.05640316009521,
+ "stop_reason": "submitted",
+ "cost": 1.548432
+}

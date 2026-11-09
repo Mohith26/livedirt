@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E3_fix_stalls.md",
+ "mode": "fix",
+ "llm": "bedrock:glm5",
+ "budget": 10,
+ "wall_s": 232.08875632286072,
+ "stop_reason": "submitted",
+ "cost": 4.462994
+}

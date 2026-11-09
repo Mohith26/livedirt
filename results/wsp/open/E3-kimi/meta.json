@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E3_fix_stalls.md",
+ "mode": "fix",
+ "llm": "bedrock:kimi",
+ "budget": 10,
+ "wall_s": 302.4768896102905,
+ "stop_reason": "cost_budget",
+ "cost": 5.229414
+}
