@@ -56,6 +56,13 @@ def run_learned(req, terr, soil, M):
             r = torch.stack([o[0] for o in outs]).mean(0); ys = torch.stack([o[1] for o in outs]).mean(0)
         H1 = terr + prior + r[0, :nx, :ny].numpy()
         H1 = relax(H1, phi)  # projection: no slope steeper than the friction angle survives
+        if ARGS.clamp_below is not None:
+            # projection 2: where the bucket passed, the ground cannot end more than clamp_below under both the old
+            # surface and the bucket's lowest point (MPM: 3% of swept cells exceed 10 cm; stops runaway holes in the loop)
+            from .scoop_model import swept_envelope
+            env = swept_envelope(req["trace"]["poses"], *terr.shape, M)
+            lo = np.where(np.isfinite(env), np.minimum(terr, env) - ARGS.clamp_below, -1e9)
+            H1 = np.maximum(H1, lo)
         d = H1 - terr
         carried = float(max(0.0, ys[0, 0]))
         extra = {"completion": float(ys[0, 1]), "peak_demand": float(ys[0, 2])}
@@ -154,6 +161,7 @@ def main():
     ap.add_argument("--backend", choices=["mpm", "scoop", "prior"], default="mpm")
     ap.add_argument("--model", default=None, help="scoop-<tag>.pt for --backend scoop")
     ap.add_argument("--ch", type=int, default=32)
+    ap.add_argument("--clamp-below", type=float, default=None)
     ARGS = ap.parse_args()
     srv = HTTPServer(("127.0.0.1", ARGS.port), H)
     print(f"mpm_server on 127.0.0.1:{ARGS.port}", flush=True)
