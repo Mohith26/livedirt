@@ -101,3 +101,16 @@ teacher's own run-to-run spread in closed loop (seed-2 reference running).
 Two-parameter bite model (carry fraction, repose offset) fitted on 22 MPM bites: RMSE 0.205 -> 0.194 m, carried MAE
 0.34 -> 0.16 m^3 (best: carry 50%, repose 6 deg below phi). The simple model cannot represent most of what MPM does in a
 bite (stalls, wall slumping), so tuning it buys little.
+
+## Checkpoint 2026-11-09 04:50 UTC (paused for a Mac update; AWS keeps running)
+
+Running on the AWS box (`i-0ba52f040840c2983`, all `setsid nohup`, independent of the Mac):
+* MPM gate reference seed 2: `~/gate-mpm-s2.log` (29 of ~45 bites) -> `~/v4/grids/v4gate-mpm-s2.json`. Gives the
+  teacher's own closed-loop spread (compare s1 vs s2 with `compare_grids.py`).
+* DAgger round 1: `~/dag1.log` (learned a5 ensemble + clamp on scenarios 300-302, MPM labels into
+  `~/v4/scoops/campaign/dag1-*`). Then retrain (`train_scoop.py`, hold out `c240,gate`) and rerun the gate loop
+  (`~/eval_a5ec.sh` pattern) with the new model.
+* Data campaign worker 1: `~/campaign-w1.log` -> `~/v4/scoops/campaign/` (151 bites so far + 28 older + gate).
+Servers: 8765 (campaign), 8766 (gate), 8767 (DAgger labels), 8790 (learned a5 ensemble, CPU).
+Guards: shutdown scheduled Tue 2026-11-10 03:47 UTC; idle alarm stops the box after 30 min below 4% CPU. Estimated
+spend so far ~38 instance-hours (~$85 gross, credits), well under the $1000 cap.
