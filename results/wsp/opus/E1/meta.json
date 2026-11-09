@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E1_read.md",
+ "mode": "read",
+ "llm": "anthropic:claude-opus-5-5",
+ "budget": 10,
+ "wall_s": 95.26390862464905,
+ "stop_reason": "submitted",
+ "cost": 0.38248425
+}

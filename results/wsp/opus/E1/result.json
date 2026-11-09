@@ -1,0 +1,55 @@
+{
+  "run_id": "c68a5ef68b8b",
+  "llm": "anthropic:claude-opus-5-5",
+  "mode": "read",
+  "thinking": "high",
+  "speed": null,
+  "answer": "These answers come only from static analysis of the weights. My two forward_feature_maps calls with guessed bite names (\"?\" and \"0\") failed, and I had no other way to get bite names, so no activation evidence went into them. The weights are still very close to their starting values: the norm layers' scale is about 1 and the bias about 0, and the weight spread is about 1.04\u20131.13\u00d7 the default initialisation. Most estimates come from a rough linear approximation that ignores the normalisation layers and SiLU. Confidence is low throughout.\n\n1. **Completion head:** I think channel 1 (the swept envelope / planned cut depth) has the biggest effect, with a positive sign. A shallower envelope (value toward +0.5) should raise predicted completion, and a deeper planned cut should lower it (stall). The runner-up is channel 3 (the physics prior). Training changed channel 3's e1 weights the most (column norm 1.44 vs about 1.2\u20131.3 for the others), and the rough linear path through the encoder also links channel 3 to completion. That path gives channel 3 a negative coefficient, which conflicts with the physics, so I don't trust its sign. Next come channels 0 and 2, then the soil channels (5 > 6 > 4). Confidence 0.35.\n\n2. **Soil channels:** mostly in the encoder. They are constant planes, so their main use is global: they reach the pooled bottleneck head (completion and peak force) through e2 to e4. The e1 skip into d1 carries a similar or slightly smaller share relative to channels 0\u20133 (0.47 vs 0.53). The e1 filters whose summed kernels respond most to the soil planes are 17 (strength 0.72, mostly friction and cohesion, both negative), 28 (0.58, cohesion + / density \u2212) and 24 (0.57, cohesion \u2212 / density \u2212). Next would be 29 and 30. Confidence 0.3.\n\n3. **e4 \"the bucket will stall\" channels, ranked:**\n   1. 160\n   2. 98\n   3. 82\n   4. 95\n   5. 61\n\n   All five push completion down through the head (combined mean and max weights \u22120.06 to \u22120.09). 160 and 98 also push peak force up and respond strongly to a deep cut plus stiffer soil along the linear path. 82 is the strongest single negative input to completion. 95 has a strong deep-cut response but its force weight is negative. 61 is the second-largest negative completion weight. The strongest opposite channels (\"will complete\") are 215, 243, 225, 223 and 113. Confidence 0.3.\n\n4. **d1/out cut vs outside:** these rankings rest on the linear path from channel 2 (and channel 1) through the e1 skip and d1, combined with the out-layer weights.\n   - **Mainly inside the cut (channel 2 = 0):** 24 (out weight +0.135), 26 (+0.093), 17 (\u22120.129), 23 (\u22120.047), 16 (+0.006, weak). I'd also add channel 25, the largest out weight (+0.161), though the path analysis gives it no in/out preference.\n   - **Mainly outside the cut:** 28 (+0.074), 19 (\u22120.119), 27 (\u22120.150), 3 (+0.057), 7 (+0.094).\n\n   Channel 0 (+0.135) and channel 29 (+0.10) look roughly neutral. Confidence 0.25.",
+  "confidence": 0.3,
+  "stop_reason": "submitted",
+  "error": null,
+  "steps": 14,
+  "seconds": 94.042,
+  "forward_used": 0,
+  "forward_budget": 10,
+  "forward_calls": [],
+  "changed_params": 0,
+  "total_params": 2016900,
+  "changed_fraction": 0.0,
+  "tensors": [],
+  "tokens": {
+    "input_tokens": 143644,
+    "output_tokens": 8676,
+    "cached_input_tokens": 127331,
+    "cache_write_tokens": 16283,
+    "reasoning_tokens": 4212,
+    "requests": 14,
+    "total_tokens": 152320
+  },
+  "cost_usd": 0.38248425,
+  "timings": {
+    "llm": {
+      "calls": 14,
+      "seconds": 87.1299
+    },
+    "tool:python": {
+      "calls": 11,
+      "seconds": 0.0307
+    },
+    "tool:forward_feature_maps": {
+      "calls": 2,
+      "seconds": 6.88
+    },
+    "tool:submit": {
+      "calls": 1,
+      "seconds": 0.0
+    }
+  },
+  "usage": {
+    "cache_creation_input_tokens": 16283,
+    "cache_read_input_tokens": 127331,
+    "input_tokens": 30,
+    "output_tokens": 8676,
+    "thinking_tokens": 4212
+  }
+}

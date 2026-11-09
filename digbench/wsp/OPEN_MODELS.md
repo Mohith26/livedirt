@@ -28,3 +28,23 @@ Answers leaned on physics priors ("deeper cut -> stall") and single weight norms
 
 Verdict: none of the three passes E1 or E3; all are below the plan's "< 2 of 4" stop line for reading. Not tested:
 budgets 25/50 (the paper's gain needed 50), second sessions. Useful as a weak-editor baseline for the frontier runs.
+
+## Claude Opus 5.5 (Anthropic API, same harness, one session each), 2026-11-09
+
+E1 read ($0.38, 14 steps, 0 of 10 probe passes used: feature_maps needs a bite name and nothing in the E1 task lists them;
+both guessed names failed; answers are static weight analysis only)
+
+| Q | Key | Opus | Score |
+|---|---|---|---|
+| 1 | ch 2, negative | ch 1 (+), runner-up ch 3; ch 2 ranked 4th | wrong |
+| 2 | encoder; 19, 22, 18 | encoder; 17, 28, 24 (17 is key rank 7) | half |
+| 3 | ablation 243, 184, 73, 215, 39; AUC 83, 213, 91, 43, 158 | 160, 98, 82, 95, 61 (its "will complete" list 215, 243, 225, 223, 113 holds 3 of the key's top-8 by ablation size) | wrong (found influential channels, labelled direction opposite to the key's framing) |
+| 4 | cut 23, 24, 26, 17, 25, 21; outside 7, 3, 28, 9, 4, 8 | cut 24, 26, 17, 23 (+25); outside 28, 19, 27, 3, 7 | right on cut (5/5), 3 of 5 outside: ~1 |
+| total | | | ~1.5 of 4 (open models 0.5-1); pass needs 3 |
+
+E3 fix stalls ($1.94, 18 steps, 9 of 10 passes): diagnosed the cause (stall estimate only in the head, never reaches the
+per-cell decoder), built a 4-layer gated side path (passive-wedge stall depth gate in e1.0 -> e1.3 -> d1.0 -> d1.3 -> out),
+passed signals through GroupNorm by keeping hijacked groups below eps with zero-sum channels, verified the circuit (d1
+activation 1274.6 vs 1275 designed), measured it on practice: v1 31.6 cm, v2 25.0 cm, takeover with correction off 18.1 cm
+vs 11.8 base. Found the cost is taking over whole GroupNorm groups (1/8 of 4 layers), reverted, submitted no change.
+Judge: unchanged (0.0981), not accepted. Harness gaps exposed: no bite-name listing for E1; no spare width for side paths.
