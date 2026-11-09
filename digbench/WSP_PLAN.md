@@ -139,3 +139,20 @@ Loop, budgeted per round:
 Phase 0 -> Phase 1 (modules in parallel) -> Phase 2 -> {Phase 3, Phase 4, Phase 5 in parallel} -> Phase 6 -> Phase 7.
 The single highest-value step is P2 (stop point), because stalls carry the largest share of error and the information
 it needs (forces, hydraulic limits) already exists in the codebase.
+
+## Feasibility check (2026-11-09; probes in `wsp/`)
+
+Measured on our data:
+* **Stop point from compiled physics** (`wsp/probe_stall_fee.py`, 495 MPM bites): the peak passive-wedge (earthmoving
+  equation) resistance along the planned path alone classifies stalls with 91% accuracy held out by run (base rate
+  36% stalled; recall 81%, precision 92%), and on stalled bites the first point where it crosses the threshold lands a
+  median 3% (mean 8%) of the path from where MPM actually stopped. P2 is feasible and probably the biggest single win.
+* **Settle rule written as weights by hand** (`wsp/probe_relax_conv.py`): two fixed difference convolutions, a ReLU and
+  two transposed convolutions per iteration reproduce the Python relax to 3e-15 m on 20 bites and conserve mass to
+  1e-15 m^3, with no training. P5 (and by the same construction P1, P4) is feasible.
+
+From the literature: hand-writing weights works for algorithmic tasks (agent-written transformers solved 10/10
+algorithmic tasks); repairing a failing control policy by weight edits worked once in the original report but only 1 of
+3 attempts helped in an independent replication; zero-shot weight READING was found to be local arithmetic plus dataset
+priors in an audit. So: let models write physics modules and choose where to patch, let gradients fit patch values, and
+never accept a change without the judge.
