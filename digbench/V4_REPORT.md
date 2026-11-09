@@ -83,6 +83,9 @@ a4 -0.41, prior -0.77.
 | learned a4 (103 bites) | 8.2 | 40 cm | 11.2 | 0.297 m |
 | learned a5, 3-seed ensemble (134 bites) | 5.9 | 40 cm | 18.2 | 0.587 m |
 | a5 ensemble + envelope floor clamp (10 cm) | 6.7 | 41 cm | 16.3 | 0.492 m |
+| **a6 ensemble, after 1 DAgger round (186 bites, 23 from DAgger)** | 4.4 | 46 cm | 8.5 | **0.116 m** (0.105 m vs seed 2) |
+| a6 ensemble + clamp | 7.8 | 42 cm | 9.3 | 0.227 m |
+| teacher seed 2 vs seed 1 (the teacher's own spread) | 8.2 | 41 cm | 7.2 | 0.043 m |
 
 The a5 ensemble's survey trace is almost the teacher's (mean above grade 23.7 / 21.5 / 20.2 cm vs 23.6 / 21.3 / 24.8 cm;
 out-of-tolerance cells ~1100 in both), but it digs a pit at the near end of the trench that MPM never digs (over-dig
@@ -90,6 +93,15 @@ out-of-tolerance cells ~1100 in both), but it digs a pit at the near end of the 
 the pit grows only in the loop, in states the training data never contained. A per-bite floor clamp halves it but does
 not remove it. This is the compounding problem again, now at the scoop level: next step is DAgger (dig with the learned
 model, have MPM label those exact states), running on fresh scenarios so the gate stays held out.
+
+**DAgger round 1 worked.** One fresh sandy-gravel scenario dug with the a5 model, 23 of its bites labelled by MPM, then
+retrained (a6). The near-end pit is gone (over-dig 0.09 m^3), the final surface is 0.116 m RMS from the teacher (0.105 m
+vs the second teacher seed) against 0.31 / 0.30 m for the heightfield, and the net cut is within 1.3-1.7 m^3 of the
+teacher (heightfield: +8.9-9.3 m^3). The teacher is very repeatable in closed loop (two particle seeds: 0.043 m, 0.4 m^3,
+8.3 vs 8.2% on grade), so the remaining 0.11 m is real model error, ~2.5x the teacher's own spread (heightfield ~7x).
+The clamp is no longer needed and makes things worse once the training data covers the model's own states.
+Still open: the learned run stops after 2 passes (teacher: 3), so on-grade is 4.4% vs 8.3%; and all of this is ONE
+scenario and soil. A second held-out gate (wet clay, 0.75:1) is running in MPM.
 
 Reading: the learned per-scoop models reproduce the teacher's OUTCOME (trench left unfinished, floor ~40 cm high,
 ~8% on grade) where the heightfield predicts a finished trench. Point-wise the final surfaces still differ by ~0.3 m for
