@@ -19,6 +19,14 @@ def _ds(a, k=4):
     a = np.asarray(a, float); return np.round(a[::k, ::k], 2).tolist()
 
 
+@wsp.probe(cost=0)
+def list_bites():
+    """Free (no forward pass, no model outputs): names of all practice bites with soil preset, completion (<0.9 = the
+    machine stalled) and grid size, so other probes can be pointed at specific bites."""
+    return [{"name": s["name"], "soil": s["soil"].get("preset", s["soil"].get("phi")), "completion": round(float(s["completion"]), 3),
+             "grid": list(s["delta"].shape)} for s in tier("practice")]
+
+
 @wsp.probe(cost=1)
 def error_report():
     """RMS surface error (m) on the practice tier: all, by region (cut / slump within 0.5 m / far), stalled vs completed

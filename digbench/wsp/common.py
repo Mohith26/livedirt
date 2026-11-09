@@ -13,7 +13,10 @@ SPLITS = Path("~/v4/wsp/splits.json").expanduser()
 
 
 def load_model(path, ch=32):
-    net = UNet(7, ch); net.load_state_dict(torch.load(path, map_location="cpu")); net.eval()
+    sd = torch.load(path, map_location="cpu")
+    from digbench.wsp.wide import WideUNet, is_wide
+    net = WideUNet(7, ch) if is_wide(sd, ch) else UNet(7, ch)
+    net.load_state_dict(sd); net.eval()
     return net
 
 

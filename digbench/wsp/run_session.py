@@ -39,12 +39,14 @@ def main():
         llm, pricing = bedrock.get(a.llm)
     else:
         llm = a.llm
-        if a.llm.startswith("anthropic:"):  # direct Anthropic API: same conservative rates as Bedrock, so --max-cost binds
+        if a.llm.startswith("anthropic:"):
+            from weightspace.llm.anthropic import AnthropicChat
+            llm = AnthropicChat(a.llm.split(":", 1)[1], max_tokens=64000)  # 16k default let high thinking eat whole turns  # direct Anthropic API: same conservative rates as Bedrock, so --max-cost binds
             from digbench.wsp import bedrock
             m = a.llm.split(":", 1)[1]
             pricing = bedrock.PRICING["fable" if "fable" in m else "opus" if "opus" in m else "sonnet"]
     fn = {"read": wsp.read, "fix": wsp.fix, "write": wsp.write, "improve": wsp.improve}[a.mode]
-    kw = dict(llm=llm, context=ctx, probes=[P.error_report, P.worst_bites, P.error_map, P.feature_maps], forward_budget=a.budget,
+    kw = dict(llm=llm, context=ctx, probes=[P.list_bites, P.error_report, P.worst_bites, P.error_map, P.feature_maps], forward_budget=a.budget,
               thinking=a.thinking, cost_budget=a.max_cost if pricing else None, pricing=pricing, max_steps=a.max_steps)
     t0 = time.time()
     res = fn(net, task, **kw)

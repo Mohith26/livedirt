@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E1_read.md",
+ "mode": "read",
+ "llm": "anthropic:claude-fable-5-1",
+ "budget": 10,
+ "wall_s": 565.2538290023804,
+ "stop_reason": "submitted",
+ "cost": 3.494238
+}
