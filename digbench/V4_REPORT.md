@@ -142,3 +142,27 @@ Running on the AWS box (`i-0ba52f040840c2983`, all `setsid nohup`, independent o
 Servers: 8765 (campaign), 8766 (gate), 8767 (DAgger labels), 8790 (learned a5 ensemble, CPU).
 Guards: shutdown scheduled Tue 2026-11-10 03:47 UTC; idle alarm stops the box after 30 min below 4% CPU. Estimated
 spend so far ~38 instance-hours (~$85 gross, credits), well under the $1000 cap.
+
+## DAgger round 2 (a7, 246 training bites incl. 72 DAgger-labelled; 2026-11-09 10:26 UTC)
+
+Per bite on 134 held-out bites (both gates + one campaign run): 0.090-0.092 m vs prior 0.171 m.
+
+| | gate 1 sandy gravel: RMSE vs teacher (seed 1 / seed 2) | on grade (teacher 8.3) | gate 2 wet clay: RMSE | on grade (teacher 3.7) |
+|---|---|---|---|---|
+| heightfield | 0.313 / 0.300 m | 56.7 | 0.451 m | 33.2 |
+| learned a6 | 0.116 / 0.105 m | 4.4 | 0.172 m | 4.5 |
+| learned a7 | 0.136 / 0.127 m | 8.5 | 0.162 m | 5.2 |
+| teacher's own spread | 0.043 m | - | not measured | - |
+
+More DAgger data did not move the closed-loop error further (a6 vs a7 within retraining noise, ~0.02 m); the learned
+model sits at 0.12-0.16 m from the teacher in both gates, ~3x the teacher's own seed-to-seed spread, against 0.30-0.45 m
+for the heightfield. Next levers (not run): more scenarios per DAgger round (diversity, not just volume), a larger model,
+and a second seed of the gate-2 teacher run.
+
+## Deploy call (v4)
+
+Not deployed to the live app yet. The per-scoop model now beats the heightfield as a model of the teacher in closed loop
+on two held-out scenarios (2.6-3x closer final surface, matching on-grade and floor error), which the v1-v3 surrogates
+never did. Remaining before it goes into the browser: a TypeScript port of the swept-envelope + cut/relax features
+(inference itself is a 1-pass U-Net per bite), and a decision on whether the demo should show the realistic outcome
+(the current robot does not finish trenches in these soils) or wait for a controller that does.
