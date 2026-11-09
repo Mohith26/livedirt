@@ -83,3 +83,10 @@ E3 fix on the wide model, judged on validation:
   the locator (where on the path to stop) failed: stalled error 0.133 -> 0.745 m. Reverted; not accepted.
 Takeaways: the widening removed the channel-takeover cost (completed bites untouched in Fable's build); the remaining
 problem is locating the stop point inside a local CNN. Both now point at global quantities (fill volume, path length).
+
+
+## Answer-key correction, Q1 (2026-11-09, audit)
+The original Q1 key (replace each input by its dataset mean) favoured binary channels and named ch 2. Three scale-fair
+measures on 187 practice + validation bites all name ch 1 (swept envelope), positive sign: input x gradient 0.18 (next
+0.08), swap-with-another-bite 0.21 (next 0.12), signed 1-std shift +0.059. Rescored E1 totals (pass = 3 of 4):
+GLM-5 ~1.5 (ch 1 right, sign wrong), Kimi ~1, DeepSeek ~0.5; Opus r1 ~2.5, Fable r1 ~1; Opus r2 ~3 (PASS), Fable r2 ~1.75.

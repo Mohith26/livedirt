@@ -1,7 +1,9 @@
 """Answer key for E1 (READ) by intervention on the network, computed after the sessions and never shown to the editor.
 
-Q1  input channel with the largest effect on the completion head (ys[1]): replace channel c by its dataset mean and
-    measure mean |change|; sign = sign of the summed input gradient d completion / d channel c.
+Q1  input channel with the largest effect on the completion head (ys[1]). PRIMARY (scale-fair): swap channel c with the
+    same channel of another bite and measure mean |change|; confirmed by input x gradient. Sign = summed input gradient.
+    (The first version used replace-by-dataset-mean, which inflates binary channels such as the untouched mask; it named
+    ch 2. Corrected 2026-11-09: all three scale-fair measures name ch 1, positive.)
 Q2  soil channels 4-6: swap each bite's soil planes for another soil's and (a) rank e1 filters by normalised activation
     change, (b) split the output change into the part that flows through the e1->d1 skip ("decoder") vs the part through
     e2..e4 ("encoder"), by patching only one path at a time.
@@ -63,8 +65,17 @@ def main():
             xg = x.clone().requires_grad_(True); fwd(net, xg)[1][0, 1].backward()
             grad += xg.grad[0].sum((1, 2)).numpy()
     eff /= len(Xs)
-    q1 = {"ablation_effect": eff.round(4).tolist(), "grad_sign": np.sign(grad).astype(int).tolist(),
-          "top": int(eff.argmax()), "top_sign": "+" if grad[eff.argmax()] > 0 else "-"}
+    swap = np.zeros(7)
+    for i, x in enumerate(Xs):
+        base_c = fwd(net, x)[1][0, 1]; j = int(rng.integers(len(Xs)))
+        if Xs[j].shape != x.shape:
+            continue
+        for c in range(7):
+            x2 = x.clone(); x2[0, c] = Xs[j][0, c]
+            swap[c] += abs(float(fwd(net, x2)[1][0, 1] - base_c))
+    swap /= len(Xs)
+    q1 = {"swap_effect": swap.round(4).tolist(), "mean_ablation_effect_biased": eff.round(4).tolist(),
+          "grad_sign": np.sign(grad).astype(int).tolist(), "top": int(swap.argmax()), "top_sign": "+" if grad[swap.argmax()] > 0 else "-"}
 
     # Q2
     soils = np.stack([x[0, 4:7].mean((1, 2)).numpy() for x in Xs])
