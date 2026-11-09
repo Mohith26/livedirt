@@ -1,0 +1,11 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "",
+	"Category": "",
+	"Description": "LiveDirt: the LiveDirt v2 simulation (learned per-scoop soil, adaptive dig controller) rendered in Unreal Editor. Blueprint/Python only, no C++.",
+	"Plugins": [
+		{ "Name": "PythonScriptPlugin", "Enabled": true },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true },
+		{ "Name": "GeometryScripting", "Enabled": true }
+	]
+}
