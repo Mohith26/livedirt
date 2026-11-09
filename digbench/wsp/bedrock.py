@@ -31,6 +31,7 @@ PRICING = {
     "opus": dict(input=5.0, output=25.0, cached_input=0.5, cache_write=6.25),
     "astra": dict(input=11.0, output=55.0, cached_input=1.10, cache_write=13.75),
     "sonnet": dict(input=3.0, output=15.0, cached_input=0.3, cache_write=3.75),
+    "fable": dict(input=10.0, output=50.0, cached_input=0.25, cache_write=12.5),  # Fable 5.1 API list price
     # open models: deliberately high placeholder rates (not checked against the price list) so --max-cost trips early
     "glm5": dict(input=2.0, output=8.0),
     "kimi": dict(input=2.0, output=8.0),

@@ -48,3 +48,17 @@ passed signals through GroupNorm by keeping hijacked groups below eps with zero-
 activation 1274.6 vs 1275 designed), measured it on practice: v1 31.6 cm, v2 25.0 cm, takeover with correction off 18.1 cm
 vs 11.8 base. Found the cost is taking over whole GroupNorm groups (1/8 of 4 layers), reverted, submitted no change.
 Judge: unchanged (0.0981), not accepted. Harness gaps exposed: no bite-name listing for E1; no spare width for side paths.
+
+## Claude Fable 5.1 (Anthropic API, same harness, one session each), 2026-11-09
+
+E1 read ($1.09, 16 steps, 0 probe passes, same bite-name gap): Q1 ch 3 (-): wrong. Q2 encoder; 17, 24, 28: half.
+Q3 82, 98, 160, 61, 245: wrong (same channels as Opus's list). Q4 cut 29, 23, 17, 16, 12, 24 (3 of 6 match), outside
+28, 19, 3, 14, 18, 22 (2 match): half. Total ~1 of 4 (Opus ~1.5).
+
+E3 fix ($7.01, 31 steps, 10 of 10 passes): same diagnosis as Opus, independently (no unit combines depth with the soil
+planes; prior + residual passes the full-path cut). Built a gated stall branch in one GroupNorm group per layer using
+antisymmetric (s, -s) pairs so the group mean is 0 and GroupNorm becomes a fixed gain; gate cancels the prior past the
+earthmoving-equation stall depth, recalibrated from the clay bite (F_s ~36 kN/m). Probes confirmed the circuit computed
+as designed. A disconnected-path control showed the takeover alone raised completed-bite error 0.108 -> 0.18-0.19 m;
+three variants ended at 0.19-0.31 m overall vs 0.118. Reverted; judge unchanged (0.0981), not accepted.
+Both frontier models reached the same blocker: the network has no spare channels for a side path.

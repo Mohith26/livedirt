@@ -1,0 +1,55 @@
+{
+  "run_id": "ac647722f33a",
+  "llm": "anthropic:claude-fable-5-1",
+  "mode": "read",
+  "thinking": "high",
+  "speed": null,
+  "answer": "Static-analysis results (linearised DC path analysis through the conv stacks incl. GroupNorm mean-removal and SiLU slope ~0.5, weight-norm bookkeeping, and head.2\u00b7head.0 products; no probes were usable because bite names are unknown).\n\n1. Input channel with largest effect on completion: **channel 3 (physics prior)**, with a **negative** sign (raising the prior toward 0, i.e. removing the predicted cut, lowers predicted completion; a more negative/larger prior cut raises it). Linearised d(completion)/d(ch) \u2248 ch3 \u22120.0061, ch1 +0.0032, ch5 \u22120.0023 (cohesion \u2191 \u2192 completion \u2193), ch6 \u22120.0011, ch0/ch2/ch4 \u2248 0. Channel 3 also has the largest e1.0 weight norm (1.44 vs \u22641.31 for the others) and the largest propagated gain in every layer. Runner-up: channel 1 (swept envelope), positive sign. Confidence 0.4 (sign 0.35).\n\n2. Soil channels (4\u20136) are used mostly in the **encoder**. e2.0 draws on the e1 block outputs ~2.4\u00d7 more strongly than d1.0 draws on the e1 skip (soil-weighted use 6.6 vs 2.8; per-channel L2 0.87 vs 0.35), and soil information is needed for the global stall/force head and for slump geometry decided at e3/e4. The three e1.0 filters most tied to the soil planes (largest effective 3x3-summed soil weights, both absolute and as a fraction of the filter): **17** (\u03c6 \u22120.53, c \u22120.48), **24** (c \u22120.44, \u03c1 \u22120.31, \u03c6 +0.19), **28** (c +0.50, \u03c1 \u22120.30). Next: 29, 30, 9, 0. Confidence 0.55 (encoder 0.55, filters 0.6).\n\n3. e4 channels most plausibly encoding \"the bucket will stall\" (most negative effective weight on the completion output through head.0\u2192head.2, combining mean- and max-pool halves, most also raising the peak-force output): **82, 98, 160, 61, 245** (then 171, 95, 17, 241, 55). 82/98/160 both lower completion and raise actuator demand, which is the stall signature. Confidence 0.4.\n\n4. d1/out channels (DC sensitivity of d1 output to the cut signature: ch2 0, ch1 and ch3 negative, mainly via the e1 skip):\n - write mainly inside the cut (ch2 = 0): **29, 23, 17, 16, 12, 24** (and 2, 0). Of these 17 and 23 have negative out weights (\u22120.129, \u22120.047 \u2192 deepen the cut), 29/24/12 have positive out weights (+0.10/+0.135/+0.063 \u2192 fill/limit the cut).\n - write mainly outside the cut (ch2 = 1, slump/far cells): **28, 19, 3, 14, 18, 22** (and 27, 9); 19 and 27 have the large negative out weights (\u22120.119, \u22120.150 \u2192 slump lowering outside the cut), 28/3/18 positive (heaping).\n Confidence 0.3.",
+  "confidence": 0.4,
+  "stop_reason": "submitted",
+  "error": null,
+  "steps": 16,
+  "seconds": 232.011,
+  "forward_used": 0,
+  "forward_budget": 10,
+  "forward_calls": [],
+  "changed_params": 0,
+  "total_params": 2016900,
+  "changed_fraction": 0.0,
+  "tensors": [],
+  "tokens": {
+    "input_tokens": 237462,
+    "output_tokens": 14795,
+    "cached_input_tokens": 213674,
+    "cache_write_tokens": 23754,
+    "reasoning_tokens": 8894,
+    "requests": 16,
+    "total_tokens": 252257
+  },
+  "cost_usd": 1.0904335,
+  "timings": {
+    "llm": {
+      "calls": 16,
+      "seconds": 225.1807
+    },
+    "tool:python": {
+      "calls": 13,
+      "seconds": 0.0325
+    },
+    "tool:forward_feature_maps": {
+      "calls": 2,
+      "seconds": 6.7966
+    },
+    "tool:submit": {
+      "calls": 1,
+      "seconds": 0.0
+    }
+  },
+  "usage": {
+    "cache_creation_input_tokens": 23754,
+    "cache_read_input_tokens": 213674,
+    "input_tokens": 34,
+    "output_tokens": 14795,
+    "thinking_tokens": 8894
+  }
+}
