@@ -217,3 +217,5 @@ table.sweep td.na { color: var(--faint); }
   .brand { padding: 0 10px; }
   .actions .iconbtn { padding: 0 12px; }
 }
+.v2tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #2f8cff; color: #fff; vertical-align: 2px; }
+.brand b .v2tag { display: inline-block !important; width: auto !important; font-size: 11px !important; color: #fff !important; margin: 0 0 0 6px; }

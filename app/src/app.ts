@@ -108,6 +108,11 @@ export class App {
     engine.scene.add(this.twin.root);
 
     this.autonomy = new DigAutonomy(terrain.hf, DX225_GEOMETRY, this.machine.cx, this.machine.cz, this.machine.groundY, this.restJoints);
+    // v2 defaults: adaptive controller + learned per-scoop soil (model loads on the first dig cycle)
+    this.autonomy.controller = 'adaptive';
+    this.autonomy.externalSoil = true;
+    this.autonomy.traceMargin = 1.0;
+    this.autonomy.designClamp = false;
     // grade survey merges both lidars (the level roof unit cannot see the near field in front of the machine)
     this.autonomy.requestScan = () => {
       const parts = [this.lastFront, this.lastScan].filter((x): x is ScanResult => !!x);
@@ -151,7 +156,7 @@ export class App {
     const ui = document.createElement('div');
     ui.innerHTML = `
       <header class="topbar">
-        <div class="brand glass"><div class="mark">${LOGO}</div><div><b>LiveDirt</b><span>A neural job site you can dig into</span></div></div>
+        <div class="brand glass"><div class="mark">${LOGO}</div><div><b>LiveDirt <span class="v2tag">v2</span></b><span>Learned soil trained on a validated MPM teacher</span></div></div>
         <nav class="modes glass">
           ${(['explore', 'dig', 'design', 'scenario', 'auto'] as Mode[]).map((m, i) => `<button data-mode="${m}">${icons[m === 'auto' ? 'auto' : m]}<span>${MODE_LABEL[m]}</span><kbd>${i + 1}</kbd></button>`).join('')}
         </nav>
@@ -398,23 +403,31 @@ export class App {
           <div class="row"><span>Avg bucket fill</span><b id="aFill">0%</b></div>
           <div class="row"><span>Productivity</span><b id="aProd">0 m³/h</b></div>
           <div class="row"><span>Lidar vs truth (grade)</span><b id="aSurv">n/a</b></div>
-          <div class="row"><span>Soil drag on bucket</span><b id="aForce">${a.neural ? '0 kN' : 'kinematic cut'}</b></div>
+          <div class="row"><span>Last scoop (soil model)</span><b id="aForce">${a.externalSoil ? 'waiting' : 'kinematic cut'}</b></div>
         </div>
-        ${this.toggleHtml('tNeural', 'Learned soil (beta)', !!a.neural, 'U-Net trained on 3D MPM dig cycles; predicts terrain and bucket force. Arm slows above the DX225 arm force (112.8 kN).')}
+        <div class="field"><label>Soil model</label><div class="seg" id="segSoilModel">
+          <button data-v="scoop" class="${a.externalSoil ? 'on' : ''}">Learned per-scoop (v2)</button><button data-v="simple" class="${a.externalSoil ? '' : 'on'}">Simple (v1)</button></div></div>
+        <div class="field"><label>Controller</label><div class="seg" id="segCtrl">
+          <button data-v="adaptive" class="${a.controller === 'adaptive' ? 'on' : ''}">Adaptive</button><button data-v="legacy" class="${a.controller === 'legacy' ? 'on' : ''}">Legacy (v1)</button></div></div>
+        <div class="note">${a.externalSoil
+          ? 'v2: a U-Net predicts each whole scoop (surface change + payload) from the terrain and the bucket\'s swept path, trained on 134 bites of a 3D MPM teacher validated against lab data. The ground updates once per scoop.'
+          : 'v1 heightfield: cuts exactly what the bucket sweeps. In MPM the same robot leaves this trench unfinished (8% on grade); the heightfield reports it nearly done.'}</div>
         <div class="log" id="aLog"></div>`;
       if (!hasDesign) $('#aExample').onclick = () => { this.exampleTrench(); this.renderPanel(); };
       $('#aRun').onclick = () => this.toggleAutonomy();
       $('#aReset').onclick = () => { a.stop(); a.joints = { ...this.restJoints }; this.twin.setJoints(a.joints); this.renderPanel(); };
       $$('#segSpeed button').forEach((b) => b.addEventListener('click', () => { a.speed = parseFloat(b.dataset.v!); $$('#segSpeed button').forEach((x) => x.classList.toggle('on', x === b)); }));
-      this.bindToggle('tNeural', async (on) => { await this.setNeuralSoil(on); this.renderPanel(); });
+      $$('#segSoilModel button').forEach((b) => b.addEventListener('click', async () => { if (a.phase !== 'idle' && a.phase !== 'done') { toast('Stop the dig cycle to switch soil models', 'warn'); return; } await this.setScoopSoil(b.dataset.v === 'scoop'); this.renderPanel(); }));
+      $$('#segCtrl button').forEach((b) => b.addEventListener('click', () => { if (a.phase !== 'idle' && a.phase !== 'done') { toast('Stop the dig cycle to switch controllers', 'warn'); return; } a.controller = b.dataset.v as 'adaptive' | 'legacy'; a.designClamp = !a.externalSoil && a.controller === 'legacy'; this.renderPanel(); }));
     }
   }
 
   // ------------------------------------------------------------------ actions
-  private toggleAutonomy() {
+  private async toggleAutonomy() {
     const a = this.autonomy;
     if (a.phase === 'idle' || a.phase === 'done') {
       if (!this.terrain.hf.designSpec) return;
+      if (a.externalSoil && !this.scoop) await this.setScoopSoil(true);
       a.plan(this.terrain.hf.designSpec);
       this.overlays.setSpoil(new THREE.Vector3(a.spoil[0], 0, a.spoil[1]));
       this.terrain.hf.beginStroke();
@@ -428,13 +441,13 @@ export class App {
 
   private exampleTrench() {
     const { cx, cz, houseYaw } = this.machine;
-    const ux = Math.cos(houseYaw), uz = Math.sin(houseYaw);
-    // along the boom heading, in front of the machine, the way excavators dig toward themselves
-    const p0: [number, number] = [cx + ux * 4.2, cz + uz * 4.2];
-    const p1: [number, number] = [cx + ux * 7.8, cz + uz * 7.8];
-    // 1:1 side slopes (45 deg) stand in this soil model's wet clay (critical angle 62 deg); 1/2:1 (63 deg) would slough
-    this.designParams = { ...this.designParams, bottomWidth: 0.9, depth: 1.0, sideSlope: 1 };
-    this.setDesign({ p0, p1, bottomWidth: 0.9, depth: 1.0, sideSlope: 1 });
+    // v2: the measured v4 gate trench (flat ground 50 deg off the house heading, 4 m x 1.1 m floor, 1 m deep, 1.5:1 slopes)
+    const yaw = houseYaw + (50 * Math.PI) / 180;
+    const ux = Math.cos(yaw), uz = Math.sin(yaw);
+    const p0: [number, number] = [cx + ux * 4.0, cz + uz * 4.0];
+    const p1: [number, number] = [cx + ux * 8.0, cz + uz * 8.0];
+    this.designParams = { ...this.designParams, bottomWidth: 1.1, depth: 1.0, sideSlope: 1.5 };
+    this.setDesign({ p0, p1, bottomWidth: 1.1, depth: 1.0, sideSlope: 1.5 });
     if (this.mode === 'design') this.renderPanel();
     this.flyTo('trench');
   }
@@ -532,21 +545,46 @@ export class App {
     }
   }
 
-  private neuralModel: import('./sim/neuralSoil').NeuralModel | null = null;
-  async setNeuralSoil(on: boolean) {
+  // ---------------- v2 learned soil: one prediction per scoop
+  private scoop: import('./sim/scoopSoil').ScoopSoil | null = null;
+  private scoopBusy = false;
+  private lastScoop: { carried: number; ms: number } | null = null;
+  async setScoopSoil(on: boolean) {
     const a = this.autonomy;
-    if (!on) { a.neural = null; return; }
-    if (!this.neuralModel) {
-      toast('Loading learned soil model (4.4 MB)…');
+    if (on && !this.scoop) {
+      toast('Loading learned soil v2 (8.1 MB)…');
       const ort = await import('onnxruntime-web/wasm');
       ort.env.wasm.wasmPaths = import.meta.env.DEV ? 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/' : '/ort/';
-      const { loadNeuralModel } = await import('./sim/neuralSoil');
-      this.neuralModel = await loadNeuralModel(ort, '/models/soil-v1.onnx', { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-      toast('Learned soil ready', 'ok');
+      const { ScoopSoil } = await import('./sim/scoopSoil');
+      this.scoop = await ScoopSoil.load(ort as never, '/models/scoop-v4.onnx', '/models/scoop-v4-bucket.json', { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+      toast('Learned soil v2 ready', 'ok');
     }
-    // friction from the selected soil's repose angle (the model was trained on dry sand, mu 0.3-0.7)
-    const mu = Math.min(0.7, Math.max(0.3, Math.tan((this.terrain.hf.soil.reposeDeg * Math.PI) / 180)));
-    a.neural = { model: this.neuralModel, mu, fMax: 112800 };
+    a.neural = null;
+    a.externalSoil = on;
+    a.traceMargin = 1.0;
+    a.designClamp = !on && a.controller === 'legacy';
+  }
+  private async runScoop() {
+    const a = this.autonomy, hf = this.terrain.hf;
+    const tr = a.pendingBite;
+    if (!tr || !this.scoop) { a.pendingBite = null; return; }
+    a.pendingBite = null;
+    this.scoopBusy = true;
+    try {
+      const { presetParams } = await import('./sim/scoopSoil');
+      const t0 = performance.now();
+      const r = await this.scoop.bite(tr, presetParams(hf.soil));
+      a.applyExternal(tr, r);
+      hf.clearActive();
+      this.lastScoop = { carried: r.carried, ms: performance.now() - t0 };
+      this.hasDug = true;
+    } catch (e) {
+      console.error(e);
+      toast('Learned soil failed on this scoop; switching to the simple model', 'warn');
+      await this.setScoopSoil(false);
+    } finally {
+      this.scoopBusy = false;
+    }
   }
 
   async ensureDetector() {
@@ -726,6 +764,8 @@ export class App {
     this.physAcc = Math.min(this.physAcc + dt, 10 * PHYS_DT);
     while (this.physAcc >= PHYS_DT - 1e-9) {
       this.physAcc -= PHYS_DT;
+      if (a.pendingBite && !this.scoopBusy) this.runScoop();
+      if (this.scoopBusy) break; // hold the machine while the learned soil resolves the scoop
       if (a.phase !== 'idle' && a.phase !== 'done' && a.phase !== 'unreachable') {
         const j = a.step(PHYS_DT, this.personDetectedInZone);
         this.twin.setJoints(j);
@@ -850,7 +890,7 @@ export class App {
       setText($('#aCyc'), `${a.stats.cycles} · ${a.stats.avgCycleS.toFixed(1)} s`);
       setText($('#aFill'), `${(a.stats.avgFill * 100).toFixed(0)}%`);
       setText($('#aProd'), `${a.stats.productivity.toFixed(0)} m³/h`);
-      setText($('#aForce'), a.neural ? `${(a.soilForce[0] / 1000).toFixed(0)} kN${a.reliefScale < 0.99 ? ' · relief' : ''}` : 'kinematic cut');
+      setText($('#aForce'), a.externalSoil ? (this.scoopBusy ? 'predicting…' : this.lastScoop ? `${this.lastScoop.carried.toFixed(2)} m³ in bucket · ${this.lastScoop.ms.toFixed(0)} ms` : 'waiting') : 'kinematic cut');
       const sv = a.stats.surveys[a.stats.surveys.length - 1];
       setText($('#aSurv'), !sv ? 'n/a' : sv.coverage === 0 ? 'no coverage' : `${(sv.lidarMeanAbove * 100).toFixed(1)} vs ${(sv.truthMeanAbove * 100).toFixed(1)} cm · ${(sv.coverage * 100).toFixed(0)}%`);
       const log = $('#aLog'); if (log) { const txt = a.log.slice(-14).join('\n'); if (log.textContent !== txt) { log.textContent = txt; log.scrollTop = log.scrollHeight; } }
@@ -877,8 +917,15 @@ function aboutHtml(d: SceneData) {
   const s = d.meta.source;
   return `
   <button class="x" aria-label="Close">${icons.close}</button>
-  <h2>What's real in LiveDirt</h2>
+  <h2>What's real in LiveDirt v2</h2>
   <p class="lead">Every neural simulator assumes the world holds still. An excavator's whole job is to change it. LiveDirt makes a real reconstructed site diggable and is explicit about which parts are learned, simulated, generated or approximated.</p>
+  <h4><i style="background:#2f8cff"></i>New in v2: learned soil from a validated teacher</h4>
+  <ul>
+    <li><b>Teacher</b>: 3D material point method (Mohr-Coulomb with cohesion, volume-corrected). Lab bucket (Coetzee 2004): draft force +6% at 800 mm, mean |error| 9.7% (v1-era solver: +114%). Flat blade vs the Sokolovski solution: +4 / -3 / -7%. Vertical-cut cohesion collapses at N 3.5-4.2 vs limit analysis 3.83-4.0. Dug-surface shape is <i>not</i> validated against a real dig.</li>
+    <li><b>Learned soil</b>: a U-Net predicts each whole scoop (surface change + payload) from the scanned terrain and the bucket's swept path, as a residual on a cut-and-relax prior, then projects slopes to the friction angle. Trained on bites from MPM-in-the-loop trenches. Held-out scoops: surface RMSE 0.11 m (prior 0.16 m), payload error 0.09 m³ (prior 0.42 m³). Runs in ~30 ms per scoop.</li>
+    <li><b>Same robot, same trench, different soil</b> (sandy gravel, 1.5:1): MPM teacher 8.3% on grade, floor 42 cm high; learned v2 8.2%, floor 40 cm; v1 heightfield 56.7%, floor 1 cm. v1 reported a nearly finished trench the teacher says the robot cannot finish. Point-wise the final surfaces still differ from the teacher by ~0.3 m.</li>
+    <li><b>Adaptive controller</b>: machine-control cutting edge (never below design across the bucket width), tiltrotator roll on slopes, straight-line tip motion, bite length planned from the scan and a learned fill efficiency, back-off after stalls.</li>
+  </ul>
   <h4><i style="background:#ff7a1a"></i>Learned from real footage</h4>
   <ul>
     <li><b>The site itself</b>: ${(d.meta.splats / 1e6).toFixed(2)}M 3D Gaussians reconstructed from 230 frames of 4K drone video (alignment in RealityScan, 3DGS in LichtFeld, by ${s.author}). Downsampled to 1.9M for the web.</li>
@@ -905,7 +952,7 @@ function aboutHtml(d: SceneData) {
   </ul>
   <h4><i style="background:#6f6861"></i>Not modelled</h4>
   <ul>
-    <li>Soil continuum mechanics (no MPM/DEM), water, bucket-soil forces, hydraulics dynamics, lidar motion distortion, the machine's self-occlusion in the lidar, view-dependent splat colour (SH0 only).</li>
+    <li>In the browser: soil continuum mechanics run live (v2 uses a model learned from MPM), water, live bucket-soil forces, hydraulics dynamics, lidar motion distortion, the machine's self-occlusion in the lidar, view-dependent splat colour (SH0 only).</li>
   </ul>
   <h4>Credits</h4>
   <table>

@@ -1,8 +1,8 @@
 {
-  // Static site on Workers static assets (free tier), personal account; no Worker code needed.
-  "name": "livedirt",
+  // LiveDirt v2: separate Worker + domain so the original (livedirt.mohithgajjela.com, project "livedirt") is untouched.
+  "name": "livedirt-v2",
   "compatibility_date": "2026-11-01",
   "account_id": "1ef5d6287be1fa950ea6ca62c8ec42ab",
   "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
-  "routes": [{ "pattern": "livedirt.mohithgajjela.com", "custom_domain": true }]
+  "routes": [{ "pattern": "livedirt-v2.mohithgajjela.com", "custom_domain": true }]
 }
