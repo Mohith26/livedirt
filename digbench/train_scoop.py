@@ -69,7 +69,10 @@ def rmse(a, b, m):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", nargs="+", required=True)
+    ap.add_argument("--data", nargs="+", default=[])
+    ap.add_argument("--split-json", default=None, help="train on one tier of digbench/wsp/splits.py; evaluate on another")
+    ap.add_argument("--split-train", default="train")
+    ap.add_argument("--split-test", default="validation")
     ap.add_argument("--heldout-runs", default="", help="comma list of run-name prefixes held out")
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--ch", type=int, default=32)
@@ -83,6 +86,10 @@ def main():
     args = ap.parse_args()
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     files = sorted(set(f for d in args.data for f in glob.glob(str(Path(d) / "*.npz"))))
+    split = None
+    if args.split_json:
+        split = json.loads(Path(args.split_json).expanduser().read_text())
+        files = sorted(split[args.split_train] + split[args.split_test])
     t0 = time.time()
     S, seen = [], set()
     for f in files:
@@ -96,7 +103,11 @@ def main():
             s["X"][3] = 0.0; s["prior"] = np.zeros_like(s["prior"])
     ho = [h for h in args.heldout_runs.split(",") if h]
     run = lambda s: s["name"].rsplit("_", 1)[0]
-    is_test = [any(run(s).startswith(h) for h in ho) for s in S]
+    if split is not None:
+        test_names = {Path(f).stem for f in split[args.split_test]}
+        is_test = [s["name"] in test_names for s in S]
+    else:
+        is_test = [any(run(s).startswith(h) for h in ho) for s in S]
     test = [s for s, t in zip(S, is_test) if t]
     train = [s for s, t in zip(S, is_test) if not t]
     print(f"samples {len(S)} train {len(train)} test {len(test)} (load {time.time() - t0:.0f}s)", flush=True)
