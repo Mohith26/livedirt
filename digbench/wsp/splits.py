@@ -24,11 +24,25 @@ def assign(run):
     return "practice" if h < 15 else "validation" if h < 32 else "train"
 
 
-def build():
+def build(practice_frac=0.18, validation_frac=0.22):
+    """Gate runs fixed; other runs ordered by a hash of their name and filled into practice, then validation, until each
+    reaches its share of bites; the rest train. Deterministic for a given set of runs."""
     files = sorted(f for d in DIRS for f in glob.glob(str(Path(d).expanduser() / "*.npz")))
     out = {"train": [], "practice": [], "validation": [], "gate": []}
+    byrun = {}
     for f in files:
-        out[assign(run_of(f))].append(f)
+        byrun.setdefault(run_of(f), []).append(f)
+    non_gate = [r for r in byrun if not r.startswith("gate")]
+    total = sum(len(byrun[r]) for r in non_gate)
+    want = {"practice": practice_frac * total, "validation": validation_frac * total}
+    for r in sorted(byrun, key=lambda r: zlib.crc32(r.encode())):
+        if r.startswith("gate"):
+            out["gate"] += byrun[r]; continue
+        for t in ("practice", "validation"):
+            if len(out[t]) < want[t]:
+                out[t] += byrun[r]; break
+        else:
+            out["train"] += byrun[r]
     return out
 
 
