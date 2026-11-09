@@ -66,6 +66,7 @@ peak demand; the result is projected through the relax step (no slope steeper th
 | a3 (volume loss on net ground change) | 76 | 54 | 0.186 / 0.156 / 0.113 | 0.418 / 0.094 |
 
 | a4 | 103 | 66 | 0.193 / 0.162 / 0.114 | 0.405 / 0.086 |
+| a5 (3 seeds, 0.101-0.109 each) | 134 | 79 | 0.201 / 0.168 / 0.101-0.109 | 0.412 / 0.071-0.086 |
 
 Net ground volume per gate bite (34 held-out): truth -0.42 m^3; a2 -0.35 (under-removes), a3 -0.50 (over-removes),
 a4 -0.41, prior -0.77.
@@ -80,6 +81,15 @@ a4 -0.41, prior -0.77.
 | learned a1 (48 bites) | 6.7 | 54 cm | 6.5 | 0.314 m |
 | learned a3 (76 bites) | 7.8 | 44 cm | 18.6 | 0.534 m |
 | learned a4 (103 bites) | 8.2 | 40 cm | 11.2 | 0.297 m |
+| learned a5, 3-seed ensemble (134 bites) | 5.9 | 40 cm | 18.2 | 0.587 m |
+| a5 ensemble + envelope floor clamp (10 cm) | 6.7 | 41 cm | 16.3 | 0.492 m |
+
+The a5 ensemble's survey trace is almost the teacher's (mean above grade 23.7 / 21.5 / 20.2 cm vs 23.6 / 21.3 / 24.8 cm;
+out-of-tolerance cells ~1100 in both), but it digs a pit at the near end of the trench that MPM never digs (over-dig
+5.1 m^3 vs 0.03). Per bite the same models do not over-dig (net-volume bias +0.06 m^3/bite, i.e. slightly UNDER-removing);
+the pit grows only in the loop, in states the training data never contained. A per-bite floor clamp halves it but does
+not remove it. This is the compounding problem again, now at the scoop level: next step is DAgger (dig with the learned
+model, have MPM label those exact states), running on fresh scenarios so the gate stays held out.
 
 Reading: the learned per-scoop models reproduce the teacher's OUTCOME (trench left unfinished, floor ~40 cm high,
 ~8% on grade) where the heightfield predicts a finished trench. Point-wise the final surfaces still differ by ~0.3 m for
