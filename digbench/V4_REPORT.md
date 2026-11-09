@@ -103,6 +103,22 @@ The clamp is no longer needed and makes things worse once the training data cove
 Still open: the learned run stops after 2 passes (teacher: 3), so on-grade is 4.4% vs 8.3%; and all of this is ONE
 scenario and soil. A second held-out gate (wet clay, 0.75:1) is running in MPM.
 
+**Second held-out gate: wet clay, 0.75:1 slopes, same site and trench** (`results/v4/gate2/`, figure `gate2_compare.png`).
+The DAgger round had no wet-clay scenario, so this tests a different soil and slope.
+
+| soil backend in the loop | on grade % | floor error | net cut m^3 | final-surface RMSE vs teacher |
+|---|---|---|---|---|
+| MPM teacher | 3.7 | 42 cm | 8.0 | - |
+| heightfield, no clamp | 33.2 | 6 cm | 8.2 | 0.451 m |
+| cut+relax prior | 6.1 | 32 cm | 7.1 | 0.325 m |
+| learned a6 ensemble | 4.5 | 43 cm | 10.9 | **0.172 m** |
+
+In wet clay the teacher digs a pit at the near end of the trench (over-dig 2.4 m^3) and leaves the floor 42 cm high; the
+learned model reproduces both, the heightfield predicts a nearly graded floor. The learned model's final surface is 2.6x
+closer to the teacher than the heightfield's. (The near-end pit the a5 model dug in sandy gravel was an artifact; in
+wet clay the teacher digs one too, so this is a soil- and state-dependent behaviour the model has to learn, not one to
+clamp away.)
+
 Reading: the learned per-scoop models reproduce the teacher's OUTCOME (trench left unfinished, floor ~40 cm high,
 ~8% on grade) where the heightfield predicts a finished trench. Point-wise the final surfaces still differ by ~0.3 m for
 every backend (the runs diverge bite by bite), and model-to-model variance is large (a3 over-digs). Not yet known: the

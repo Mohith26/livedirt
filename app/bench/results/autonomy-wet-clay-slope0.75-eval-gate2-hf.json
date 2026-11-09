@@ -1,0 +1,334 @@
+{
+  "soil": "wet-clay",
+  "design": {
+    "p0": [
+      0.5737855253723487,
+      3.16218201025186
+    ],
+    "p1": [
+      4.247571050744698,
+      4.74436402050372
+    ],
+    "bottomWidth": 1.1,
+    "depth": 1,
+    "sideSlope": 0.75
+  },
+  "simSeconds": 476.5,
+  "wallSeconds": 961.21,
+  "phase": "done",
+  "verified": false,
+  "cycles": 17,
+  "avgCycleS": 27.61,
+  "avgFill": 0.59,
+  "productivityM3h": 28.8,
+  "bankRemoved": 3.796,
+  "passes": 4,
+  "surveys": [
+    {
+      "t": 232.1,
+      "points": 12490,
+      "coverage": 0.522,
+      "inTolFrac": 0.176,
+      "lidarMeanAboveCm": 17.35,
+      "truthMeanAboveCm": 17.1
+    },
+    {
+      "t": 294.9,
+      "points": 13210,
+      "coverage": 0.538,
+      "inTolFrac": 0.28,
+      "lidarMeanAboveCm": 9.72,
+      "truthMeanAboveCm": 9.59
+    },
+    {
+      "t": 386.1,
+      "points": 12420,
+      "coverage": 0.547,
+      "inTolFrac": 0.345,
+      "lidarMeanAboveCm": 7.22,
+      "truthMeanAboveCm": 7.11
+    },
+    {
+      "t": 476.5,
+      "points": 13184,
+      "coverage": 0.543,
+      "inTolFrac": 0.362,
+      "lidarMeanAboveCm": 6.43,
+      "truthMeanAboveCm": 6.32
+    }
+  ],
+  "final": {
+    "onGradePct": 33.2,
+    "meanAbsErrorCm": 8.85,
+    "remainingCutM3": 0.983,
+    "overDigM3": 0.223,
+    "unplannedCutM3": 0.025,
+    "sloughedM3": 3.509,
+    "maxAboveCm": 38.9,
+    "maxBelowCm": 24.9
+  },
+  "bottom": {
+    "cells": 441,
+    "onGradePct": 65.8,
+    "meanAbsErrorCm": 6.15,
+    "remainingCutM3": 0.253,
+    "overDigM3": 0.018,
+    "maxAboveCm": 38.9,
+    "maxBelowCm": 2.3
+  },
+  "slopes": {
+    "cells": 922,
+    "onGradePct": 17.7,
+    "meanAbsErrorCm": 10.14,
+    "remainingCutM3": 0.731,
+    "overDigM3": 0.204,
+    "maxAboveCm": 38.5,
+    "maxBelowCm": 24.9
+  },
+  "backend": "heightfield",
+  "controller": "adaptive",
+  "designClamp": false,
+  "adaptive": {
+    "fillEff": 0.329,
+    "log": [
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 0.4360189573459712,
+        "swept": 0.398,
+        "measured": 0.3303,
+        "eff": 0.692,
+        "cut": 0.55,
+        "completion": 1
+      },
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 0.8625592417061602,
+        "swept": 0.3757,
+        "measured": 0.2643,
+        "eff": 0.697,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 1,
+        "swept": 0.1355,
+        "measured": 0.0611,
+        "eff": 0.598,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 1,
+        "t0": 0,
+        "t1": 0.44549763033175316,
+        "swept": 0.4693,
+        "measured": 0.3566,
+        "eff": 0.663,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 1,
+        "t0": 0,
+        "t1": 0.8720379146919421,
+        "swept": 0.3265,
+        "measured": 0.2794,
+        "eff": 0.74,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 1,
+        "t0": 0,
+        "t1": 1,
+        "swept": 0.1594,
+        "measured": 0.0975,
+        "eff": 0.689,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.4265402843601892,
+        "swept": 1.0606,
+        "measured": 0.4555,
+        "eff": 0.585,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.8341232227488142,
+        "swept": 1.2573,
+        "measured": 0.4191,
+        "eff": 0.484,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 1,
+        "swept": 0.4477,
+        "measured": 0.3075,
+        "eff": 0.565,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.502369668246445,
+        "swept": 0.8477,
+        "measured": 0.4444,
+        "eff": 0.549,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.928909952606634,
+        "swept": 0.859,
+        "measured": 0.3942,
+        "eff": 0.513,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 0.6635071090047386,
+        "swept": 0.0664,
+        "measured": 0.0173,
+        "eff": 0.412,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.5497630331753549,
+        "swept": 0.3591,
+        "measured": 0.1552,
+        "eff": 0.42,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.9763033175355439,
+        "swept": 0.3332,
+        "measured": 0.1907,
+        "eff": 0.481,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 0.7109004739336485,
+        "swept": 0.0409,
+        "measured": 0.0002,
+        "eff": 0.481,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.5592417061611369,
+        "swept": 0.2322,
+        "measured": 0.0089,
+        "eff": 0.329,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 1,
+        "swept": 0.0437,
+        "measured": 0.0141,
+        "eff": 0.329,
+        "cut": 0.6,
+        "completion": 1
+      }
+    ]
+  },
+  "log": [
+    "0.0s plan: 4 lane(s) x 4 bites, trench 4.0 m, spoil 3.2 m off centreline; adaptive: 3 lanes",
+    "0.0s start",
+    "230.6s survey: holding still to scan",
+    "232.1s survey (1.6 s dwell): 12490 pts, coverage 52%, lidar 17.3 cm vs truth 17.1 cm above grade, 523 cells out of tol",
+    "232.1s pass 2",
+    "293.3s survey: holding still to scan",
+    "294.9s survey (1.6 s dwell): 13210 pts, coverage 54%, lidar 9.7 cm vs truth 9.6 cm above grade, 448 cells out of tol",
+    "294.9s pass 3",
+    "384.6s survey: holding still to scan",
+    "386.1s survey (1.6 s dwell): 12420 pts, coverage 55%, lidar 7.2 cm vs truth 7.1 cm above grade, 393 cells out of tol",
+    "386.1s pass 4",
+    "474.9s survey: holding still to scan",
+    "476.5s survey (1.6 s dwell): 13184 pts, coverage 54%, lidar 6.4 cm vs truth 6.3 cm above grade, 372 cells out of tol",
+    "476.5s stopped: no further improvement; 36% of measured cells within tolerance"
+  ],
+  "debugCuts": [
+    "11.7s drag lane 0 tip 2.83,-0.12,5.30 D -0.07 tilt 40 q 7 wp 2.81,-0.12,5.30",
+    "12.0s drag lane 0 tip 2.67,-0.12,5.24 D -0.07 tilt 40 q 6 wp 2.55,-0.12,5.19",
+    "12.0s drag lane 0 tip 2.65,-0.12,5.23 D -0.07 tilt 40 q 6 wp 2.55,-0.12,5.19",
+    "12.1s drag lane 0 tip 2.62,-0.12,5.21 D -0.07 tilt 40 q 6 wp 2.55,-0.12,5.19",
+    "12.1s drag lane 0 tip 2.59,-0.12,5.20 D -0.01 tilt 40 q 6 wp 2.55,-0.12,5.19",
+    "12.6s drag lane 0 tip 2.39,-0.08,5.12 D -0.00 tilt 40 q 5 wp 2.30,-0.06,5.07",
+    "12.7s drag lane 0 tip 2.36,-0.08,5.10 D -0.00 tilt 40 q 5 wp 2.30,-0.06,5.07",
+    "25.6s drag lane 0 tip 2.19,-0.06,5.03 D -0.00 tilt 40 q 12 wp 2.04,-0.06,4.96",
+    "25.6s drag lane 0 tip 2.19,-0.06,5.03 D -0.00 tilt 40 q 12 wp 2.04,-0.06,4.96",
+    "25.7s drag lane 0 tip 2.16,-0.06,5.02 D -0.00 tilt 40 q 12 wp 2.04,-0.06,4.96",
+    "25.7s drag lane 0 tip 2.16,-0.06,5.01 D -0.00 tilt 40 q 12 wp 2.04,-0.06,4.96",
+    "25.8s drag lane 0 tip 2.13,-0.06,5.00 D -0.00 tilt 40 q 12 wp 2.04,-0.06,4.96",
+    "30.2s drag lane 0 tip 0.53,0.08,4.31 D 0.13 tilt 40 q 6 wp 0.49,0.07,4.30",
+    "30.3s drag lane 0 tip 0.50,0.08,4.30 D 0.13 tilt 40 q 6 wp 0.49,0.07,4.30",
+    "30.6s drag lane 0 tip 0.29,0.11,4.21 D 0.20 tilt 40 q 5 wp 0.23,0.12,4.18",
+    "30.8s drag lane 0 tip 0.27,0.14,4.22 D 0.20 tilt 40 q 5 wp 0.23,0.12,4.18",
+    "30.8s drag lane 0 tip 0.26,0.12,4.21 D 0.20 tilt 40 q 5 wp 0.23,0.12,4.18",
+    "85.1s drag lane 1 tip 4.06,-0.16,3.49 D -0.10 tilt -40 q 8 wp 3.87,-0.16,3.41",
+    "85.2s drag lane 1 tip 4.05,-0.16,3.49 D -0.10 tilt -40 q 8 wp 3.87,-0.16,3.41",
+    "85.2s drag lane 1 tip 4.03,-0.16,3.48 D -0.10 tilt -40 q 8 wp 3.87,-0.16,3.41",
+    "85.3s drag lane 1 tip 4.02,-0.16,3.48 D -0.10 tilt -40 q 8 wp 3.87,-0.16,3.41",
+    "85.3s drag lane 1 tip 4.00,-0.16,3.47 D -0.10 tilt -40 q 8 wp 3.87,-0.16,3.41",
+    "86.0s drag lane 1 tip 3.82,-0.16,3.39 D -0.06 tilt -40 q 7 wp 3.62,-0.15,3.30",
+    "86.0s drag lane 1 tip 3.82,-0.16,3.39 D -0.06 tilt -40 q 7 wp 3.62,-0.15,3.30",
+    "86.1s drag lane 1 tip 3.79,-0.16,3.38 D -0.11 tilt -40 q 7 wp 3.62,-0.15,3.30",
+    "86.1s drag lane 1 tip 3.79,-0.16,3.38 D -0.11 tilt -40 q 7 wp 3.62,-0.15,3.30",
+    "86.6s drag lane 1 tip 3.59,-0.14,3.29 D -0.07 tilt -40 q 6 wp 3.36,-0.03,3.19",
+    "86.6s drag lane 1 tip 3.57,-0.13,3.28 D -0.07 tilt -40 q 6 wp 3.36,-0.03,3.19",
+    "101.5s drag lane 1 tip 2.91,-0.02,3.00 D 0.04 tilt -40 q 12 wp 2.84,-0.01,2.97",
+    "101.6s drag lane 1 tip 2.91,-0.02,3.00 D 0.04 tilt -40 q 12 wp 2.84,-0.01,2.97",
+    "105.5s drag lane 1 tip 1.49,0.05,2.40 D 0.12 tilt -40 q 6 wp 1.29,0.17,2.30",
+    "213.1s drag lane 2 tip 0.19,0.01,3.00 D 0.07 tilt 0 q 5 wp -0.01,0.35,2.91",
+    "300.5s drag lane 0 tip 3.09,-0.14,5.42 D -0.07 tilt 40 q 12 wp 3.00,-0.14,5.38",
+    "300.6s drag lane 0 tip 3.08,-0.13,5.42 D -0.07 tilt 40 q 12 wp 3.00,-0.14,5.38",
+    "300.6s drag lane 0 tip 3.07,-0.14,5.41 D -0.07 tilt 40 q 12 wp 3.00,-0.14,5.38",
+    "300.7s drag lane 0 tip 3.05,-0.13,5.40 D -0.07 tilt 40 q 12 wp 3.00,-0.14,5.38",
+    "301.3s drag lane 0 tip 2.89,-0.13,5.33 D -0.07 tilt 40 q 11 wp 2.74,-0.12,5.27",
+    "301.3s drag lane 0 tip 2.87,-0.13,5.32 D -0.07 tilt 40 q 11 wp 2.74,-0.12,5.27",
+    "301.4s drag lane 0 tip 2.86,-0.13,5.32 D -0.07 tilt 40 q 11 wp 2.74,-0.12,5.27",
+    "301.4s drag lane 0 tip 2.84,-0.12,5.31 D -0.07 tilt 40 q 11 wp 2.74,-0.12,5.27"
+  ],
+  "volume": {
+    "terrainStartM3": 608.455,
+    "terrainEndM3": 610.647,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 2.192,
+    "bankCutM3": 3.796,
+    "swellExpectedM3": 1.139
+  },
+  "neural": null
+}
