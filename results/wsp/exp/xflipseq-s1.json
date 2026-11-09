@@ -1,0 +1,59 @@
+{
+ "tag": "xflipseq-s1",
+ "args": {
+  "tag": "xflipseq-s1",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 1,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": true,
+  "prior": "seq",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 46,
+ "train_s": 67,
+ "net": {
+  "all": 11.219,
+  "deep": 32.929,
+  "completed": 8.895,
+  "stalled": 15.853
+ },
+ "net_ttay": {
+  "all": 11.065,
+  "deep": 32.465,
+  "completed": 8.834,
+  "stalled": 15.519
+ },
+ "net_ttaxy": {
+  "all": 10.941,
+  "deep": 32.155,
+  "completed": 8.657,
+  "stalled": 15.438
+ },
+ "ema": {
+  "all": 11.151,
+  "deep": 32.043,
+  "completed": 8.936,
+  "stalled": 15.606
+ },
+ "ema_ttay": {
+  "all": 11.008,
+  "deep": 31.581,
+  "completed": 8.876,
+  "stalled": 15.323
+ },
+ "ema_ttaxy": {
+  "all": 10.881,
+  "deep": 31.268,
+  "completed": 8.725,
+  "stalled": 15.217
+ }
+}

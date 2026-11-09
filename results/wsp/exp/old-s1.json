@@ -1,0 +1,59 @@
+{
+ "tag": "old-s1",
+ "args": {
+  "tag": "old-s1",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 1,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 0.75,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 148,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 50,
+ "net": {
+  "all": 10.508,
+  "deep": 30.642,
+  "completed": 8.055,
+  "stalled": 15.292
+ },
+ "net_ttay": {
+  "all": 10.282,
+  "deep": 29.735,
+  "completed": 7.915,
+  "stalled": 14.89
+ },
+ "net_ttaxy": {
+  "all": 13.364,
+  "deep": 42.202,
+  "completed": 9.043,
+  "stalled": 20.981
+ },
+ "ema": {
+  "all": 10.26,
+  "deep": 28.849,
+  "completed": 8.185,
+  "stalled": 14.481
+ },
+ "ema_ttay": {
+  "all": 10.137,
+  "deep": 28.257,
+  "completed": 8.134,
+  "stalled": 14.217
+ },
+ "ema_ttaxy": {
+  "all": 13.328,
+  "deep": 42.032,
+  "completed": 9.079,
+  "stalled": 20.908
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "tag": "warm-s0",
+ "args": {
+  "tag": "warm-s0",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 0,
+  "epochs": 30,
+  "lr": 0.0005,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "/home/ubuntu/v4/wsp/exp/old-s0.pt",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 20,
+ "net": {
+  "all": 9.728,
+  "deep": 26.603,
+  "completed": 8.068,
+  "stalled": 13.248
+ },
+ "net_ttay": {
+  "all": 9.616,
+  "deep": 26.177,
+  "completed": 8.048,
+  "stalled": 12.951
+ },
+ "net_ttaxy": {
+  "all": 13.494,
+  "deep": 43.275,
+  "completed": 9.048,
+  "stalled": 21.409
+ },
+ "ema": {
+  "all": 9.965,
+  "deep": 27.076,
+  "completed": 8.239,
+  "stalled": 13.613
+ },
+ "ema_ttay": {
+  "all": 9.893,
+  "deep": 26.819,
+  "completed": 8.255,
+  "stalled": 13.365
+ },
+ "ema_ttaxy": {
+  "all": 13.441,
+  "deep": 43.495,
+  "completed": 8.842,
+  "stalled": 21.562
+ }
+}

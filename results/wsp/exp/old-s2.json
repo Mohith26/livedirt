@@ -1,0 +1,59 @@
+{
+ "tag": "old-s2",
+ "args": {
+  "tag": "old-s2",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 2,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 0.75,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 148,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 51,
+ "net": {
+  "all": 11.056,
+  "deep": 31.431,
+  "completed": 8.591,
+  "stalled": 15.941
+ },
+ "net_ttay": {
+  "all": 10.998,
+  "deep": 31.613,
+  "completed": 8.499,
+  "stalled": 15.903
+ },
+ "net_ttaxy": {
+  "all": 13.627,
+  "deep": 41.464,
+  "completed": 9.664,
+  "stalled": 20.975
+ },
+ "ema": {
+  "all": 11.378,
+  "deep": 31.844,
+  "completed": 8.856,
+  "stalled": 16.357
+ },
+ "ema_ttay": {
+  "all": 11.317,
+  "deep": 31.598,
+  "completed": 8.835,
+  "stalled": 16.211
+ },
+ "ema_ttaxy": {
+  "all": 13.514,
+  "deep": 40.699,
+  "completed": 9.738,
+  "stalled": 20.566
+ }
+}

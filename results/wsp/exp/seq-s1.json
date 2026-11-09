@@ -1,0 +1,59 @@
+{
+ "tag": "seq-s1",
+ "args": {
+  "tag": "seq-s1",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 1,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "seq",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 46,
+ "train_s": 67,
+ "net": {
+  "all": 9.911,
+  "deep": 28.174,
+  "completed": 8.389,
+  "stalled": 13.117
+ },
+ "net_ttay": {
+  "all": 9.817,
+  "deep": 28.025,
+  "completed": 8.375,
+  "stalled": 12.869
+ },
+ "net_ttaxy": {
+  "all": 13.053,
+  "deep": 40.544,
+  "completed": 9.395,
+  "stalled": 19.754
+ },
+ "ema": {
+  "all": 9.829,
+  "deep": 27.659,
+  "completed": 8.354,
+  "stalled": 12.971
+ },
+ "ema_ttay": {
+  "all": 9.76,
+  "deep": 27.54,
+  "completed": 8.35,
+  "stalled": 12.775
+ },
+ "ema_ttaxy": {
+  "all": 13.028,
+  "deep": 40.887,
+  "completed": 9.187,
+  "stalled": 19.983
+ }
+}

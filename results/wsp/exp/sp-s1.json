@@ -1,0 +1,59 @@
+{
+ "tag": "sp-s1",
+ "args": {
+  "tag": "sp-s1",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 1,
+  "epochs": 30,
+  "lr": 0.0005,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "/home/ubuntu/v4/wsp/exp/old-s1.pt",
+  "shrink": 0.5,
+  "perturb": 0.1
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 20,
+ "net": {
+  "all": 10.385,
+  "deep": 29.264,
+  "completed": 8.198,
+  "stalled": 14.713
+ },
+ "net_ttay": {
+  "all": 10.29,
+  "deep": 29.091,
+  "completed": 8.121,
+  "stalled": 14.574
+ },
+ "net_ttaxy": {
+  "all": 13.682,
+  "deep": 44.347,
+  "completed": 8.869,
+  "stalled": 21.967
+ },
+ "ema": {
+  "all": 10.32,
+  "deep": 27.901,
+  "completed": 8.294,
+  "stalled": 14.448
+ },
+ "ema_ttay": {
+  "all": 10.254,
+  "deep": 27.724,
+  "completed": 8.252,
+  "stalled": 14.345
+ },
+ "ema_ttaxy": {
+  "all": 13.617,
+  "deep": 43.106,
+  "completed": 8.968,
+  "stalled": 21.611
+ }
+}

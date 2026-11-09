@@ -1,0 +1,59 @@
+{
+ "tag": "base-s2",
+ "args": {
+  "tag": "base-s2",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 2,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 67,
+ "net": {
+  "all": 10.966,
+  "deep": 32.962,
+  "completed": 9.072,
+  "stalled": 14.914
+ },
+ "net_ttay": {
+  "all": 10.846,
+  "deep": 32.575,
+  "completed": 8.992,
+  "stalled": 14.699
+ },
+ "net_ttaxy": {
+  "all": 13.812,
+  "deep": 44.541,
+  "completed": 9.787,
+  "stalled": 21.145
+ },
+ "ema": {
+  "all": 10.845,
+  "deep": 32.133,
+  "completed": 9.026,
+  "stalled": 14.667
+ },
+ "ema_ttay": {
+  "all": 10.771,
+  "deep": 31.943,
+  "completed": 8.968,
+  "stalled": 14.544
+ },
+ "ema_ttaxy": {
+  "all": 13.604,
+  "deep": 43.492,
+  "completed": 9.699,
+  "stalled": 20.836
+ }
+}

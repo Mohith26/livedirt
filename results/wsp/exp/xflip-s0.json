@@ -1,0 +1,59 @@
+{
+ "tag": "xflip-s0",
+ "args": {
+  "tag": "xflip-s0",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 0,
+  "epochs": 100,
+  "lr": 0.002,
+  "bs": 8,
+  "ch": 32,
+  "xflip": true,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 17,
+ "train_s": 65,
+ "net": {
+  "all": 10.771,
+  "deep": 30.415,
+  "completed": 8.579,
+  "stalled": 15.253
+ },
+ "net_ttay": {
+  "all": 10.529,
+  "deep": 29.633,
+  "completed": 8.439,
+  "stalled": 14.823
+ },
+ "net_ttaxy": {
+  "all": 10.423,
+  "deep": 29.503,
+  "completed": 8.28,
+  "stalled": 14.791
+ },
+ "ema": {
+  "all": 10.8,
+  "deep": 29.9,
+  "completed": 8.636,
+  "stalled": 15.262
+ },
+ "ema_ttay": {
+  "all": 10.623,
+  "deep": 29.212,
+  "completed": 8.548,
+  "stalled": 14.913
+ },
+ "ema_ttaxy": {
+  "all": 10.563,
+  "deep": 29.147,
+  "completed": 8.456,
+  "stalled": 14.887
+ }
+}

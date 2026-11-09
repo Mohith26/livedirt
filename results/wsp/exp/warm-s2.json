@@ -1,0 +1,59 @@
+{
+ "tag": "warm-s2",
+ "args": {
+  "tag": "warm-s2",
+  "out": "/home/ubuntu/v4/wsp/exp",
+  "seed": 2,
+  "epochs": 30,
+  "lr": 0.0005,
+  "bs": 8,
+  "ch": 32,
+  "xflip": false,
+  "prior": "cutrelax",
+  "ema": 0.998,
+  "subset_frac": 1.0,
+  "init": "/home/ubuntu/v4/wsp/exp/old-s2.pt",
+  "shrink": 1.0,
+  "perturb": 0.0
+ },
+ "n_train": 197,
+ "n_test": 107,
+ "load_s": 16,
+ "train_s": 21,
+ "net": {
+  "all": 10.638,
+  "deep": 30.918,
+  "completed": 8.596,
+  "stalled": 14.789
+ },
+ "net_ttay": {
+  "all": 10.579,
+  "deep": 30.812,
+  "completed": 8.537,
+  "stalled": 14.694
+ },
+ "net_ttaxy": {
+  "all": 13.351,
+  "deep": 41.765,
+  "completed": 9.391,
+  "stalled": 20.559
+ },
+ "ema": {
+  "all": 10.694,
+  "deep": 30.378,
+  "completed": 8.639,
+  "stalled": 14.865
+ },
+ "ema_ttay": {
+  "all": 10.678,
+  "deep": 30.503,
+  "completed": 8.594,
+  "stalled": 14.872
+ },
+ "ema_ttaxy": {
+  "all": 13.209,
+  "deep": 40.635,
+  "completed": 9.377,
+  "stalled": 20.263
+ }
+}
