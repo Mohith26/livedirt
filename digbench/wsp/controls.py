@@ -12,7 +12,7 @@ import torch
 
 from digbench.scoop_model import CELL
 from digbench.train_scoop import batchify
-from digbench.wsp.common import load_model, tier
+from digbench.wsp.common import batch, load_model, tier
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     opt = torch.optim.Adam(params, lr=3e-4); S = tier("practice"); gm.train()
     for _ in range(a.passes):
         for i in range(0, len(S), 8):
-            X, P, D, Y, (nx, ny) = batchify(S[i:i + 8]); r, ys = gm(X); pred = P + r
+            X, P, D, Y, (nx, ny) = batch(gm, S[i:i + 8]); r, ys = gm(X); pred = P + r
             w = 1.0 + 9.0 * ((D.abs() > 0.01) | (P.abs() > 0.01)).float()
             loss = (w * (pred - D) ** 2)[:, :nx, :ny].mean() + ((pred[:, :nx, :ny].sum((1, 2)) - D[:, :nx, :ny].sum((1, 2))) * CELL * CELL).pow(2).mean()
             opt.zero_grad(); loss.backward(); opt.step()

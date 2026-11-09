@@ -56,15 +56,16 @@ def is_wide(sd, ch=32):
 
 
 @torch.no_grad()
-def widen(net, ch=32, extra=EXTRA):
+def widen(net, ch=32, extra=EXTRA, cin_new=None):
     """Copy a trained UNet into a WideUNet; spare channels all zero."""
     old = {"e1": ch, "e2": 2 * ch, "e3": 4 * ch, "e4": 8 * ch, "d3": 4 * ch, "d2": 2 * ch, "d1": ch}
     W = widths(ch, extra)
     # input layout of each block, as a list of (n_old, n_new) segments in concat order
-    ins = {"e1": [(7, 7)], "e2": [(old["e1"], W["e1"])], "e3": [(old["e2"], W["e2"])], "e4": [(old["e3"], W["e3"])],
+    cin_old = int(net.e1[0].in_channels); cin_new = cin_new or cin_old
+    ins = {"e1": [(cin_old, cin_new)], "e2": [(old["e1"], W["e1"])], "e3": [(old["e2"], W["e2"])], "e4": [(old["e3"], W["e3"])],
            "d3": [(old["e4"], W["e4"]), (old["e3"], W["e3"])], "d2": [(old["d3"], W["d3"]), (old["e2"], W["e2"])],
            "d1": [(old["d2"], W["d2"]), (old["e1"], W["e1"])]}
-    wn = WideUNet(7, ch, extra)
+    wn = WideUNet(cin_new, ch, extra)
     for p in wn.parameters():
         p.zero_()
     sd_o, sd_w = net.state_dict(), wn.state_dict()
@@ -96,9 +97,10 @@ def widen(net, ch=32, extra=EXTRA):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--base", required=True); ap.add_argument("--out", required=True)
+    ap.add_argument("--cin", type=int, default=None, help="8 = add the beyond-predicted-stop input (zero weights)")
     a = ap.parse_args()
     from digbench.wsp.common import evaluate, load_model, predict, tier
-    net = load_model(a.base); wn = widen(net)
+    net = load_model(a.base); wn = widen(net, cin_new=a.cin)
     torch.save(wn.state_dict(), a.out)
     wn2 = load_model(a.out)
     S = tier("validation") + tier("practice")
