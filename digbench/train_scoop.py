@@ -83,6 +83,9 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--extra", default="", help="comma list of extra input channels: progress (first-touch time fraction "
+                    "along the planned path, 0 where untouched; encodes drag direction and order), stop (beyond the "
+                    "calculator's predicted stop; needs ~/v4/wsp/stop_params.json)")
     args = ap.parse_args()
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     files = sorted(set(f for d in args.data for f in glob.glob(str(Path(d) / "*.npz"))))
@@ -94,6 +97,15 @@ def main():
     S, seen = [], set()
     for f in files:
         s_ = load_sample(f)
+        if args.extra:
+            from digbench.wsp.stop_point import _walk_file, for_file
+            (_, _, _, first), _ = _walk_file(f); add = []
+            for e in args.extra.split(","):
+                if e == "progress":
+                    add.append(np.where(np.isfinite(first), first, 0.0).astype(np.float32))
+                elif e == "stop":
+                    add.append(for_file(f)[0])
+            s_["X"] = np.concatenate([s_["X"], np.stack(add)]).astype(np.float32)
         key = hash((s_["X"][0].tobytes(), s_["X"][1].tobytes()))  # identical terrain + swept envelope = same bite replayed
         if key in seen:
             continue

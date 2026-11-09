@@ -1,0 +1,9 @@
+{
+ "task": "digbench/wsp/tasks/E3s_fix_stalls_stop.md",
+ "mode": "fix",
+ "llm": "anthropic:claude-opus-5-5",
+ "budget": 25,
+ "wall_s": 1161.8231542110443,
+ "stop_reason": "submitted",
+ "cost": 5.6956875
+}

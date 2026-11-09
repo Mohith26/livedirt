@@ -90,3 +90,27 @@ The original Q1 key (replace each input by its dataset mean) favoured binary cha
 measures on 187 practice + validation bites all name ch 1 (swept envelope), positive sign: input x gradient 0.18 (next
 0.08), swap-with-another-bite 0.21 (next 0.12), signed 1-std shift +0.059. Rescored E1 totals (pass = 3 of 4):
 GLM-5 ~1.5 (ch 1 right, sign wrong), Kimi ~1, DeepSeek ~0.5; Opus r1 ~2.5, Fable r1 ~1; Opus r2 ~3 (PASS), Fable r2 ~1.75.
+
+## Round 3 (2026-11-09): audit fixes, stop-point input, Opus 5.5 at budgets 25 and 50 (xhigh thinking)
+Audit fixes before the run: stop-point calculator (train-fit: V_th 2.75 m^3 removable soil or F_th 43 kN/m; validation
+90.7% stall accuracy, median stop error 1.0% of path vs 31% for "never stops") as input channel 7 of a function-preserving
+8-input widened copy (max output diff 9.5e-7 m); CONTEXT rewritten from verified facts (drag is -x on 69/79 practice
+bites, prior caps volume by uniform scaling, w0 practice numbers) plus an auto-generated description of the exact copy;
+probes compacted to fit the 12k tool limit (list_bites 11.8k -> 5.0k chars), new path_profile and compare_groups, zone
+errors (deep_planned / shallow_planned / beyond_stop) in error_report; empty-answer runs flagged BROKEN; controls made
+input-aware; E1 Q1 key corrected (see above).
+Key audit finding: the stall premise in all earlier E3 prompts was wrong. On stalled bites the calculator flags, only
+4-5% of squared error is past the predicted stop (the teacher still cuts 0.2-0.3 m there); 60-67% is in the dug zone and
+28-37% outside the path. The worst cells are planned >0.6 m deep: RMS 27-30 cm with ~0 mean bias, on stalled AND completed
+bites (a shape/placement error). The E3 task was rewritten to state this.
+
+- Opus b25 ($5.70, 21/25 passes): traced the deep cut to d1 ch 17 (out weight -0.129, activations 5-10 -> 0.6-1.1 m);
+  two spare-channel limiters on it were worse (all 11.92 / 11.83 vs 11.78 cm practice). Submitted original.
+- Opus b50 ($5.35, 27/50 passes): diagnosis: the network has no input for drag direction; +x bites (13%) need the
+  opposite end deep, so the net averages two groups (large RMS, ~0 bias). Wiring ch 7 into e1.0 made it much worse
+  (stalled 18.3 vs 13.4). Submitted original. Neither session ran out of budget.
+- Check of the b50 diagnosis by retraining (same recipe, train -> validation, 2 seeds): adding a "path progress" input
+  (first-touch time fraction, encodes direction and order) did not help: all 10.27 / 10.54 cm vs 10.20 / 10.38 without;
+  +x bites 11.7 / 14.1 vs 12.5 / 13.8 (seed noise is as large as any difference). So the remaining error is not fixed by
+  giving the network that information either; the measured lever so far is more data (learning curve 13.0 -> 10.9 -> ~9 cm
+  at 48 / 72 / 246 scoops).

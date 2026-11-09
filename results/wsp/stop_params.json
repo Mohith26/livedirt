@@ -1,0 +1,41 @@
+{
+ "v_th": 2.749999999999999,
+ "f_th": 43.0,
+ "fit_on": "train",
+ "train": {
+  "n": 197,
+  "stalled": 82,
+  "stall_accuracy": 0.9035532994923858,
+  "recall": 0.8048780487804879,
+  "precision": 0.9565217391304348,
+  "mae_completion": 0.04800063134133775,
+  "stalled_median_stop_error": 0.019978204754705797
+ },
+ "practice": {
+  "n": 79,
+  "stalled": 28,
+  "stall_accuracy": 0.8860759493670886,
+  "recall": 0.6785714285714286,
+  "precision": 1.0,
+  "mae_completion": 0.04272926942743573,
+  "stalled_median_stop_error": 0.011229239856467954
+ },
+ "validation": {
+  "n": 108,
+  "stalled": 27,
+  "stall_accuracy": 0.9074074074074074,
+  "recall": 0.8148148148148148,
+  "precision": 0.8148148148148148,
+  "mae_completion": 0.028922251110673466,
+  "stalled_median_stop_error": 0.009798699787142873
+ },
+ "baseline_never_stop_validation": {
+  "n": 108,
+  "stalled": 27,
+  "stall_accuracy": 0.75,
+  "recall": 0.0,
+  "precision": 0.0,
+  "mae_completion": 0.0739795286005491,
+  "stalled_median_stop_error": 0.30666124946016315
+ }
+}
