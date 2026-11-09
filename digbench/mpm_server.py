@@ -45,12 +45,15 @@ def run_learned(req, terr, soil, M):
         d, carried = prior, prior_vol
         extra = {"completion": 1.0, "peak_demand": 0.0}
     else:
-        if "net" not in _NET:
-            net = UNet(X.shape[0], ARGS.ch); net.load_state_dict(torch.load(ARGS.model, map_location="cpu")); net.eval()
-            _NET["net"] = net
+        if "nets" not in _NET:
+            _NET["nets"] = []
+            for m in ARGS.model.split(","):  # comma list = ensemble (mean of members)
+                net = UNet(X.shape[0], ARGS.ch); net.load_state_dict(torch.load(m, map_location="cpu")); net.eval()
+                _NET["nets"].append(net)
         Xp, (nx, ny) = pad8(X[None])
         with torch.no_grad():
-            r, ys = _NET["net"](torch.tensor(Xp))
+            outs = [n(torch.tensor(Xp)) for n in _NET["nets"]]
+            r = torch.stack([o[0] for o in outs]).mean(0); ys = torch.stack([o[1] for o in outs]).mean(0)
         H1 = terr + prior + r[0, :nx, :ny].numpy()
         H1 = relax(H1, phi)  # projection: no slope steeper than the friction angle survives
         d = H1 - terr
