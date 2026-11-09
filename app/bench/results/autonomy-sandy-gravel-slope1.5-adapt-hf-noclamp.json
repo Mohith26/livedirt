@@ -1,0 +1,161 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1.5
+  },
+  "simSeconds": 146.7,
+  "wallSeconds": 124.835,
+  "phase": "done",
+  "verified": false,
+  "cycles": 6,
+  "avgCycleS": 23.88,
+  "avgFill": 0.707,
+  "productivityM3h": 31,
+  "bankRemoved": 1.249,
+  "passes": 2,
+  "surveys": [
+    {
+      "t": 116.4,
+      "points": 11109,
+      "coverage": 0.782,
+      "inTolFrac": 0.603,
+      "lidarMeanAboveCm": 2.36,
+      "truthMeanAboveCm": 2.41
+    },
+    {
+      "t": 146.7,
+      "points": 11119,
+      "coverage": 0.787,
+      "inTolFrac": 0.631,
+      "lidarMeanAboveCm": 2.04,
+      "truthMeanAboveCm": 2.1
+    }
+  ],
+  "final": {
+    "onGradePct": 48,
+    "meanAbsErrorCm": 4.32,
+    "remainingCutM3": 0.336,
+    "overDigM3": 0.098,
+    "unplannedCutM3": 0.001,
+    "sloughedM3": 2.841,
+    "maxAboveCm": 40.4,
+    "maxBelowCm": 9
+  },
+  "bottom": {
+    "cells": 89,
+    "onGradePct": 76.4,
+    "meanAbsErrorCm": 3.03,
+    "remainingCutM3": 0.019,
+    "overDigM3": 0.008,
+    "maxAboveCm": 19.2,
+    "maxBelowCm": 2.7
+  },
+  "slopes": {
+    "cells": 914,
+    "onGradePct": 45.2,
+    "meanAbsErrorCm": 4.45,
+    "remainingCutM3": 0.317,
+    "overDigM3": 0.09,
+    "maxAboveCm": 40.4,
+    "maxBelowCm": 9
+  },
+  "backend": "heightfield",
+  "controller": "adaptive",
+  "designClamp": false,
+  "adaptive": {
+    "fillEff": 0.488,
+    "log": [
+      {
+        "lane": 0,
+        "t0": 0,
+        "t1": 0.3658536585365851,
+        "swept": 0.5571,
+        "measured": 0.2933,
+        "eff": 0.571,
+        "cut": 0.55,
+        "completion": 1
+      },
+      {
+        "lane": 1,
+        "t0": 0,
+        "t1": 0.3739837398373981,
+        "swept": 0.4079,
+        "measured": 0.2151,
+        "eff": 0.553,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 2,
+        "t0": 0,
+        "t1": 0.3658536585365851,
+        "swept": 0.3984,
+        "measured": 0.2009,
+        "eff": 0.534,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 3,
+        "t0": 0,
+        "t1": 0.3658536585365851,
+        "swept": 0.3683,
+        "measured": 0.1597,
+        "eff": 0.494,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 4,
+        "t0": 0,
+        "t1": 0.3658536585365851,
+        "swept": 0.7202,
+        "measured": 0.3445,
+        "eff": 0.488,
+        "cut": 0.6,
+        "completion": 1
+      },
+      {
+        "lane": 4,
+        "t0": 0,
+        "t1": 0.5609756097560974,
+        "swept": 0.0489,
+        "measured": 0.0352,
+        "eff": 0.488,
+        "cut": 0.6,
+        "completion": 1
+      }
+    ]
+  },
+  "log": [
+    "0.0s plan: 5 lane(s) x 5 bites, trench 3.6 m, spoil 3.9 m off centreline; adaptive: 5 lanes",
+    "0.0s start",
+    "114.9s survey: holding still to scan",
+    "116.4s survey (1.6 s dwell): 11109 pts, coverage 78%, lidar 2.4 cm vs truth 2.4 cm above grade, 233 cells out of tol",
+    "116.4s pass 2",
+    "145.2s survey: holding still to scan",
+    "146.7s survey (1.6 s dwell): 11119 pts, coverage 79%, lidar 2.0 cm vs truth 2.1 cm above grade, 211 cells out of tol",
+    "146.7s stopped: no further improvement; 63% of measured cells within tolerance"
+  ],
+  "debugCuts": [],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 1.249,
+    "swellExpectedM3": 0.15
+  },
+  "neural": null
+}

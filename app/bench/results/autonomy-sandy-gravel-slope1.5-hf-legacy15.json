@@ -1,0 +1,88 @@
+{
+  "soil": "sandy-gravel",
+  "design": {
+    "p0": [
+      0.6521598309769181,
+      -0.30713979418676574
+    ],
+    "p1": [
+      3.8682968289571336,
+      -1.9246881892039935
+    ],
+    "bottomWidth": 0.9,
+    "depth": 1,
+    "sideSlope": 1.5
+  },
+  "simSeconds": 520.3,
+  "wallSeconds": 392.965,
+  "phase": "done",
+  "verified": true,
+  "cycles": 25,
+  "avgCycleS": 20.7,
+  "avgFill": 0.179,
+  "productivityM3h": 12.4,
+  "bankRemoved": 1.787,
+  "passes": 1,
+  "surveys": [
+    {
+      "t": 520.3,
+      "points": 10632,
+      "coverage": 0.793,
+      "inTolFrac": 0.971,
+      "lidarMeanAboveCm": 0.21,
+      "truthMeanAboveCm": 0.2
+    }
+  ],
+  "final": {
+    "onGradePct": 98.2,
+    "meanAbsErrorCm": 0.17,
+    "remainingCutM3": 0.017,
+    "overDigM3": 0,
+    "unplannedCutM3": 0,
+    "sloughedM3": 2.44,
+    "maxAboveCm": 9.3,
+    "maxBelowCm": 0
+  },
+  "bottom": {
+    "cells": 89,
+    "onGradePct": 96.6,
+    "meanAbsErrorCm": 0.17,
+    "remainingCutM3": 0.002,
+    "overDigM3": 0,
+    "maxAboveCm": 5.5,
+    "maxBelowCm": 0
+  },
+  "slopes": {
+    "cells": 914,
+    "onGradePct": 98.4,
+    "meanAbsErrorCm": 0.17,
+    "remainingCutM3": 0.015,
+    "overDigM3": 0,
+    "maxAboveCm": 9.3,
+    "maxBelowCm": 0
+  },
+  "backend": "heightfield",
+  "controller": "legacy",
+  "designClamp": true,
+  "log": [
+    "0.0s plan: 5 lane(s) x 5 bites, trench 3.6 m, spoil 3.9 m off centreline",
+    "0.0s start",
+    "3.3s waypoint unreachable (1.14 m), skipping",
+    "105.4s waypoint unreachable (0.54 m), skipping",
+    "419.9s waypoint unreachable (0.75 m), skipping",
+    "518.8s survey: holding still to scan",
+    "520.3s survey (1.6 s dwell): 10632 pts, coverage 79%, lidar 0.2 cm vs truth 0.2 cm above grade, 16 cells out of tol",
+    "520.3s done: 97% of measured cells within tolerance (lidar survey)"
+  ],
+  "debugCuts": [],
+  "volume": {
+    "terrainStartM3": 60.252,
+    "terrainEndM3": 60.252,
+    "inBucketM3": 0,
+    "carriedLedgerM3": 0,
+    "deltaM3": 0,
+    "bankCutM3": 1.787,
+    "swellExpectedM3": 0.214
+  },
+  "neural": null
+}
