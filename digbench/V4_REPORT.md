@@ -45,7 +45,13 @@ v4 gate scenario (sandy-gravel, yaw +50, 1.5:1, 4 m x 1.1 m floor, 1 m deep):
 |---|---|---|---|
 | heightfield with design clamp (old deployed) | legacy | 77.6 / 86.2 / 75.9 | 4.96 |
 | heightfield, no clamp | adaptive | 56.7 / 93.7 / 49.2 | 3.61 |
-| MPM (teacher) | adaptive | PENDING | PENDING |
+| MPM (teacher), seed 1 | adaptive | 8.3 / 0.0 / 9.9 (floor 42 cm high) | 15.2 carried, 6.8 net cut; 47 bites, 6.3 h |
+
+In the teacher, the same robot does NOT finish the trench: the 1.5:1 walls are stable in the finished shape, but every
+bite leaves steeper faces that slump back in (15.2 m^3 carried out for 6.8 m^3 of net cut), and after three passes
+the controller stops because the out-of-tolerance count stops falling (1144 -> 1088 -> 1081 cells). The heightfield
+version of the same robot reports a nearly finished trench (floor within 1 cm). That gap is the soil model, not the
+robot, and it is the central v4 finding.
 
 ## 4. Per-scoop model
 
@@ -59,8 +65,26 @@ peak demand; the result is projected through the relax step (no slope steeper th
 | a2 | 72 | 52 | 0.186 / 0.156 / 0.109 | 0.422 / 0.093 |
 | a3 (volume loss on net ground change) | 76 | 54 | 0.186 / 0.156 / 0.113 | 0.418 / 0.094 |
 
+| a4 | 103 | 66 | 0.193 / 0.162 / 0.114 | 0.405 / 0.086 |
+
 Net ground volume per gate bite (34 held-out): truth -0.42 m^3; a2 -0.35 (under-removes), a3 -0.50 (over-removes),
-prior -0.77. Loop results vs the MPM reference: PENDING.
+a4 -0.41, prior -0.77.
+
+**Closed loop vs the teacher** (same scenario, same controller; `compare_grids.py`; figure `results/v4/gate/gate_compare.png`):
+
+| soil backend in the loop | on grade % | floor error | net cut m^3 (teacher 6.8) | final-surface RMSE vs teacher (design cells) |
+|---|---|---|---|---|
+| MPM teacher | 8.3 | 42 cm | 6.8 | - |
+| heightfield, no clamp | 56.7 | 1 cm | 16.1 | 0.313 m |
+| cut+relax prior | 23.3 | 15 cm | 14.6 | 0.383 m |
+| learned a1 (48 bites) | 6.7 | 54 cm | 6.5 | 0.314 m |
+| learned a3 (76 bites) | 7.8 | 44 cm | 18.6 | 0.534 m |
+| learned a4 (103 bites) | 8.2 | 40 cm | 11.2 | 0.297 m |
+
+Reading: the learned per-scoop models reproduce the teacher's OUTCOME (trench left unfinished, floor ~40 cm high,
+~8% on grade) where the heightfield predicts a finished trench. Point-wise the final surfaces still differ by ~0.3 m for
+every backend (the runs diverge bite by bite), and model-to-model variance is large (a3 over-digs). Not yet known: the
+teacher's own run-to-run spread in closed loop (seed-2 reference running).
 
 ## 5. Simple model tuned to the teacher
 
