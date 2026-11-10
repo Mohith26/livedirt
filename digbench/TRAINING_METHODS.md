@@ -41,3 +41,19 @@ labels (warm start, scratch every 3rd version), runs both gates, and writes `~/v
 | a8 | 583 | 22.8 / 21.2 | 15.8 | 37.8 | pit: 8% of gate-1 floor > 40 cm too deep |
 | a9 | 604 | 10.6 / 13.4 | 15.0 | 27.0 | first loop version (scratch); pit gone (0%), new best |
 Envelope floor clamp on a8 did not help (gate 1 24.1 / 22.4, gate 2 15.85). Teacher noise floor on gate 1: 4.3 cm.
+
+## Target: "within 10% of the simulator on all metrics" (digbench/al_loop/target.py)
+The teacher is not repeatable to 10 cm: two teacher runs of gate 2 (wet clay) differ by 14.7 cm RMS and 0.82 m^3 (10%)
+in soil removed; gate 1 (sandy gravel) by 4.3 cm and 0.41 m^3 (6%). So each metric is checked per gate and per teacher
+seed against max(10%, 1.1 x the teacher's own run-to-run gap): soil removed in the 1 m neighbourhood, final-surface RMS
+over the design (gate 1 <= 4.7 cm, gate 2 <= 16.1 cm), mean floor height (<= 10 cm). 12 checks; pass = all.
+Status a7-a11: floor passes everywhere; gate-2 surface passes (a8-a11); soil removed fails everywhere (17-40%);
+gate-1 surface fails (best 10.6 cm, a9). Versions swing 2x on gate 1 (a9 10.6/13.4, a10 24.5/22.9, a11 21.7/19.9).
+Bite-level aggregates on gate 1 are already within ~10% of the teacher (47 vs 45-49 bites, stalls 36% vs 38-40%,
+carried 15.2-15.4 vs 16.2-16.5 m^3). The volume gap sits in the trench depth on gate 1 (a9 +1.3 m^3 left, a11 -2.1 m^3)
+and in raised material outside the trench on gate 2 (-2.4 m^3); held-out per-bite removed/added volumes are unbiased
+(-4% / -1%), so this accumulates in the closed loop rather than coming from a per-bite bias.
+
+Loop changes (2026-11-10 06:00 UTC): 5-member ensembles; queue re-ranked by each new ensemble; one digger (queue was
+6x oversupplied); target check in the ledger; budget tracker (stop at est. $900) and a 2-hourly keeper routine that
+restarts dead parts, extends the shutdown guard 4 h at a time, and commits the ledger.

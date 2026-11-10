@@ -1,3 +1,5 @@
 {"tag": "a7", "n_train": 246, "per_bite": [9.0, 9.2], "gate1_cm": [13.6, 12.7], "gate2_cm": 16.2, "score_cm": 29.4, "note": "before the loop"}
 {"tag": "a8", "n_train": 583, "per_bite": [8.09, 7.99, 8.35], "gate1_cm": [22.8, 21.2], "gate2_cm": 15.8, "score_cm": 37.8, "note": "before the loop; pit at trench segment 3"}
 {"tag": "a9", "n_samples": 753, "per_bite": [8.29, 8.37, 8.3], "n_train": 604, "gate1_cm": [10.6, 13.4], "gate2_cm": 15.0, "score_cm": 27.0}
+{"tag": "a10", "n_samples": 783, "per_bite": [8.26, 8.24, 8.23], "n_train": 628, "gate1_cm": [24.5, 22.9], "gate2_cm": 14.5, "score_cm": 38.3}
+{"tag": "a11", "n_samples": 814, "per_bite": [8.18, 8.2, 8.08], "n_train": 654, "gate1_cm": [21.7, 19.9], "gate2_cm": 15.7, "score_cm": 36.5}

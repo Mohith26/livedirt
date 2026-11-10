@@ -10,8 +10,11 @@ L = Path("~/v4/loop").expanduser(); G = Path("~/v4/grids").expanduser(); E = Pat
 
 def main():
     tag, n = sys.argv[1], int(sys.argv[2]); row = {"tag": tag, "n_samples": n, "per_bite": []}
-    for sd in range(3):
-        for line in (L / f"train-{tag}-s{sd}.log").read_text().splitlines():
+    for sd in range(8):
+        f = L / f"train-{tag}-s{sd}.log"
+        if not f.exists():
+            continue
+        for line in f.read_text().splitlines():
             if line.startswith("{\"n_test\""):
                 row["per_bite"].append(round(json.loads(line)["rmse_model"] * 100, 2)); row["n_train"] = json.loads(line)["n_train"]
     try:
@@ -20,6 +23,14 @@ def main():
         row.update(gate1_cm=[round(100 * x, 1) for x in g1], gate2_cm=round(100 * g2, 1), score_cm=round(100 * (sum(g1) / 2 + g2), 1))
     except Exception as e:
         row["gate_error"] = str(e)[:200]
+    try:
+        from digbench.al_loop.target import evaluate
+        t = evaluate(tag); row["target_pass"] = t["pass"]; row["target_metric_ok"] = f"{t['n_metric_ok']}/12"
+        row["cut_rel"] = [c.get("cut_rel") for c in t["checks"]]
+        if t["pass"]:
+            (L / "TARGET_MET").write_text(json.dumps(row))
+    except Exception as e:
+        row["target_error"] = str(e)[:200]
     with open(L / "ledger.jsonl", "a") as f:
         f.write(json.dumps(row) + "\n")
     best = json.loads((L / "BEST.json").read_text()) if (L / "BEST.json").exists() else None
