@@ -95,11 +95,13 @@ def main():
     ap.add_argument("--ch", type=int, default=32); ap.add_argument("--xflip", action="store_true"); ap.add_argument("--prior", default="cutrelax")
     ap.add_argument("--ema", type=float, default=0.0); ap.add_argument("--subset-frac", type=float, default=1.0)
     ap.add_argument("--subset-file", default="", help="json list of train-sample names to use")
+    ap.add_argument("--add-files", default="", help="json list of extra sample files appended to the train tier")
     ap.add_argument("--init", default=""); ap.add_argument("--shrink", type=float, default=1.0); ap.add_argument("--perturb", type=float, default=0.0)
     a = ap.parse_args(); torch.manual_seed(a.seed); np.random.seed(a.seed)
     out = Path(a.out).expanduser(); out.mkdir(parents=True, exist_ok=True)
     sp = json.loads(SPLITS.read_text()); t0 = time.time()
-    train, test = load(sp["train"], a.prior), load(sp["validation"], a.prior)
+    extra = json.loads(Path(a.add_files).expanduser().read_text()) if a.add_files else []
+    train, test = load(sp["train"] + extra, a.prior), load(sp["validation"], a.prior)
     if a.subset_frac < 1.0:
         rng = np.random.default_rng(123); idx = rng.permutation(len(train))[: int(round(a.subset_frac * len(train)))]
         train = [train[i] for i in sorted(idx)]

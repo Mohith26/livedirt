@@ -83,6 +83,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--init", default="", help="warm start: load this state dict before training")
     ap.add_argument("--extra", default="", help="comma list of extra input channels: progress (first-touch time fraction "
                     "along the planned path, 0 where untouched; encodes drag direction and order), stop (beyond the "
                     "calculator's predicted stop; needs ~/v4/wsp/stop_params.json)")
@@ -125,6 +126,8 @@ def main():
     print(f"samples {len(S)} train {len(train)} test {len(test)} (load {time.time() - t0:.0f}s)", flush=True)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     net = UNet(S[0]["X"].shape[0], args.ch).to(dev)
+    if args.init:
+        net.load_state_dict(torch.load(args.init, map_location=dev))
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=args.epochs * max(1, math.ceil(len(train) / args.bs)))
     C2 = CELL * CELL
