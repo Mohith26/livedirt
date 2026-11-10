@@ -33,3 +33,11 @@ elsewhere a8 is closer); gate 2 (wet clay) 15.8 vs 16.2 cm. Promotion must use t
 Diggers run random scenarios (+-60 deg heading) with the newest ensemble in the loop and score every bite by ensemble
 disagreement into a queue; three MPM labellers always take the most disputed bite; the train loop retrains every +30
 labels (warm start, scratch every 3rd version), runs both gates, and writes `~/v4/loop/ledger.jsonl` and `BEST.json`.
+
+## Loop results so far
+| Version | Train scoops | Gate 1 vs teacher s1 / s2 (cm) | Gate 2 (cm) | Score | Note |
+|---|---|---|---|---|---|
+| a7 | 246 | 13.6 / 12.7 | 16.2 | 29.4 | before the loop |
+| a8 | 583 | 22.8 / 21.2 | 15.8 | 37.8 | pit: 8% of gate-1 floor > 40 cm too deep |
+| a9 | 604 | 10.6 / 13.4 | 15.0 | 27.0 | first loop version (scratch); pit gone (0%), new best |
+Envelope floor clamp on a8 did not help (gate 1 24.1 / 22.4, gate 2 15.85). Teacher noise floor on gate 1: 4.3 cm.
