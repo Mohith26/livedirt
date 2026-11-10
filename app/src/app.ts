@@ -108,7 +108,7 @@ export class App {
     engine.scene.add(this.twin.root);
 
     this.autonomy = new DigAutonomy(terrain.hf, DX225_GEOMETRY, this.machine.cx, this.machine.cz, this.machine.groundY, this.restJoints);
-    // v2 defaults: adaptive controller + learned per-scoop soil (model loads on the first dig cycle)
+    // v2/v3 defaults: adaptive controller + learned per-scoop soil (model loads on the first dig cycle)
     this.autonomy.controller = 'adaptive';
     this.autonomy.externalSoil = true;
     this.autonomy.traceMargin = 1.0;
@@ -156,7 +156,7 @@ export class App {
     const ui = document.createElement('div');
     ui.innerHTML = `
       <header class="topbar">
-        <div class="brand glass"><div class="mark">${LOGO}</div><div><b>LiveDirt <span class="v2tag">v2</span></b><span>Learned soil trained on a validated MPM teacher</span></div></div>
+        <div class="brand glass"><div class="mark">${LOGO}</div><div><b>LiveDirt <span class="v2tag">v3</span></b><span>Learned soil trained on a validated MPM teacher</span></div></div>
         <nav class="modes glass">
           ${(['explore', 'dig', 'design', 'scenario', 'auto'] as Mode[]).map((m, i) => `<button data-mode="${m}">${icons[m === 'auto' ? 'auto' : m]}<span>${MODE_LABEL[m]}</span><kbd>${i + 1}</kbd></button>`).join('')}
         </nav>
@@ -406,11 +406,11 @@ export class App {
           <div class="row"><span>Last scoop (soil model)</span><b id="aForce">${a.externalSoil ? 'waiting' : 'kinematic cut'}</b></div>
         </div>
         <div class="field"><label>Soil model</label><div class="seg" id="segSoilModel">
-          <button data-v="scoop" class="${a.externalSoil ? 'on' : ''}">Learned per-scoop (v2)</button><button data-v="simple" class="${a.externalSoil ? '' : 'on'}">Simple (v1)</button></div></div>
+          <button data-v="scoop" class="${a.externalSoil ? 'on' : ''}">Learned per-scoop (v3)</button><button data-v="simple" class="${a.externalSoil ? '' : 'on'}">Simple (v1)</button></div></div>
         <div class="field"><label>Controller</label><div class="seg" id="segCtrl">
           <button data-v="adaptive" class="${a.controller === 'adaptive' ? 'on' : ''}">Adaptive</button><button data-v="legacy" class="${a.controller === 'legacy' ? 'on' : ''}">Legacy (v1)</button></div></div>
         <div class="note">${a.externalSoil
-          ? 'v2: a U-Net predicts each whole scoop (surface change + payload) from the terrain and the bucket\'s swept path, trained on 134 bites of a 3D MPM teacher validated against lab data. The ground updates once per scoop.'
+          ? 'v3: an ensemble of 5 U-Nets predicts each whole scoop (surface change + payload) from the terrain and the bucket\'s swept path, trained on 805 bites of a 3D MPM teacher validated against lab data, most collected by an active-learning loop on the model\'s own digs. The ground updates once per scoop.'
           : 'v1 heightfield: cuts exactly what the bucket sweeps. In MPM the same robot leaves this trench unfinished (8% on grade); the heightfield reports it nearly done.'}</div>
         <div class="log" id="aLog"></div>`;
       if (!hasDesign) $('#aExample').onclick = () => { this.exampleTrench(); this.renderPanel(); };
@@ -552,12 +552,12 @@ export class App {
   async setScoopSoil(on: boolean) {
     const a = this.autonomy;
     if (on && !this.scoop) {
-      toast('Loading learned soil v2 (8.1 MB)…');
+      toast('Loading learned soil v3 (5-model ensemble, 40 MB)…');
       const ort = await import('onnxruntime-web/wasm');
       ort.env.wasm.wasmPaths = import.meta.env.DEV ? 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/' : '/ort/';
       const { ScoopSoil } = await import('./sim/scoopSoil');
-      this.scoop = await ScoopSoil.load(ort as never, '/models/scoop-v4.onnx', '/models/scoop-v4-bucket.json', { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-      toast('Learned soil v2 ready', 'ok');
+      this.scoop = await ScoopSoil.load(ort as never, [0, 1, 2, 3, 4].map((i) => `/models/scoop-a16-s${i}.onnx`), '/models/scoop-v4-bucket.json', { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+      toast('Learned soil v3 ready', 'ok');
     }
     a.neural = null;
     a.externalSoil = on;
@@ -917,13 +917,13 @@ function aboutHtml(d: SceneData) {
   const s = d.meta.source;
   return `
   <button class="x" aria-label="Close">${icons.close}</button>
-  <h2>What's real in LiveDirt v2</h2>
+  <h2>What's real in LiveDirt v3</h2>
   <p class="lead">Every neural simulator assumes the world holds still. An excavator's whole job is to change it. LiveDirt makes a real reconstructed site diggable and is explicit about which parts are learned, simulated, generated or approximated.</p>
-  <h4><i style="background:#2f8cff"></i>New in v2: learned soil from a validated teacher</h4>
+  <h4><i style="background:#2f8cff"></i>New in v3: learned soil from a validated teacher, trained in a closed loop</h4>
   <ul>
     <li><b>Teacher</b>: 3D material point method (Mohr-Coulomb with cohesion, volume-corrected). Lab bucket (Coetzee 2004): draft force +6% at 800 mm, mean |error| 9.7% (v1-era solver: +114%). Flat blade vs the Sokolovski solution: +4 / -3 / -7%. Vertical-cut cohesion collapses at N 3.5-4.2 vs limit analysis 3.83-4.0. Dug-surface shape is <i>not</i> validated against a real dig.</li>
-    <li><b>Learned soil</b>: a U-Net predicts each whole scoop (surface change + payload) from the scanned terrain and the bucket's swept path, as a residual on a cut-and-relax prior, then projects slopes to the friction angle. Trained on bites from MPM-in-the-loop trenches. Held-out scoops: surface RMSE 0.11 m (prior 0.16 m), payload error 0.09 m³ (prior 0.42 m³). Runs in ~30 ms per scoop.</li>
-    <li><b>Same robot, same trench, different soil</b> (sandy gravel, 1.5:1): MPM teacher 8.3% on grade, floor 42 cm high; learned v2 8.2%, floor 40 cm; v1 heightfield 56.7%, floor 1 cm. v1 reported a nearly finished trench the teacher says the robot cannot finish. Point-wise the final surfaces still differ from the teacher by ~0.3 m.</li>
+    <li><b>Learned soil (model a16)</b>: an ensemble of 5 U-Nets predicts each whole scoop (surface change + payload) from the scanned terrain and the bucket's swept path, as a residual on a cut-and-relax prior, then projects slopes to the friction angle. Trained on 805 bites: MPM-in-the-loop trenches plus an active-learning DAgger loop (the model digs, the 3D teacher labels the scoops its ensemble disagrees on most). Held-out scoops: surface RMSE 7.9-8.2 cm per member (prior 17.2 cm), payload error 0.05 m³ (prior 0.38 m³).</li>
+    <li><b>Same robot, same trench, different soil</b>, final surface vs the MPM teacher (RMSE over the design; two teacher runs of the same trench differ by 4.3 cm in sandy gravel and 14.7 cm in wet clay): sandy gravel 1.5:1, learned v3 11.6 / 13.7 cm vs v1 heightfield 31.3 cm; wet clay 0.75:1, learned v3 14.5 / 11.0 cm vs v1 45.1 cm. On grade: teacher 8.3% / 3.7%, learned v3 6.3% / 4.7%, v1 heightfield 56.7% / 33.2%. v1 reports a nearly finished trench the teacher says the robot cannot finish; v3 reproduces the unfinished outcome, but it is not yet within the teacher's own run-to-run noise in sandy gravel.</li>
     <li><b>Adaptive controller</b>: machine-control cutting edge (never below design across the bucket width), tiltrotator roll on slopes, straight-line tip motion, bite length planned from the scan and a learned fill efficiency, back-off after stalls.</li>
   </ul>
   <h4><i style="background:#ff7a1a"></i>Learned from real footage</h4>
@@ -952,7 +952,7 @@ function aboutHtml(d: SceneData) {
   </ul>
   <h4><i style="background:#6f6861"></i>Not modelled</h4>
   <ul>
-    <li>In the browser: soil continuum mechanics run live (v2 uses a model learned from MPM), water, live bucket-soil forces, hydraulics dynamics, lidar motion distortion, the machine's self-occlusion in the lidar, view-dependent splat colour (SH0 only).</li>
+    <li>In the browser: soil continuum mechanics run live (v3 uses a model learned from MPM), water, live bucket-soil forces, hydraulics dynamics, lidar motion distortion, the machine's self-occlusion in the lidar, view-dependent splat colour (SH0 only).</li>
   </ul>
   <h4>Credits</h4>
   <table>

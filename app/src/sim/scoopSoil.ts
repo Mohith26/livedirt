@@ -1,5 +1,6 @@
 /**
- * LiveDirt v2 learned soil: one inference per SCOOP (digbench/scoop_model.py, trained on MPM-in-the-loop bites).
+ * LiveDirt v3 learned soil: one inference per SCOOP (digbench/scoop_model.py, trained on MPM-in-the-loop bites).
+ * v3: an ensemble (mean of the members' residual and scalars, as digbench/mpm_server.py does for a comma list of models).
  *
  * Input (bite's bed grid, 5 cm, window frame of the DigTrace, margin M around the 3.4 m x 2 m window):
  *   0 terrain - anchor, 1 swept envelope - terrain (clipped), 2 untouched mask, 3 cut+relax prior,
@@ -143,13 +144,19 @@ export function pad8(X: Float32Array, C: number, nx: number, ny: number) {
 
 type Ort = { Tensor: new (type: 'float32', data: Float32Array, dims: number[]) => unknown; InferenceSession: { create(u: string | Uint8Array, o?: unknown): Promise<{ run(f: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>> }> } };
 
+type Session = { run(f: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>> };
+
 export class ScoopSoil {
-  constructor(private ort: Ort, private session: { run(f: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>> }, readonly geom: BucketGeom) {}
-  static async load(ort: Ort, modelUrl: string, bucketUrl: string, opts?: unknown) {
-    const [session, geom] = await Promise.all([ort.InferenceSession.create(modelUrl, opts), fetch(bucketUrl).then((r) => r.json())]);
-    return new ScoopSoil(ort, session, geom as BucketGeom);
+  private sessions: Session[];
+  constructor(private ort: Ort, session: Session | Session[], readonly geom: BucketGeom) { this.sessions = Array.isArray(session) ? session : [session]; }
+  /** modelUrl: one ONNX file, or a list = ensemble (members averaged) */
+  static async load(ort: Ort, modelUrl: string | string[], bucketUrl: string, opts?: unknown) {
+    const urls = Array.isArray(modelUrl) ? modelUrl : [modelUrl];
+    const [sessions, geom] = await Promise.all([Promise.all(urls.map((u) => ort.InferenceSession.create(u, opts))), fetch(bucketUrl).then((r) => r.json())]);
+    return new ScoopSoil(ort, sessions, geom as BucketGeom);
   }
-  static fromParts(ort: Ort, session: { run(f: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>> }, geom: BucketGeom) { return new ScoopSoil(ort, session, geom); }
+  static fromParts(ort: Ort, session: Session | Session[], geom: BucketGeom) { return new ScoopSoil(ort, session, geom); }
+  get members() { return this.sessions.length; }
 
   /** run one bite: trace terrain (window frame) + poses -> surface delta on the trace grid + carried volume */
   async bite(tr: DigTrace, soil: ScoopSoilParams, minDelta = 0.01): Promise<ScoopResult> {
@@ -158,8 +165,13 @@ export class ScoopSoil {
     const T = Float64Array.from(tr.terrain);
     const { X, prior } = makeInputs(T, tr.poses, soil, nx, ny, M, this.geom);
     const { data, px, py } = pad8(X, 7, nx, ny);
-    const out = await this.session.run({ x: new this.ort.Tensor('float32', data, [1, 7, px, py]) });
-    const r = out.residual.data, ys = out.scalars.data;
+    const r = new Float64Array(px * py), ys = new Float64Array(3);
+    for (const sess of this.sessions) {  // sequential: each member is ~8 MB of weights; wasm runs one at a time anyway
+      const out = await sess.run({ x: new this.ort.Tensor('float32', data, [1, 7, px, py]) });
+      const rr = out.residual.data, yy = out.scalars.data;
+      for (let k = 0; k < r.length; k++) r[k] += rr[k] / this.sessions.length;
+      for (let k = 0; k < 3; k++) ys[k] += yy[k] / this.sessions.length;
+    }
     const H1 = new Float64Array(n);
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) { const k = i * ny + j; H1[k] = T[k] + prior[k] + r[i * py + j]; }
     const H2 = relax(H1, nx, ny, soil.phi);
