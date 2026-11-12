@@ -11,6 +11,9 @@ Control the dig (run / pause / reset, soil model v1/v3 (a16), soil type, speed, 
 
 Unreal-side requirements (enabled in LiveDirtUE.uproject): Python Editor Script Plugin, Editor Scripting Utilities,
 Geometry Script. No C++ (no Xcode needed).
+
+Tempo: the same script runs inside a Tempo project (see unreal/TEMPO.md). While Play-In-Editor runs it drives the PIE
+copies of the actors, which is the world Tempo's cameras and lidars render.
 """
 import base64
 import json
@@ -244,9 +247,7 @@ def _place_part(p):
         sm.set_static_mesh(cube)
         sm.set_material(0, _solid_instance(p["color"]))
         _state["parts"][p["name"]] = a
-    r = p["r"]
-    a.set_actor_location_and_rotation(unreal.Vector(*p["c"]), unreal.Rotator(roll=r[0], pitch=r[1], yaw=r[2]), False, False)
-    a.set_actor_scale3d(unreal.Vector(p["s"][0] / 100.0, p["s"][1] / 100.0, p["s"][2] / 100.0))
+    _move(a, p)
 
 
 def build():
@@ -282,19 +283,63 @@ def build():
     unreal.log("[LiveDirt] level built; control the dig at " + BRIDGE)
 
 
+def _pie_world():
+    """the Play-In-Editor world while PIE runs, else None"""
+    try:
+        return unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_game_world()
+    except Exception:
+        return None
+
+
+def _targets():
+    """Actors to drive this frame: the editor-world actors normally, their Play-In-Editor copies while PIE runs.
+    PIE duplicates the level when it starts, and Tempo's sensors (TempoCamera / TempoLidar) only render the PIE world,
+    so following the editor actors alone would leave the sensors looking at a frozen copy of the dig."""
+    w = _pie_world()
+    if w is None:
+        if _state.get("pie_world") is not None:
+            _state["pie_world"], _state["terrain_version"] = None, -1
+        return _state["parts"], _state["zone_actor"]
+    cached = _state.get("pie_world")
+    if cached is None or cached[0] != w:
+        by_label = {}
+        for a in unreal.GameplayStatics.get_all_actors_of_class(w, unreal.Actor):
+            lab = a.get_actor_label()
+            if lab.startswith(PREFIX):
+                by_label[lab] = a
+        parts = {name: by_label[PREFIX + "Machine_" + name] for name in _state["parts"] if PREFIX + "Machine_" + name in by_label}
+        cached = (w, parts, by_label.get(PREFIX + "Terrain_DigZone"))
+        _state["pie_world"], _state["terrain_version"] = cached, -1
+        unreal.log(f"[LiveDirt] following the bridge in the PIE world ({len(parts)} machine parts)")
+    return cached[1], cached[2]
+
+
+def _move(a, p):
+    r = p["r"]
+    a.set_actor_location_and_rotation(unreal.Vector(*p["c"]), unreal.Rotator(roll=r[0], pitch=r[1], yaw=r[2]), False, False)
+    a.set_actor_scale3d(unreal.Vector(p["s"][0] / 100.0, p["s"][1] / 100.0, p["s"][2] / 100.0))
+
+
 def _tick(dt):
     try:
         s = _get("/state", timeout=0.5)
     except Exception as e:  # bridge not running: keep the editor responsive, try again next frame
         _warn_once("bridge", f"bridge not reachable at {BRIDGE} ({e}); start it with: cd app && npx tsx bench/unreal-bridge.ts")
         return
+    parts, zone = _targets()
+    in_pie = _state.get("pie_world") is not None
     for p in s["parts"]:
-        _place_part(p)
+        if in_pie:
+            a = parts.get(p["name"])
+            if a is not None:
+                _move(a, p)
+        else:
+            _place_part(p)
     now = time.time()
-    if s["terrainVersion"] != _state["terrain_version"] and now - _state["last_terrain"] > TERRAIN_MIN_INTERVAL and _state["zone_actor"]:
+    if s["terrainVersion"] != _state["terrain_version"] and now - _state["last_terrain"] > TERRAIN_MIN_INTERVAL and zone:
         try:
             g = _get("/terrain", timeout=5)
-            _fill_mesh(_state["zone_actor"], g, _material("M_LD_VertexColor", _build_vertex_color))
+            _fill_mesh(zone, g, _material("M_LD_VertexColor", _build_vertex_color))
             _state["terrain_version"] = g["version"]
         except Exception as e:
             _warn_once("terrain", f"terrain update failed: {e}")

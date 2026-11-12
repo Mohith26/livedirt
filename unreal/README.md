@@ -24,3 +24,6 @@ sandy gravel. Unreal only renders it.
 
 To swap in a different DigBench model later, copy its members to `app/public/models/scoop-<name>-s0..4.onnx` and change
 `SCOOP_MODEL` at the top of `app/bench/unreal-bridge.ts`.
+
+## In Tempo
+To view the dig through Tempo's cameras and lidar (gRPC-streamable), see [TEMPO.md](TEMPO.md) (`make_tempo_project.sh` builds the project).
