@@ -1,6 +1,6 @@
 /**
  * LiveDirt -> Unreal bridge. Runs the real simulation headless (captured terrain, earthwork heightfield, adaptive dig
- * controller, per-scoop learned soil v2 or the v1 heightfield cut, lidar survey) and serves its state over HTTP on
+ * controller, per-scoop learned soil v3 (model a16, 5-member ensemble) or the v1 heightfield cut, lidar survey) and serves its state over HTTP on
  * localhost so an Unreal Editor Python script (unreal/LiveDirtUE/Content/Python/livedirt_ue.py) can render it.
  *
  *   cd app && npx tsx bench/unreal-bridge.ts [--port 8790]
@@ -35,10 +35,13 @@ const houseYaw0 = machine.houseYawDeg * DEG, trackYaw = machine.trackYawDeg * DE
 
 // ---------------------------------------------------------------- simulation state
 const ortN = await import('onnxruntime-node');
-const sess = await ortN.InferenceSession.create(path.resolve('public/models/scoop-v4.onnx'));
+// learned soil v3 = model a16: 5-member ensemble (members averaged), same files the browser v3 loads
+const SCOOP_MODEL = 'a16';
+const sess = await Promise.all([0, 1, 2, 3, 4].map((i) => ortN.InferenceSession.create(path.resolve(`public/models/scoop-${SCOOP_MODEL}-s${i}.onnx`))));
 const scoop = ScoopSoil.fromParts(ortN as never, sess as never, JSON.parse(fs.readFileSync(path.resolve('public/models/scoop-v4-bucket.json'), 'utf8')));
+console.log(`learned soil v3: model ${SCOOP_MODEL}, ${scoop.members}-member ensemble`);
 
-const cfg = { soil: 'sandy-gravel', model: 'v2' as 'v2' | 'v1', controller: 'adaptive' as 'adaptive' | 'legacy', speed: 4, color: 'albedo' as 'albedo' | 'grade' | 'change', running: false };
+const cfg = { soil: 'sandy-gravel', model: 'v3' as 'v3' | 'v1', controller: 'adaptive' as 'adaptive' | 'legacy', speed: 4, color: 'albedo' as 'albedo' | 'grade' | 'change', running: false };
 let hf: Heightfield, auto: DigAutonomy, ray: HeightRaycaster, restJoints: JointState;
 let terrainVersion = 0, simT = 0, scanSeed = 1, latestScan: Float32Array | null = null, busy = false, lastScoop: { carried: number; ms: number } | null = null;
 const log: string[] = [];
@@ -56,7 +59,7 @@ function reset() {
   restJoints = solveIk(DX225_GEOMETRY, cx, gy, cz, tip, -100 * DEG, houseYaw0).joints;
   auto = new DigAutonomy(hf, DX225_GEOMETRY, cx, cz, gy, restJoints);
   auto.controller = cfg.controller;
-  auto.externalSoil = cfg.model === 'v2';
+  auto.externalSoil = cfg.model === 'v3';
   auto.traceMargin = 1.0;
   auto.designClamp = cfg.model === 'v1' && cfg.controller === 'legacy';
   auto.requestScan = () => latestScan;
@@ -209,7 +212,7 @@ const page = `<!doctype html><meta charset=utf-8><title>LiveDirt UE control</tit
 <style>body{font:14px system-ui;background:#16130f;color:#eee;margin:24px;max-width:640px}button{margin:3px;padding:8px 12px;border-radius:8px;border:0;background:#333;color:#eee;cursor:pointer}button.on{background:#e8701e}pre{background:#000;padding:10px;border-radius:8px;white-space:pre-wrap}</style>
 <h2>LiveDirt → Unreal</h2>
 <div><button onclick="c('start')">▶ Run</button><button onclick="c('pause')">⏸ Pause</button><button onclick="c('reset')">↺ Reset site</button></div>
-<div>Soil model: <button id=m_v2 onclick="c('model=v2')">Learned per-scoop (v2)</button><button id=m_v1 onclick="c('model=v1')">Simple heightfield (v1)</button></div>
+<div>Soil model: <button id=m_v3 onclick="c('model=v3')">Learned per-scoop (v3, a16 ensemble)</button><button id=m_v1 onclick="c('model=v1')">Simple heightfield (v1)</button></div>
 <div>Controller: <button id=k_adaptive onclick="c('controller=adaptive')">Adaptive</button><button id=k_legacy onclick="c('controller=legacy')">Legacy</button></div>
 <div>Soil: ${SOILS.map((s) => `<button id=s_${s.id} onclick="c('soil=${s.id}')">${s.label}</button>`).join('')}</div>
 <div>Speed: ${[1, 2, 4, 8, 16].map((v) => `<button id=v_${v} onclick="c('speed=${v}')">${v}×</button>`).join('')}</div>
@@ -239,7 +242,7 @@ http.createServer((req, res) => {
       else if (k === 'reset') reset();
       else if (k === 'speed') cfg.speed = Math.max(1, Math.min(32, parseFloat(v) || 4));
       else if (k === 'color') { cfg.color = v as typeof cfg.color; terrainVersion++; }
-      else if (k === 'model' && (v === 'v1' || v === 'v2')) { cfg.model = v; reset(); }
+      else if (k === 'model' && (v === 'v1' || v === 'v3')) { cfg.model = v; reset(); }
       else if (k === 'controller' && (v === 'adaptive' || v === 'legacy')) { cfg.controller = v; reset(); }
       else if (k === 'soil' && SOILS.some((s) => s.id === v)) { cfg.soil = v; reset(); }
     }

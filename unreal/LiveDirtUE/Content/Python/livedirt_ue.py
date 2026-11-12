@@ -7,7 +7,7 @@ the machine; the dig-zone terrain mesh is rebuilt whenever the soil changes (at 
 Usage (Unreal Editor, Output Log -> Python):
     import livedirt_ue; livedirt_ue.start()        # build the level and start following the bridge
     livedirt_ue.stop()                              # stop polling (actors stay)
-Control the dig (run / pause / reset, soil model v1/v2, soil type, speed, colour mode) at http://127.0.0.1:8790/
+Control the dig (run / pause / reset, soil model v1/v3 (a16), soil type, speed, colour mode) at http://127.0.0.1:8790/
 
 Unreal-side requirements (enabled in LiveDirtUE.uproject): Python Editor Script Plugin, Editor Scripting Utilities,
 Geometry Script. No C++ (no Xcode needed).
